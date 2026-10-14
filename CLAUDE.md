@@ -70,8 +70,9 @@ behaviour it is fixed: if it fails, assume the code is wrong. Change a test only
 desired behaviour itself changed, and say so explicitly. Never edit a test to get a suite
 green.
 
-Backend tests use SQLite in memory with a fake verifier (see `backend/tests/conftest.py`),
-the verifier tests start a real HTTP server on an ephemeral port.
+Backend tests use SQLite in memory with a fake verifier (see `backend/tests/conftest.py`);
+with `TEST_DATABASE_URL=postgresql+asyncpg://...` set they run against a real PostgreSQL
+(CI runs both). The verifier tests start a real HTTP server on an ephemeral port.
 
 ## Engineering standards
 
