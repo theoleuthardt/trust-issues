@@ -18,7 +18,11 @@ const BUTTONS: readonly TouchButton[] = [
  * On-screen buttons that feed the shared `InputState`. Pointer capture keeps a button held
  * while the finger drifts, and releasing happens on every way a press can end.
  */
-export function mountTouchControls(parent: HTMLElement, input: InputState): () => void {
+export function mountTouchControls(
+  parent: HTMLElement,
+  input: InputState,
+  onMenu?: () => void,
+): () => void {
   const root = document.createElement('div');
   root.className = 'touch-controls';
   const groups = {
@@ -47,6 +51,15 @@ export function mountTouchControls(parent: HTMLElement, input: InputState): () =
     button.addEventListener('lostpointercapture', release);
     button.addEventListener('contextmenu', (event) => event.preventDefault());
     groups[side].append(button);
+  }
+
+  if (onMenu) {
+    const menu = document.createElement('button');
+    menu.type = 'button';
+    menu.className = 'touch-menu';
+    menu.textContent = 'Menu';
+    menu.addEventListener('click', onMenu);
+    root.insertBefore(menu, groups.right);
   }
 
   parent.append(root);

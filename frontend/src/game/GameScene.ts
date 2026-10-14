@@ -47,6 +47,8 @@ export interface GameSceneData {
   levels: readonly Level[];
   startIndex: number;
   input: InputState;
+  onFinished?: (event: RunFinishedEvent) => void;
+  onExit?: () => void;
 }
 
 const HEAD_WIDTH = 8;
@@ -78,6 +80,8 @@ export class GameScene extends Phaser.Scene {
   private level!: Level;
   private levelText!: Phaser.GameObjects.Text;
   private controls!: InputState;
+  private onFinished: ((event: RunFinishedEvent) => void) | undefined;
+  private onExit: (() => void) | undefined;
   private state!: GameState;
   private recorded: number[] = [];
   private facing: 1 | -1 = 1;
@@ -106,6 +110,8 @@ export class GameScene extends Phaser.Scene {
     this.levels = data.levels;
     this.level = data.levels[data.startIndex] ?? (data.levels[0] as Level);
     this.controls = data.input;
+    this.onFinished = data.onFinished;
+    this.onExit = data.onExit;
   }
 
   create(): void {
@@ -123,6 +129,7 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(1, 0);
 
     this.input.keyboard?.on('keydown-R', () => this.restart());
+    this.input.keyboard?.on('keydown-ESC', () => this.onExit?.());
     this.input.keyboard?.on('keydown-ENTER', () => {
       if (this.state.finished) this.advance();
     });
@@ -243,6 +250,7 @@ export class GameScene extends Phaser.Scene {
       replay: encodeReplay(this.recorded),
     };
     this.events.emit(RUN_FINISHED, event);
+    this.onFinished?.(event);
   }
 
   private drawBackground(): void {
