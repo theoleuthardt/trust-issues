@@ -118,6 +118,11 @@ target that skilled players can beat; beating it scores more than 1000 points (s
 | 13  | `bait-and-switch`     | Bait and Switch     | 4      | The floor goes where you were about to land          |
 | 14  | `the-gauntlet`        | The Gauntlet        | 4      | Everything so far, back to back                      |
 | 15  | `final-exam`          | Final Exam          | 4      | Stairs, pits, walls and mid-air spikes in one run    |
+| 16  | `vertigo`             | Vertigo             | 4      | Towers: climb, and watch where the spikes come from  |
+| 17  | `narrow-ledges`       | Narrow Ledges       | 3      | One-tile stones over wide gaps                       |
+| 18  | `mind-games`          | Mind Games          | 4      | Traps that go off while you are in the air           |
+| 19  | `tunnel-vision`       | Tunnel Vision       | 3      | Long ceilings that cut every jump short              |
+| 20  | `trust-issues`        | Trust Issues        | 4      | The title level: nothing is what it seems            |
 
 ## Design guidance
 
