@@ -69,6 +69,24 @@ gh api -X POST repos/theoleuthardt/trust-issues/issues/<epic-number>/sub_issues 
 
    One issue, one branch, one PR. A PR that also refactors something unrelated is split.
 
+   **Stacked PRs.** When a change depends on another one that is not merged yet, branch
+   from that branch and open the PR with `--base <that-branch>`. CI runs for every pull
+   request, so the stack is checked as it grows. Merge bottom-up with squash merges. A
+   squash merge creates a new commit, so the branch above still carries the original
+   commits of the merged PR. The merged branch is deleted, so write down its tip commit
+   _before_ merging and use that SHA to rebase the next branch onto `main` afterwards:
+
+   ```bash
+   old_base=$(git rev-parse <base-branch>)   # before merging the PR below
+   # ... squash-merge the PR below, then:
+   git fetch origin
+   git rebase --onto origin/main "$old_base" <next-branch>
+   git push --force-with-lease
+   ```
+
+   GitHub retargets the PR above to `main` once the base branch is deleted, but it does not
+   rebase it; `gh pr create --base` alone gives no such behaviour.
+
 8. **CI must be green** and review findings resolved, then the PR is squash-merged and the
    branch deleted. After the merge: `scripts/kanban-status.sh 42 done`.
 
