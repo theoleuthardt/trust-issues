@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@trust-issues/sim": "*",
-    "phaser": "^3.90.0"
+    "phaser": "^4.2.1"
   },
   "devDependencies": {
     "vite": "^8.3.4"
