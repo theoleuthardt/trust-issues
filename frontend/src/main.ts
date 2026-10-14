@@ -1,9 +1,13 @@
 import Phaser from 'phaser';
 import { LEVELS } from '@trust-issues/sim';
+import { ApiClient, ApiError } from './api/client';
+import type { AuthMode } from './api/credentials';
+import { validateCredentials } from './api/credentials';
+import { SessionStore } from './api/session';
 import { ProgressStore, firstOpenIndex, levelCards } from './app/progress';
+import { authScreen, levelSelect, mainMenu, titleScreen } from './app/screens';
 import { memoryStorage } from './app/storage';
 import type { StorageLike } from './app/storage';
-import { levelSelect, mainMenu, titleScreen } from './app/screens';
 import { GameScene, SCENE_KEY } from './game/GameScene';
 import type { RunFinishedEvent } from './game/GameScene';
 import { startIndex } from './game/progress';
@@ -17,7 +21,7 @@ const LEVEL_WIDTH_TILES = 32;
 const LEVEL_HEIGHT_TILES = 18;
 const TILE_PX = 32;
 
-type Screen = 'title' | 'menu' | 'levels' | 'game';
+type Screen = 'title' | 'auth' | 'menu' | 'levels' | 'game';
 
 applyPaletteToCss(document.documentElement);
 
@@ -27,7 +31,13 @@ const ui = document.getElementById('ui');
 if (!ui) throw new Error('missing #ui container');
 
 const input = new InputState();
-const store = new ProgressStore(browserStorage());
+const storage = browserStorage();
+const store = new ProgressStore(storage);
+const sessions = new SessionStore(storage);
+const api = new ApiClient(
+  (...args) => window.fetch(...args),
+  () => sessions.current()?.token,
+);
 let game: Phaser.Game | undefined;
 
 const setScreen = (screen: Screen) => {
@@ -82,16 +92,63 @@ function show(screen: Screen, element: HTMLElement): void {
 }
 
 function showTitle(): void {
-  show('title', titleScreen(showMenu));
+  show(
+    'title',
+    titleScreen({
+      signedInAs: sessions.current()?.username,
+      onPlay: showMenu,
+      onSignIn: () => showAuth('login'),
+      onRegister: () => showAuth('register'),
+      onSignOut: () => {
+        sessions.clear();
+        showTitle();
+      },
+    }),
+  );
+}
+
+function showAuth(mode: AuthMode, notice?: string): void {
+  show(
+    'auth',
+    authScreen({
+      mode,
+      notice,
+      onSwitchMode: () => showAuth(mode === 'login' ? 'register' : 'login'),
+      onBack: showTitle,
+      onSubmit: async (username, password) => {
+        const problem = validateCredentials(mode, username, password);
+        if (problem) return problem;
+        const name = username.trim();
+        let registered = false;
+        try {
+          if (mode === 'register') {
+            await api.register(name, password);
+            registered = true;
+          }
+          sessions.save(await api.login(name, password), name);
+          showMenu();
+          return undefined;
+        } catch (error) {
+          if (registered) {
+            showAuth('login', 'Your account was created, but signing in failed. Please sign in.');
+            return undefined;
+          }
+          return error instanceof ApiError ? error.message : 'Something went wrong.';
+        }
+      },
+    }),
+  );
 }
 
 function showMenu(): void {
   const progress = store.load();
   const next = firstOpenIndex(LEVELS, progress);
   const started = Object.keys(progress).length > 0;
+  const account = sessions.current();
   show(
     'menu',
     mainMenu({
+      accountLine: account ? `Signed in as ${account.username}` : 'Playing as guest',
       continueLabel: started ? `Continue · Level ${next + 1}` : 'Start',
       onContinue: () => startLevel(next),
       onLevels: showLevels,

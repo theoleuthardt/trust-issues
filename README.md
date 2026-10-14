@@ -10,9 +10,9 @@ levels, more of them.
   your recorded inputs through the same deterministic simulation and derives the time itself.
 
 > Status: playable. Twenty levels with three or four stages each, a deterministic simulation,
-> accounts, verified runs and a leaderboard API exist; a title screen, a main menu and the
-> level select are in the game. Sign-in, registration and the leaderboard screens in the game
-> are still to be built. The work is tracked on the
+> accounts, verified runs and a leaderboard API exist; a title screen, sign-in and registration,
+> a main menu and the level select are in the game. Submitting runs and the leaderboard
+> screens in the game are still to be built. The work is tracked on the
 > [Kanban board](https://github.com/users/theoleuthardt/projects/2) (private) and in the
 > issues of this repository.
 
