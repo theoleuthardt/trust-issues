@@ -44,7 +44,10 @@ const api = new ApiClient(
 );
 let game: Phaser.Game | undefined;
 
+let navigation = 0;
+
 const setScreen = (screen: Screen) => {
+  navigation += 1;
   document.body.dataset.screen = screen;
 };
 
@@ -217,13 +220,16 @@ function showLeaderboard(index: number, back: () => void = showLeaderboardPicker
   if (!level) return;
   const title = `${index + 1}. ${level.name}`;
   show('board', leaderboardScreen({ title, state: { kind: 'loading' }, onBack: back }));
+  const requested = navigation;
   api
     .leaderboard(level.id)
     .then((entries) => {
+      if (navigation !== requested) return;
       const rows = leaderboardRows(entries, sessions.current()?.username);
       show('board', leaderboardScreen({ title, state: { kind: 'ready', rows }, onBack: back }));
     })
     .catch((error: unknown) => {
+      if (navigation !== requested) return;
       const message = error instanceof ApiError ? error.message : 'Something went wrong.';
       show('board', leaderboardScreen({ title, state: { kind: 'error', message }, onBack: back }));
     });
