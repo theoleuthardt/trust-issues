@@ -123,6 +123,31 @@ describe('ApiClient', () => {
     expect(calls[0]?.url).toBe('/api/progress');
   });
 
+  it('loads the leaderboard of a level without a token', async () => {
+    const { fetchFn, calls } = fakeFetch(200, [
+      { rank: 1, username: 'alice', score: 1010, frames: 890, deaths: 0 },
+      { rank: 2, username: 'bob', score: 940, frames: 960, deaths: 2 },
+    ]);
+    const client = new ApiClient(fetchFn, () => undefined);
+
+    const rows = await client.leaderboard('trust-nothing', 20);
+
+    expect(rows).toEqual([
+      { rank: 1, username: 'alice', score: 1010, frames: 890, deaths: 0 },
+      { rank: 2, username: 'bob', score: 940, frames: 960, deaths: 2 },
+    ]);
+    expect(calls[0]?.url).toBe('/api/leaderboard/trust-nothing?limit=20');
+  });
+
+  it('encodes the level id in the leaderboard path', async () => {
+    const { fetchFn, calls } = fakeFetch(200, []);
+    const client = new ApiClient(fetchFn, () => undefined);
+
+    await client.leaderboard('a/b c');
+
+    expect(calls[0]?.url).toBe('/api/leaderboard/a%2Fb%20c?limit=50');
+  });
+
   it('turns a failure while reading the body into an ApiError', async () => {
     const broken = {
       ok: true,

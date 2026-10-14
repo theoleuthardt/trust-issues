@@ -87,6 +87,11 @@ replayed the run, the verified rank:
 
 ![Finish screen](images/finish.png)
 
+The leaderboard of a level lists the best verified runs; the signed-in player's own row is
+inverted.
+
+![Leaderboard](images/leaderboard.png)
+
 ## Touch
 
 Two circular buttons left (move) and one right (jump), 64 px, semi-transparent paper with an

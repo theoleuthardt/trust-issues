@@ -158,6 +158,7 @@ describe('mainMenu', () => {
       continueLabel: 'Start',
       onContinue: noop,
       onLevels,
+      onLeaderboards: noop,
       onBack: noop,
     });
 

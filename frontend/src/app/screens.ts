@@ -1,6 +1,7 @@
 import { formatTime } from '../format';
 import type { AuthMode } from '../api/credentials';
 import { h } from './dom';
+import type { LeaderboardRow } from './leaderboard';
 import type { LevelCard } from './progress';
 
 const button = (label: string, onClick: () => void, primary = false) =>
@@ -128,6 +129,7 @@ export interface MainMenuOptions {
   continueLabel: string;
   onContinue: () => void;
   onLevels: () => void;
+  onLeaderboards: () => void;
   onBack: () => void;
 }
 
@@ -142,6 +144,7 @@ export function mainMenu(options: MainMenuOptions): HTMLElement {
       { class: 'stack' },
       button(options.continueLabel, options.onContinue, true),
       button('Levels', options.onLevels),
+      button('Leaderboards', options.onLeaderboards),
       button('Back', options.onBack),
     ),
   );
@@ -165,6 +168,7 @@ export function levelSelect(
   cards: readonly LevelCard[],
   onPick: (index: number) => void,
   onBack: () => void,
+  heading = 'Levels',
 ): HTMLElement {
   const grid = h('div', { class: 'cards' });
   for (const card of cards) {
@@ -186,8 +190,61 @@ export function levelSelect(
   return h(
     'section',
     { class: 'screen screen-levels' },
-    h('h2', { class: 'heading', text: 'Levels' }),
+    h('h2', { class: 'heading', text: heading }),
     grid,
     h('div', { class: 'stack' }, button('Back', onBack)),
+  );
+}
+
+export type LeaderboardState =
+  | { kind: 'loading' }
+  | { kind: 'error'; message: string }
+  | { kind: 'ready'; rows: readonly LeaderboardRow[] };
+
+export interface LeaderboardScreenOptions {
+  title: string;
+  state: LeaderboardState;
+  onBack: () => void;
+}
+
+export function leaderboardScreen(options: LeaderboardScreenOptions): HTMLElement {
+  const { state } = options;
+  let content: HTMLElement;
+  if (state.kind === 'loading') {
+    content = h('p', { class: 'account-line', text: 'Loading…' });
+  } else if (state.kind === 'error') {
+    content = h('p', { class: 'form-error', text: state.message });
+    content.setAttribute('role', 'alert');
+  } else if (state.rows.length === 0) {
+    content = h('p', { class: 'account-line', text: 'Nobody has finished this level yet.' });
+  } else {
+    const head = h(
+      'tr',
+      {},
+      ...['#', 'Player', 'Score', 'Time', 'Deaths'].map((label) => h('th', { text: label })),
+    );
+    const body = state.rows.map((row) =>
+      h(
+        'tr',
+        { class: row.isYou ? 'row-you' : '' },
+        h('td', { text: row.rank }),
+        h('td', { text: row.username }),
+        h('td', { text: row.score }),
+        h('td', { text: row.time }),
+        h('td', { text: row.deaths }),
+      ),
+    );
+    content = h(
+      'div',
+      { class: 'table-wrap' },
+      h('table', { class: 'board' }, h('thead', {}, head), h('tbody', {}, ...body)),
+    );
+  }
+  return h(
+    'section',
+    { class: 'screen screen-board' },
+    h('h2', { class: 'heading', text: `Leaderboard · ${options.title}` }),
+    content,
+    h('div', { class: 'stack' }, button('Back', options.onBack)),
   );
 }
