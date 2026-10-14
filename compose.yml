@@ -21,7 +21,7 @@ services:
   verifier:
     build:
       context: .
-      dockerfile: verifier/Dockerfile
+      dockerfile: verifier/Containerfile
     environment:
       VERIFIER_TOKEN: ${VERIFIER_TOKEN:?set VERIFIER_TOKEN in .env}
     restart: unless-stopped
@@ -29,6 +29,7 @@ services:
   backend:
     build:
       context: backend
+      dockerfile: Containerfile
     environment:
       DATABASE_URL: postgresql+asyncpg://trust:${POSTGRES_PASSWORD}@db:5432/trustissues
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
@@ -42,7 +43,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: frontend/Dockerfile
+      dockerfile: frontend/Containerfile
     ports:
       - '${WEB_PORT:-8080}:8080'
     depends_on:
