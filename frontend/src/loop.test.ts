@@ -29,6 +29,20 @@ describe('FixedStepper', () => {
     expect(stepper.advance(0)).toBe(0);
   });
 
+  it('counts a frame that is only a rounding error short of a tick as a full tick', () => {
+    const stepper = new FixedStepper(1000 / 60, 5);
+    let now = 1000;
+    let ticks = 0;
+
+    for (let frame = 0; frame < 3000; frame++) {
+      const next = 1000 + (frame + 1) * (1000 / 60);
+      ticks += stepper.advance(next - now);
+      now = next;
+    }
+
+    expect(ticks).toBe(3000);
+  });
+
   it('ignores negative deltas', () => {
     const stepper = new FixedStepper(10, 5);
 
