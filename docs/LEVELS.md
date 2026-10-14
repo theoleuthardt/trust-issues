@@ -113,6 +113,11 @@ target that skilled players can beat; beating it scores more than 1000 points (s
 | 8   | `low-ceiling`         | Low Ceiling         | 3      | Ceilings cut your jumps short                        |
 | 9   | `domino-effect`       | Domino Effect       | 4      | One trap leads straight into the next                |
 | 10  | `fake-friends`        | Fake Friends        | 3      | Stepping stones that bite back                       |
+| 11  | `needle-garden`       | Needle Garden       | 4      | Fields of spikes and the shortest safe ground        |
+| 12  | `climb-every-wall`    | Climb Every Wall    | 4      | Walls too high to jump, with steps to build          |
+| 13  | `bait-and-switch`     | Bait and Switch     | 4      | The floor goes where you were about to land          |
+| 14  | `the-gauntlet`        | The Gauntlet        | 4      | Everything so far, back to back                      |
+| 15  | `final-exam`          | Final Exam          | 4      | Stairs, pits, walls and mid-air spikes in one run    |
 
 ## Design guidance
 

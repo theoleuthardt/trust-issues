@@ -9,6 +9,10 @@ describe('levels', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  it('ships at least fifteen levels', () => {
+    expect(LEVELS.length).toBeGreaterThanOrEqual(15);
+  });
+
   it('gives every level three or four stages', () => {
     for (const level of LEVELS) {
       expect(level.stages.length, level.id).toBeGreaterThanOrEqual(3);
