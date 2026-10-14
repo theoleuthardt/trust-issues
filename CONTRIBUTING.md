@@ -25,6 +25,16 @@ Requirements: Node 22.12+, uv, go-task. Podman is only needed for the full stack
 | `scripts`                        | Smoke test and board helper                                |
 | `*/Containerfile`, `compose.yml` | Image definitions per service and the Podman compose stack |
 
+## Running the backend tests on PostgreSQL
+
+The default run uses SQLite in memory. CI also runs the suite against PostgreSQL; locally:
+
+```bash
+podman run -d --rm --name ti-pg -e POSTGRES_USER=trust -e POSTGRES_PASSWORD=testpw \
+  -e POSTGRES_DB=trusttest -p 127.0.0.1:55432:5432 docker.io/library/postgres:17-alpine
+cd backend && TEST_DATABASE_URL=postgresql+asyncpg://trust:testpw@127.0.0.1:55432/trusttest uv run pytest
+```
+
 ## Standards
 
 - **Test first.** Add or change the test that expresses the behaviour before the

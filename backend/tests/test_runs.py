@@ -1,3 +1,5 @@
+import asyncio
+
 from litestar.testing import AsyncTestClient
 
 from tests.conftest import FakeVerifier, auth_headers
@@ -209,3 +211,23 @@ async def test_ranks_by_score_not_by_time(client: AsyncTestClient, verifier: Fak
     assert second.json()["rank"] == 2
     board = await client.get("/api/leaderboard/trust-nothing")
     assert [entry["username"] for entry in board.json()] == ["alice", "bob"]
+
+
+async def test_concurrent_submissions_of_one_player_keep_the_best(
+    client: AsyncTestClient, verifier: FakeVerifier
+) -> None:
+    headers = await auth_headers(client, "mallory")
+    verifier.compute = lambda _level, replay: run(
+        frames=replay[1], deaths=0, score=2000 - replay[1]
+    )
+
+    responses = await asyncio.gather(
+        *(
+            client.post("/api/runs", json=submission(replay=[2, 100 + n]), headers=headers)
+            for n in range(12)
+        )
+    )
+
+    assert [response.status_code for response in responses] == [201] * 12
+    board = (await client.get("/api/leaderboard/trust-nothing")).json()
+    assert [(entry["username"], entry["score"]) for entry in board] == [("mallory", 1900)]
