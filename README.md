@@ -9,10 +9,12 @@ levels, more of them.
 - **Leaderboards you can trust.** Times are not reported by the client. The server replays
   your recorded inputs through the same deterministic simulation and derives the time itself.
 
-> Status: proof of concept. One playable level, accounts, verified runs and a leaderboard API
-> exist; the game UI for sign-in, leaderboard and level select is still to be built. The work
-> is tracked on the [Kanban board](https://github.com/users/theoleuthardt/projects/2)
-> (private) and in the issues of this repository.
+> Status: playable. Twenty levels with three or four stages each, a deterministic simulation,
+> accounts, verified runs and a leaderboard API exist; a title screen, a main menu and the
+> level select are in the game. Sign-in, registration and the leaderboard screens in the game
+> are still to be built. The work is tracked on the
+> [Kanban board](https://github.com/users/theoleuthardt/projects/2) (private) and in the
+> issues of this repository.
 
 ## Stack
 
@@ -70,6 +72,7 @@ the Vite proxy.
 | Move        | `←` `→` or `A` `D`  | on-screen arrows    |
 | Jump        | `Space`, `↑` or `W` | on-screen jump      |
 | Restart run | `R`                 | tap after finishing |
+| Menu        | `Esc`               | -                   |
 | Next level  | `Enter`             | tap after finishing |
 
 Touch controls show up on touch devices automatically; force them with `?touch=1` or hide

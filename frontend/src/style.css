@@ -52,3 +52,142 @@ body {
   background: var(--ti-ink);
   color: var(--ti-paper);
 }
+
+body:not([data-screen='game']) .touch-controls {
+  display: none;
+}
+
+#ui {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow-y: auto;
+}
+
+#ui[hidden] {
+  display: none;
+}
+
+.screen {
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  background: var(--ti-paper);
+  color: var(--ti-ink);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+.logo {
+  margin: 0;
+  font-size: clamp(40px, 9vw, 84px);
+  letter-spacing: -0.04em;
+}
+
+.tagline {
+  margin: 0;
+  color: var(--ti-inkSoft);
+  font-size: clamp(14px, 2.4vw, 20px);
+}
+
+.heading {
+  margin: 0;
+  font-size: clamp(26px, 4vw, 40px);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: min(320px, 80vw);
+}
+
+.button {
+  font: inherit;
+  font-size: 18px;
+  padding: 14px 20px;
+  background: var(--ti-paper);
+  color: var(--ti-ink);
+  border: 3px solid var(--ti-ink);
+  cursor: pointer;
+}
+
+.button:hover,
+.button:focus-visible {
+  background: var(--ti-ink);
+  color: var(--ti-paper);
+  outline: none;
+}
+
+.button-primary {
+  background: var(--ti-ink);
+  color: var(--ti-paper);
+}
+
+.button-primary:hover,
+.button-primary:focus-visible {
+  background: var(--ti-paper);
+  color: var(--ti-ink);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  width: min(960px, 100%);
+}
+
+.card {
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--ti-paper);
+  color: var(--ti-ink);
+  border: 3px solid var(--ti-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.card:hover:not(:disabled),
+.card:focus-visible {
+  background: var(--ti-ink);
+  color: var(--ti-paper);
+  outline: none;
+}
+
+.card:disabled {
+  border-style: dashed;
+  color: var(--ti-inkSoft);
+  cursor: default;
+}
+
+.card-number {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.card-name {
+  font-size: 15px;
+}
+
+.card-detail {
+  font-size: 12px;
+  color: var(--ti-inkSoft);
+}
+
+.card:hover:not(:disabled) .card-detail,
+.card:focus-visible .card-detail {
+  color: var(--ti-paperShade);
+}
+
+.card-cleared .card-number::after {
+  content: ' ■';
+  font-size: 14px;
+}
