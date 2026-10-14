@@ -17,6 +17,9 @@ export function scoreRun(parFrames: number, run: { frames: number; deaths: numbe
   if (!Number.isInteger(run.frames) || run.frames < 1) {
     throw new RangeError('frames must be a positive integer');
   }
+  if (!Number.isInteger(run.deaths) || run.deaths < 0) {
+    throw new RangeError('deaths must be a non-negative integer');
+  }
   const timeScore = Math.min(MAX_TIME_SCORE, Math.floor((PAR_TIME_SCORE * parFrames) / run.frames));
   return Math.max(0, timeScore - DEATH_PENALTY * run.deaths);
 }

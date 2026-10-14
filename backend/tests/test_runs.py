@@ -89,6 +89,49 @@ async def test_a_higher_score_replaces_the_personal_best(
     assert [(entry["username"], entry["score"]) for entry in board] == [("mallory", 1175)]
 
 
+async def test_a_faster_run_with_a_lower_score_does_not_replace_the_best(
+    client: AsyncTestClient, verifier: FakeVerifier
+) -> None:
+    headers = await auth_headers(client, "mallory")
+    verifier.next = run(frames=300, deaths=0, score=1000)
+    await client.post("/api/runs", json=submission(), headers=headers)
+
+    verifier.next = run(frames=250, deaths=12, score=900)
+    response = await client.post("/api/runs", json=submission(), headers=headers)
+
+    assert response.json()["personal_best"] is False
+    board = (await client.get("/api/leaderboard/trust-nothing")).json()
+    assert [(entry["frames"], entry["score"]) for entry in board] == [(300, 1000)]
+
+
+async def test_a_slower_run_with_a_higher_score_replaces_the_best(
+    client: AsyncTestClient, verifier: FakeVerifier
+) -> None:
+    headers = await auth_headers(client, "mallory")
+    verifier.next = run(frames=250, deaths=12, score=900)
+    await client.post("/api/runs", json=submission(), headers=headers)
+
+    verifier.next = run(frames=300, deaths=0, score=1000)
+    response = await client.post("/api/runs", json=submission(), headers=headers)
+
+    assert response.json()["personal_best"] is True
+    board = (await client.get("/api/leaderboard/trust-nothing")).json()
+    assert [(entry["frames"], entry["score"]) for entry in board] == [(300, 1000)]
+
+
+async def test_an_identical_result_keeps_the_earlier_submission(
+    client: AsyncTestClient, verifier: FakeVerifier
+) -> None:
+    headers = await auth_headers(client, "mallory")
+    verifier.next = run(frames=300, deaths=0, score=1000)
+    first = await client.post("/api/runs", json=submission(), headers=headers)
+
+    second = await client.post("/api/runs", json=submission(), headers=headers)
+
+    assert first.json()["personal_best"] is True
+    assert second.json()["personal_best"] is False
+
+
 async def test_with_an_equal_score_the_faster_run_wins(
     client: AsyncTestClient, verifier: FakeVerifier
 ) -> None:

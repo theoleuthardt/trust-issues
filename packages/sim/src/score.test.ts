@@ -47,6 +47,11 @@ describe('scoreRun', () => {
     );
   });
 
+  it('rejects negative or fractional deaths', () => {
+    expect(() => scoreRun(PAR, { frames: PAR, deaths: -1 })).toThrow(RangeError);
+    expect(() => scoreRun(PAR, { frames: PAR, deaths: 1.5 })).toThrow(RangeError);
+  });
+
   it('rejects a run without frames or a level without par', () => {
     expect(() => scoreRun(PAR, { frames: 0, deaths: 0 })).toThrow(RangeError);
     expect(() => scoreRun(0, { frames: 10, deaths: 0 })).toThrow(RangeError);

@@ -127,7 +127,14 @@ describe('stages', () => {
   });
 
   it('names the problem when a level is still written in the old single-stage format', () => {
-    const legacy = { id: 'old', name: 'Old', rows: ['.S.E', '####'], traps: [], maxFrames: 100 };
+    const legacy = {
+      id: 'old',
+      name: 'Old',
+      rows: ['.S.E', '####'],
+      traps: [],
+      maxFrames: 100,
+      parFrames: 50,
+    };
 
     expect(() => buildLevel(legacy as unknown as LevelDef)).toThrow(/stage/);
   });

@@ -41,6 +41,17 @@ async def test_equal_scores_are_ordered_by_time_then_by_submission(
     assert [e["username"] for e in response.json()] == ["fast", "first", "slow"]
 
 
+async def test_identical_results_are_ordered_by_who_submitted_first(
+    client: AsyncTestClient, verifier: FakeVerifier
+) -> None:
+    for name in ["early", "late"]:
+        await _submit(client, verifier, await auth_headers(client, name), 300, 900)
+
+    response = await client.get("/api/leaderboard/trust-nothing")
+
+    assert [e["username"] for e in response.json()] == ["early", "late"]
+
+
 async def test_leaderboard_respects_the_limit(
     client: AsyncTestClient, verifier: FakeVerifier
 ) -> None:

@@ -55,6 +55,10 @@ characters or contains `change-me`/`example`/`placeholder`.
 
 ## Updating
 
+The backend needs a verifier that returns the `score` field (added with the score
+system). When both change in one release, start the verifier first or restart both together,
+otherwise run submissions are answered with 503 until the verifier is updated.
+
 ```bash
 git pull
 podman compose up -d --build
