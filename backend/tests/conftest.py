@@ -73,7 +73,7 @@ async def client(settings: Settings, verifier: FakeVerifier) -> AsyncIterator[As
         finally:
             await cleanup.dispose()
         engine = create_async_engine(settings.database_url)
-    app = create_app(settings, verifier=verifier, engine=engine)
+    app = create_app(settings, verifier=verifier, engine=engine, create_schema=True)
     async with AsyncTestClient(app=app) as test_client:
         yield test_client
 

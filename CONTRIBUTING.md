@@ -35,6 +35,20 @@ podman run -d --rm --name ti-pg -e POSTGRES_USER=trust -e POSTGRES_PASSWORD=test
 cd backend && TEST_DATABASE_URL=postgresql+asyncpg://trust:testpw@127.0.0.1:55432/trusttest uv run pytest
 ```
 
+## Changing the database schema
+
+Models live in `backend/src/trust_issues_backend/models.py`, the schema in Alembic migrations.
+After changing a model:
+
+```bash
+cd backend
+DATABASE_URL=sqlite+aiosqlite:///dev.db uv run python -m trust_issues_backend.migrate   # bring a scratch DB to head
+DATABASE_URL=sqlite+aiosqlite:///dev.db uv run alembic revision --autogenerate -m "add foo"
+```
+
+Read the generated file in `backend/alembic/versions/`, fix what autogenerate cannot know and
+commit it with the model change. A test compares the migrated schema with the models.
+
 ## Standards
 
 - **Test first.** Add or change the test that expresses the behaviour before the

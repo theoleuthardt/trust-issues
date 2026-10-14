@@ -47,6 +47,9 @@ Single suites: `npm test --workspace @trust-issues/sim`, `cd backend && uv run p
 - **One input path.** Keyboard and touch both feed `InputState`; the scene only reads
   `InputState.mask()`.
 - **Colours come from `frontend/src/theme.ts`.** No hard-coded colours in components.
+- **Schema changes need a migration.** Change the model, run `task backend:migration -- "what"`
+  against a database at head, review the generated revision and keep the SQLite/PostgreSQL
+  drift test green; the application never creates tables itself.
 - **Backend boundaries are msgspec structs** in `schemas.py` with their constraints
   declared there. Routes trust validated data. Passwords are hashed with argon2 in a
   worker thread; login answers identically for unknown users and wrong passwords.

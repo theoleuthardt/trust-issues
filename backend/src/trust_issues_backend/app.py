@@ -1,7 +1,5 @@
 """Application factory."""
 
-import asyncio
-import logging
 from collections.abc import AsyncGenerator
 from datetime import timedelta
 
@@ -28,8 +26,6 @@ from trust_issues_backend.routes.runs import submit_run
 from trust_issues_backend.settings import Settings
 from trust_issues_backend.verifier import HttpVerifier, Verifier
 
-logger = logging.getLogger(__name__)
-
 PUBLIC_PATHS = [
     r"^/health$",
     r"^/api/auth/register$",
@@ -37,31 +33,21 @@ PUBLIC_PATHS = [
     r"^/api/leaderboard/",
     r"^/schema",
 ]
-DATABASE_STARTUP_ATTEMPTS = 30
 MAX_REQUEST_BODY_BYTES = 256 * 1024
-
-
-async def _create_schema(engine: AsyncEngine) -> None:
-    """Creates missing tables, waiting for the database to accept connections first."""
-    for attempt in range(1, DATABASE_STARTUP_ATTEMPTS + 1):
-        try:
-            async with engine.begin() as connection:
-                await connection.run_sync(Base.metadata.create_all)
-        except (OSError, ConnectionError) as error:
-            if attempt == DATABASE_STARTUP_ATTEMPTS:
-                raise
-            logger.warning("database not ready (%s), retrying", error)
-            await asyncio.sleep(1)
-        else:
-            return
 
 
 def create_app(
     settings: Settings,
     verifier: Verifier | None = None,
     engine: AsyncEngine | None = None,
+    create_schema: bool = False,
 ) -> Litestar:
-    """Builds the app; verifier and engine are injectable so tests need no network."""
+    """
+    Builds the app; verifier and engine are injectable so tests need no network.
+
+    The schema belongs to the migrations (`alembic upgrade head`, run by the container before
+    the server starts); `create_schema` lets tests build it from the models instead.
+    """
     engine = engine or create_async_engine(settings.database_url, pool_pre_ping=True)
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
@@ -92,7 +78,9 @@ def create_app(
             yield session
 
     async def on_startup(_: Litestar) -> None:
-        await _create_schema(engine)
+        if create_schema:
+            async with engine.begin() as connection:
+                await connection.run_sync(Base.metadata.create_all)
 
     async def on_shutdown(_: Litestar) -> None:
         await engine.dispose()
