@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import {
+  PLAYER_HEIGHT,
   PLAYER_WIDTH,
   TICKS_PER_SECOND,
   TILE_SIZE,
@@ -13,6 +14,16 @@ import { Input } from '@trust-issues/sim';
 import { formatTime } from '../format';
 import type { InputState } from '../input/InputState';
 import { FixedStepper } from '../loop';
+import {
+  POP_MS,
+  VANISH_MS,
+  burst,
+  particleAt,
+  popScale,
+  tileChanges,
+  vanishScale,
+} from './effects';
+import type { Particle } from './effects';
 import { advancePhase, figurePose, legFoot } from './figure';
 import { PALETTE, colorNumber } from '../theme';
 
@@ -41,6 +52,18 @@ const LEG_WIDTH = 5;
 const LEG_SPACING = 4;
 const HUD_FONT = { fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: '20px' };
 const MAX_TICKS_PER_FRAME = 5;
+const DEATH_PARTICLES = 10;
+const SKYLINE = [3, 5, 2, 4, 6, 3, 5, 2, 4, 3, 6, 2, 5, 4, 3, 6];
+
+interface TileEffect {
+  kind: 'pop' | 'vanish';
+  bornAt: number;
+}
+
+interface LiveParticle {
+  particle: Particle;
+  bornAt: number;
+}
 
 export class GameScene extends Phaser.Scene {
   private level!: Level;
@@ -54,6 +77,11 @@ export class GameScene extends Phaser.Scene {
   private timeText!: Phaser.GameObjects.Text;
   private deathText!: Phaser.GameObjects.Text;
   private overlay: Phaser.GameObjects.GameObject[] = [];
+  private previousTiles: Uint8Array | undefined;
+  private knownDeaths = 0;
+  private lastPosition = { x: 0, y: 0 };
+  private tileEffects = new Map<number, TileEffect>();
+  private particles: LiveParticle[] = [];
 
   constructor() {
     super(SCENE_KEY);
@@ -109,6 +137,10 @@ export class GameScene extends Phaser.Scene {
     this.recorded = [];
     this.facing = 1;
     this.phase = 0;
+    this.previousTiles = undefined;
+    this.knownDeaths = 0;
+    this.tileEffects.clear();
+    this.particles = [];
     this.stepper.reset();
   }
 
@@ -152,52 +184,128 @@ export class GameScene extends Phaser.Scene {
 
   private drawBackground(): void {
     const g = this.add.graphics();
+    const { width, height } = this.scale;
     g.fillStyle(colorNumber('paper'));
-    g.fillRect(0, 0, this.scale.width, this.scale.height);
+    g.fillRect(0, 0, width, height);
+    g.fillStyle(colorNumber('paperShade'));
+    for (let tx = 0; tx < this.level.width; tx += 2) {
+      const tiles = SKYLINE[(tx / 2) % SKYLINE.length] ?? 3;
+      g.fillRect(tx * TILE_SIZE, height - tiles * TILE_SIZE, TILE_SIZE * 2, tiles * TILE_SIZE);
+    }
   }
 
   private render(): void {
+    const now = this.time.now;
+    this.trackEffects(now);
     const g = this.world;
     g.clear();
-    this.renderTiles(g);
-    this.renderExit(g);
+    this.renderTiles(g, now);
+    this.renderExit(g, now);
+    this.renderParticles(g, now);
     this.renderPlayer(g);
     this.timeText.setText(formatTime(this.state.tick));
     this.deathText.setText(`Deaths ${this.state.deaths}`);
   }
 
-  private renderTiles(g: Phaser.GameObjects.Graphics): void {
+  private trackEffects(now: number): void {
+    if (this.state.deaths !== this.knownDeaths) {
+      this.knownDeaths = this.state.deaths;
+      const origin = {
+        x: this.lastPosition.x + PLAYER_WIDTH / 2,
+        y: this.lastPosition.y + PLAYER_HEIGHT / 2,
+      };
+      for (const particle of burst(origin, DEATH_PARTICLES)) {
+        this.particles.push({ particle, bornAt: now });
+      }
+      this.tileEffects.clear();
+    } else if (this.previousTiles) {
+      for (const change of tileChanges(this.previousTiles, this.state.tiles)) {
+        if (change.to === Tile.Spike) {
+          this.tileEffects.set(change.index, { kind: 'pop', bornAt: now });
+        } else if (change.from === Tile.Solid && change.to === Tile.Air) {
+          this.tileEffects.set(change.index, { kind: 'vanish', bornAt: now });
+        }
+      }
+    }
+    this.previousTiles = this.state.tiles.slice();
+    this.lastPosition = { x: this.state.x, y: this.state.y };
+  }
+
+  private renderTiles(g: Phaser.GameObjects.Graphics, now: number): void {
     const { width, height } = this.level;
     for (let ty = 0; ty < height; ty++) {
       for (let tx = 0; tx < width; tx++) {
-        const tile = this.state.tiles[ty * width + tx];
+        const index = ty * width + tx;
+        const tile = this.state.tiles[index];
         const x = tx * TILE_SIZE;
         const y = ty * TILE_SIZE;
         if (tile === Tile.Solid) {
           g.fillStyle(colorNumber('ink'));
           g.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+          g.fillStyle(colorNumber('inkLift'));
+          g.fillRect(x + TILE_SIZE - 1, y, 1, TILE_SIZE);
+          g.fillRect(x, y + TILE_SIZE - 1, TILE_SIZE, 1);
+          const above = ty > 0 ? this.state.tiles[index - width] : Tile.Solid;
+          if (above !== Tile.Solid) {
+            g.fillStyle(colorNumber('inkSoft'));
+            g.fillRect(x, y, TILE_SIZE, 3);
+          }
         } else if (tile === Tile.Spike) {
-          g.fillStyle(colorNumber('accent'));
-          g.fillTriangle(
-            x + 2,
-            y + TILE_SIZE,
-            x + TILE_SIZE / 2,
-            y + 6,
-            x + TILE_SIZE - 2,
-            y + TILE_SIZE,
-          );
+          const effect = this.tileEffects.get(index);
+          const scale = effect?.kind === 'pop' ? popScale(now - effect.bornAt) : 1;
+          if (effect?.kind === 'pop' && now - effect.bornAt >= POP_MS)
+            this.tileEffects.delete(index);
+          this.drawSpike(g, x, y, scale);
         }
       }
     }
+    for (const [index, effect] of this.tileEffects) {
+      if (effect.kind !== 'vanish') continue;
+      const age = now - effect.bornAt;
+      if (age >= VANISH_MS) {
+        this.tileEffects.delete(index);
+        continue;
+      }
+      const size = TILE_SIZE * vanishScale(age);
+      const x = (index % width) * TILE_SIZE + (TILE_SIZE - size) / 2;
+      const y = Math.floor(index / width) * TILE_SIZE + (TILE_SIZE - size) / 2;
+      g.fillStyle(colorNumber('ink'));
+      g.fillRect(x, y, size, size);
+    }
   }
 
-  private renderExit(g: Phaser.GameObjects.Graphics): void {
+  private drawSpike(g: Phaser.GameObjects.Graphics, x: number, y: number, scale: number): void {
+    const baseY = y + TILE_SIZE;
+    const apexY = baseY - (TILE_SIZE - 6) * scale;
+    const left = x + 2;
+    const right = x + TILE_SIZE - 2;
+    const middle = x + TILE_SIZE / 2;
+    g.fillStyle(colorNumber('accent'));
+    g.fillTriangle(left, baseY, middle, apexY, right, baseY);
+    g.fillStyle(colorNumber('accentDark'));
+    g.fillTriangle(middle, apexY, right, baseY, middle, baseY);
+  }
+
+  private renderExit(g: Phaser.GameObjects.Graphics, now: number): void {
     const x = this.level.exit.x * TILE_SIZE;
     const y = this.level.exit.y * TILE_SIZE;
+    const halo = TILE_SIZE * 0.85 + Math.sin(now / 350) * 2;
+    g.fillStyle(colorNumber('paper'));
+    g.fillCircle(x + TILE_SIZE / 2, y + TILE_SIZE / 2, halo);
     g.fillStyle(colorNumber('ink'));
     g.fillRoundedRect(x + 4, y + 2, TILE_SIZE - 8, TILE_SIZE - 2, { tl: 12, tr: 12, bl: 0, br: 0 });
     g.fillStyle(colorNumber('paper'));
     g.fillRoundedRect(x + 9, y + 8, TILE_SIZE - 18, TILE_SIZE - 8, { tl: 7, tr: 7, bl: 0, br: 0 });
+  }
+
+  private renderParticles(g: Phaser.GameObjects.Graphics, now: number): void {
+    this.particles = this.particles.filter(({ particle, bornAt }) => {
+      const at = particleAt(particle, now - bornAt);
+      if (!at) return false;
+      g.fillStyle(colorNumber('ink'), at.alpha);
+      g.fillRect(at.x - 2, at.y - 2, 4, 4);
+      return true;
+    });
   }
 
   private renderPlayer(g: Phaser.GameObjects.Graphics): void {
@@ -215,8 +323,8 @@ export class GameScene extends Phaser.Scene {
 
     g.lineStyle(LEG_WIDTH, colorNumber('ink'));
     for (const [leg, side] of [
-      [pose.back, 1],
-      [pose.front, -1],
+      [pose.back, -this.facing],
+      [pose.front, this.facing],
     ] as const) {
       const hip = { x: centre + side * LEG_SPACING, y: hipY };
       const foot = legFoot(hip, leg, this.facing);
