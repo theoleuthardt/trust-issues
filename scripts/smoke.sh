@@ -38,6 +38,7 @@ wait_for http://127.0.0.1:18081/health
   export JWT_SECRET="$jwt_secret"
   export VERIFIER_URL=http://127.0.0.1:18081
   export VERIFIER_TOKEN="$verifier_token"
+  uv run python -m trust_issues_backend.migrate >"$tmp/migrate.log" 2>&1
   exec setsid uv run uvicorn trust_issues_backend.main:app --port 18000 >"$tmp/backend.log" 2>&1
 ) &
 pids+=($!)

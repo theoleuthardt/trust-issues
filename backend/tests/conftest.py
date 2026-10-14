@@ -17,6 +17,16 @@ PASSWORD = "correct-horse-battery"
 TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
 
 
+def require_test_database(url: str) -> None:
+    """Refuses to let a test wipe a database whose name does not contain "test"."""
+    database = make_url(url).database or ""
+    if "test" not in database:
+        raise RuntimeError(
+            f"refusing to reset database '{database}': TEST_DATABASE_URL must name a "
+            "database that contains 'test'"
+        )
+
+
 @dataclass
 class FakeVerifier:
     """Verifier double: answers with `next` (a result or an exception to raise)."""
@@ -60,12 +70,7 @@ async def client(settings: Settings, verifier: FakeVerifier) -> AsyncIterator[As
             connect_args={"check_same_thread": False},
         )
     else:
-        database = make_url(settings.database_url).database or ""
-        if "test" not in database:
-            raise RuntimeError(
-                f"refusing to reset database '{database}': TEST_DATABASE_URL must name a "
-                "database that contains 'test'"
-            )
+        require_test_database(settings.database_url)
         cleanup = create_async_engine(settings.database_url)
         try:
             async with cleanup.begin() as connection:
@@ -73,7 +78,7 @@ async def client(settings: Settings, verifier: FakeVerifier) -> AsyncIterator[As
         finally:
             await cleanup.dispose()
         engine = create_async_engine(settings.database_url)
-    app = create_app(settings, verifier=verifier, engine=engine)
+    app = create_app(settings, verifier=verifier, engine=engine, create_schema=True)
     async with AsyncTestClient(app=app) as test_client:
         yield test_client
 

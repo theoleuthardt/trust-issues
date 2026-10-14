@@ -32,6 +32,18 @@ tasks:
     cmds:
       - uv run uvicorn trust_issues_backend.main:app --reload --port 8000
 
+  backend:migrate:
+    desc: Apply all database migrations (needs DATABASE_URL and the other backend settings)
+    dir: backend
+    cmds:
+      - uv run python -m trust_issues_backend.migrate
+
+  backend:migration:
+    desc: 'New migration from model changes: task backend:migration -- "add foo"'
+    dir: backend
+    cmds:
+      - uv run alembic revision --autogenerate -m "{{.CLI_ARGS}}"
+
   db:up:
     desc: Start the local Postgres
     cmds:

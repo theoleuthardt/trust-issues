@@ -64,8 +64,10 @@ git pull
 podman compose up -d --build
 ```
 
-The backend creates missing tables at startup. Until migrations exist (planned), schema
-changes need a manual step and are called out in the release notes.
+The backend container migrates the database to the newest revision before it starts, so an
+update needs no manual step. A database created by an earlier version without migrations is
+adopted automatically; one that does not match the baseline makes the container exit with a
+clear message instead of being modified. Back up before updating (see Backups below).
 
 ## Start on boot
 
