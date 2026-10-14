@@ -57,10 +57,32 @@ until scrolling cameras are implemented.
   tiles into spikes (it never replaces solid tiles).
 - Dying re-arms every trap of the stage and restores its tiles.
 
+## Authoring stages
+
+Stages are written with the small DSL in `packages/sim/src/levels/stage.ts` instead of by
+hand-drawn ASCII. A stage is a two-row floor plus features; the spawn is in column 1 and the
+exit in column 30 unless told otherwise.
+
+| Feature               | Effect                                                   |
+| --------------------- | -------------------------------------------------------- |
+| `gap(x, w)`           | permanent hole in the floor                              |
+| `spikes(x, w)`        | permanent spikes on the floor                            |
+| `wall(x, h)`          | permanent wall on the floor                              |
+| `block(x, y, w, h)`   | free-floating solid block                                |
+| `pop(at, x, w)`       | spikes appear at `x` when the player reaches column `at` |
+| `drop(at, x, w)`      | the floor vanishes at `x`                                |
+| `rise(at, x, h)`      | a wall rises at `x`                                      |
+| `sky(at, x, y)`       | a spike appears in mid-air at (`x`, `y`)                 |
+| `vanish(at, x, y, w)` | tiles of a platform vanish                               |
+| `seal(at, x, y, h)`   | tiles appear at (`x`, `y`) downwards                     |
+
+A trap fires when the player overlaps columns `at` and `at + 1` within three tiles above
+the floor. Reference: a jump clears a wall of 2 tiles and a gap of 3 tiles.
+
 ## Adding a level
 
-1. Create `packages/sim/src/levels/<id>.ts` exporting a `LevelContent` (a level without its
-   par time) with its stages.
+1. Write a `LevelContent` (a level without its par time) with its stages, for example in a
+   pack file under `packages/sim/src/levels/`.
 2. Register it in `packages/sim/src/levels/content.ts`; the order is the play order.
 3. Run `task levels:solve` (or `task levels:solve -- <level-id>` for one level). The solver
    finds a zero-death solution for every stage, checks the combined replay in the
@@ -75,6 +97,16 @@ The solver searches in macro steps (hold a direction, optionally jump, for 1 to 
 so its solutions are near-optimal rather than perfect. The par time is therefore a fair
 target that skilled players can beat; beating it scores more than 1000 points (see
 [SCORING.md](SCORING.md)).
+
+## The levels
+
+| #   | Id              | Name          | Stages | Idea                                                 |
+| --- | --------------- | ------------- | ------ | ---------------------------------------------------- |
+| 1   | `trust-nothing` | Trust Nothing | 3      | A spike appears, then the floor goes: the tutorial   |
+| 2   | `ground-rules`  | Ground Rules  | 3      | Plain walls and gaps first, then traps in between    |
+| 3   | `hole-punch`    | Hole Punch    | 4      | The floor drops away right in front of you           |
+| 4   | `spike-season`  | Spike Season  | 3      | Spikes pop up in rows and pairs                      |
+| 5   | `wall-street`   | Wall Street   | 4      | Walls rise out of the floor, sometimes behind a hole |
 
 ## Design guidance
 

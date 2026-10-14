@@ -9,6 +9,13 @@ describe('levels', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  it('gives every level three or four stages', () => {
+    for (const level of LEVELS) {
+      expect(level.stages.length, level.id).toBeGreaterThanOrEqual(3);
+      expect(level.stages.length, level.id).toBeLessThanOrEqual(4);
+    }
+  });
+
   it('looks levels up by id', () => {
     expect(getLevel('trust-nothing')?.name).toBe('Trust Nothing');
     expect(getLevel('missing')).toBeUndefined();
@@ -38,7 +45,7 @@ describe('levels', () => {
     it('is not beaten by just holding right', () => {
       const result = simulate(level, new Array<number>(level.maxFrames).fill(Input.Right));
 
-      expect(result.deaths).toBeGreaterThan(0);
+      expect(result.finished).toBe(false);
     });
   });
 });

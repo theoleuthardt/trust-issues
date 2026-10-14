@@ -11,7 +11,7 @@ describe('verifyRun', () => {
 
     expect(outcome).toEqual({
       status: 200,
-      body: { finished: true, frames: 290, deaths: 0, score: 1000 },
+      body: { finished: true, frames: solution?.frames, deaths: 0, score: 1000 },
     });
   });
 
