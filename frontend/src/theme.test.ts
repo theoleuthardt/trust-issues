@@ -15,8 +15,8 @@ function contrast(a: string, b: string): number {
 }
 
 describe('palette', () => {
-  it('stays minimal: at most six colours', () => {
-    expect(Object.keys(PALETTE).length).toBeLessThanOrEqual(6);
+  it('stays minimal: at most eight colours', () => {
+    expect(Object.keys(PALETTE).length).toBeLessThanOrEqual(8);
   });
 
   it('only contains #rrggbb or #rrggbbaa colours', () => {
@@ -34,6 +34,13 @@ describe('palette', () => {
   it('keeps hazards visible on the paper and apart from solid ground', () => {
     expect(contrast(PALETTE.accent, PALETTE.paper)).toBeGreaterThanOrEqual(3);
     expect(contrast(PALETTE.accent, PALETTE.ink)).toBeGreaterThanOrEqual(3);
+  });
+
+  it('keeps the shading roles close to the colour they shade', () => {
+    expect(contrast(PALETTE.inkLift, PALETTE.ink)).toBeGreaterThan(1.1);
+    expect(contrast(PALETTE.inkLift, PALETTE.ink)).toBeLessThan(2);
+    expect(contrast(PALETTE.accentDark, PALETTE.accent)).toBeGreaterThan(1.2);
+    expect(contrast(PALETTE.accentDark, PALETTE.paper)).toBeGreaterThanOrEqual(3);
   });
 
   it('converts a palette role to the number Phaser expects', () => {
