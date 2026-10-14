@@ -2,8 +2,8 @@ html,
 body {
   margin: 0;
   height: 100%;
-  background: var(--ti-night, #1b1633);
-  color: var(--ti-text, #f4efff);
+  background: var(--ti-paper, #f4f1ea);
+  color: var(--ti-ink, #14141c);
   overscroll-behavior: none;
   touch-action: none;
   user-select: none;
@@ -40,15 +40,15 @@ body {
   height: 64px;
   opacity: 0.6;
   border-radius: 50%;
-  border: 3px solid var(--ti-outline);
+  border: 3px solid var(--ti-ink);
   background: var(--ti-panel);
-  color: var(--ti-text);
+  color: var(--ti-ink);
   font-size: 30px;
   line-height: 1;
   touch-action: none;
 }
 
 .touch-button:active {
-  background: var(--ti-groundTop);
-  color: var(--ti-night);
+  background: var(--ti-ink);
+  color: var(--ti-paper);
 }

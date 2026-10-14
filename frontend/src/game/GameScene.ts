@@ -35,8 +35,6 @@ export interface GameSceneData {
 
 const HUD_FONT = { fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: '20px' };
 const MAX_TICKS_PER_FRAME = 5;
-const STAR_COUNT = 60;
-const HUD_HEIGHT = 48;
 
 export class GameScene extends Phaser.Scene {
   private level!: Level;
@@ -65,12 +63,12 @@ export class GameScene extends Phaser.Scene {
     this.add
       .text(this.scale.width / 2, 14, this.level.name, {
         ...HUD_FONT,
-        color: PALETTE.textDim,
+        color: PALETTE.inkSoft,
       })
       .setOrigin(0.5, 0);
-    this.timeText = this.add.text(16, 14, '', { ...HUD_FONT, color: PALETTE.text });
+    this.timeText = this.add.text(16, 14, '', { ...HUD_FONT, color: PALETTE.ink });
     this.deathText = this.add
-      .text(this.scale.width - 16, 14, '', { ...HUD_FONT, color: PALETTE.text })
+      .text(this.scale.width - 16, 14, '', { ...HUD_FONT, color: PALETTE.ink })
       .setOrigin(1, 0);
 
     this.input.keyboard?.on('keydown-R', () => this.restart());
@@ -110,26 +108,26 @@ export class GameScene extends Phaser.Scene {
     const deaths = this.state.deaths;
     const { width, height } = this.scale;
     const shade = this.add
-      .rectangle(0, 0, width, height, colorNumber('night'), 0.78)
+      .rectangle(0, 0, width, height, colorNumber('paper'), 0.88)
       .setOrigin(0, 0);
     const title = this.add
       .text(width / 2, height / 2 - 70, 'Cleared. Somehow.', {
         ...HUD_FONT,
         fontSize: '44px',
-        color: PALETTE.groundTop,
+        color: PALETTE.accent,
       })
       .setOrigin(0.5);
     const summary = this.add
       .text(width / 2, height / 2, `${formatTime(frames)}   ·   ${deaths} deaths`, {
         ...HUD_FONT,
         fontSize: '30px',
-        color: PALETTE.text,
+        color: PALETTE.ink,
       })
       .setOrigin(0.5);
     const hint = this.add
       .text(width / 2, height / 2 + 70, 'Press R or tap to try again', {
         ...HUD_FONT,
-        color: PALETTE.textDim,
+        color: PALETTE.inkSoft,
       })
       .setOrigin(0.5);
     this.overlay = [shade, title, summary, hint];
@@ -145,17 +143,8 @@ export class GameScene extends Phaser.Scene {
 
   private drawBackground(): void {
     const g = this.add.graphics();
-    g.fillStyle(colorNumber('night'));
+    g.fillStyle(colorNumber('paper'));
     g.fillRect(0, 0, this.scale.width, this.scale.height);
-    g.fillStyle(colorNumber('nightFar'));
-    g.fillRect(0, this.scale.height * 0.55, this.scale.width, this.scale.height * 0.45);
-    g.fillStyle(colorNumber('star'));
-    for (let i = 0; i < STAR_COUNT; i++) {
-      const x = (i * 197) % this.scale.width;
-      const y = HUD_HEIGHT + ((i * 89 + (i % 7) * 31) % (this.scale.height * 0.45));
-      const size = 2 + (i % 3);
-      g.fillRect(x, y, size, size);
-    }
   }
 
   private render(): void {
@@ -176,32 +165,16 @@ export class GameScene extends Phaser.Scene {
         const x = tx * TILE_SIZE;
         const y = ty * TILE_SIZE;
         if (tile === Tile.Solid) {
-          g.fillStyle(colorNumber('ground'));
+          g.fillStyle(colorNumber('ink'));
           g.fillRect(x, y, TILE_SIZE, TILE_SIZE);
-          g.lineStyle(1, colorNumber('groundLine'));
-          g.strokeRect(x + 0.5, y + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
-          const above = ty > 0 ? this.state.tiles[(ty - 1) * width + tx] : Tile.Solid;
-          if (above !== Tile.Solid) {
-            g.fillStyle(colorNumber('groundTop'));
-            g.fillRect(x, y, TILE_SIZE, 6);
-          }
         } else if (tile === Tile.Spike) {
-          g.fillStyle(colorNumber('spike'));
+          g.fillStyle(colorNumber('accent'));
           g.fillTriangle(
             x + 2,
             y + TILE_SIZE,
             x + TILE_SIZE / 2,
             y + 6,
             x + TILE_SIZE - 2,
-            y + TILE_SIZE,
-          );
-          g.fillStyle(colorNumber('spikeShade'));
-          g.fillTriangle(
-            x + TILE_SIZE / 2,
-            y + 6,
-            x + TILE_SIZE - 2,
-            y + TILE_SIZE,
-            x + TILE_SIZE / 2,
             y + TILE_SIZE,
           );
         }
@@ -212,13 +185,10 @@ export class GameScene extends Phaser.Scene {
   private renderExit(g: Phaser.GameObjects.Graphics): void {
     const x = this.level.exit.x * TILE_SIZE;
     const y = this.level.exit.y * TILE_SIZE;
-    const pulse = 0.12 + 0.06 * Math.sin(this.time.now / 300);
-    g.fillStyle(colorNumber('glow'), pulse);
-    g.fillCircle(x + TILE_SIZE / 2, y + TILE_SIZE / 2, TILE_SIZE * 1.1);
-    g.fillStyle(colorNumber('door'));
-    g.fillRoundedRect(x + 3, y + 1, TILE_SIZE - 6, TILE_SIZE - 1, { tl: 10, tr: 10, bl: 0, br: 0 });
-    g.fillStyle(colorNumber('doorInside'));
-    g.fillRoundedRect(x + 8, y + 6, TILE_SIZE - 16, TILE_SIZE - 6, { tl: 6, tr: 6, bl: 0, br: 0 });
+    g.fillStyle(colorNumber('ink'));
+    g.fillRoundedRect(x + 4, y + 2, TILE_SIZE - 8, TILE_SIZE - 2, { tl: 12, tr: 12, bl: 0, br: 0 });
+    g.fillStyle(colorNumber('paper'));
+    g.fillRoundedRect(x + 9, y + 8, TILE_SIZE - 18, TILE_SIZE - 8, { tl: 7, tr: 7, bl: 0, br: 0 });
   }
 
   private renderPlayer(g: Phaser.GameObjects.Graphics): void {
@@ -228,15 +198,11 @@ export class GameScene extends Phaser.Scene {
     const x = this.state.x + (PLAYER_WIDTH - width) / 2;
     const y = this.state.y + PLAYER_HEIGHT - height;
 
-    g.fillStyle(colorNumber('player'));
+    g.fillStyle(colorNumber('ink'));
     g.fillRoundedRect(x, y, width, height, 7);
-    g.lineStyle(2, colorNumber('outline'));
-    g.strokeRoundedRect(x, y, width, height, 7);
-    g.fillStyle(colorNumber('playerShade'));
-    g.fillRect(x + 3, y + height - 6, width - 6, 3);
 
     const eyeShift = this.facing * 2;
-    g.fillStyle(colorNumber('eye'));
+    g.fillStyle(colorNumber('paper'));
     g.fillRect(x + width * 0.28 + eyeShift, y + height * 0.28, 4, 7);
     g.fillRect(x + width * 0.62 + eyeShift, y + height * 0.28, 4, 7);
   }
