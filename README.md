@@ -11,8 +11,8 @@ levels, more of them.
 
 > Status: playable. Twenty levels with three or four stages each, a deterministic simulation,
 > accounts, verified runs and a leaderboard API exist; a title screen, sign-in and registration,
-> a main menu and the level select are in the game. Submitting runs and the leaderboard
-> screens in the game are still to be built. The work is tracked on the
+> a main menu and the level select are in the game. Finished runs are sent to the server and
+> verified; the leaderboard screens in the game are still to be built. The work is tracked on the
 > [Kanban board](https://github.com/users/theoleuthardt/projects/2) (private) and in the
 > issues of this repository.
 
@@ -67,13 +67,14 @@ the Vite proxy.
 
 ## Controls
 
-| Action      | Keyboard            | Touch               |
-| ----------- | ------------------- | ------------------- |
-| Move        | `←` `→` or `A` `D`  | on-screen arrows    |
-| Jump        | `Space`, `↑` or `W` | on-screen jump      |
-| Restart run | `R`                 | tap after finishing |
-| Menu        | `Esc`               | -                   |
-| Next level  | `Enter`             | tap after finishing |
+| Action      | Keyboard                  | Touch               |
+| ----------- | ------------------------- | ------------------- |
+| Move        | `←` `→` or `A` `D`        | on-screen arrows    |
+| Jump        | `Space`, `↑` or `W`       | on-screen jump      |
+| Restart run | `R`                       | tap after finishing |
+| Menu        | `Esc`                     | -                   |
+| Send again  | `S` (after a failed send) | -                   |
+| Next level  | `Enter`                   | tap after finishing |
 
 `?level=<id>` starts a level directly (handy for testing, it ignores the unlock order).
 Touch controls show up on touch devices automatically; force them with `?touch=1` or hide
