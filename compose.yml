@@ -35,6 +35,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
       VERIFIER_URL: http://verifier:8081
       VERIFIER_TOKEN: ${VERIFIER_TOKEN}
+    ports:
+      - '127.0.0.1:${API_PORT:-8000}:8000'
     depends_on:
       - db
       - verifier
@@ -45,9 +47,7 @@ services:
       context: .
       dockerfile: frontend/Containerfile
     ports:
-      - '${WEB_PORT:-8080}:8080'
-    depends_on:
-      - backend
+      - '127.0.0.1:${WEB_PORT:-8080}:8080'
     restart: unless-stopped
 
 volumes:
