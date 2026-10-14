@@ -22,6 +22,14 @@ export interface ServerRun {
   deaths: number;
 }
 
+export interface LeaderboardEntry {
+  rank: number;
+  username: string;
+  score: number;
+  frames: number;
+  deaths: number;
+}
+
 export interface RunResult {
   frames: number;
   deaths: number;
@@ -52,6 +60,16 @@ export class ApiClient {
 
   me(): Promise<User> {
     return this.request<User>('GET', '/auth/me');
+  }
+
+  /** The best verified runs on a level, best score first; public. */
+  leaderboard(levelId: string, limit = 50): Promise<LeaderboardEntry[]> {
+    return this.request<LeaderboardEntry[]>(
+      'GET',
+      `/leaderboard/${encodeURIComponent(levelId)}?limit=${limit}`,
+      undefined,
+      'run',
+    );
   }
 
   /** The best verified run of the signed-in player on every level they cleared. */

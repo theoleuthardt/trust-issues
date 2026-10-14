@@ -49,6 +49,7 @@ export interface GameSceneData {
   input: InputState;
   onFinished?: (event: RunFinishedEvent) => void;
   onRetrySubmit?: () => void;
+  onShowLeaderboard?: (levelId: string) => void;
   onExit?: () => void;
 }
 
@@ -84,6 +85,7 @@ export class GameScene extends Phaser.Scene {
   private onFinished: ((event: RunFinishedEvent) => void) | undefined;
   private onExit: (() => void) | undefined;
   private onRetrySubmit: (() => void) | undefined;
+  private onShowLeaderboard: ((levelId: string) => void) | undefined;
   private statusText: Phaser.GameObjects.Text | undefined;
   private state!: GameState;
   private recorded: number[] = [];
@@ -116,6 +118,7 @@ export class GameScene extends Phaser.Scene {
     this.onFinished = data.onFinished;
     this.onExit = data.onExit;
     this.onRetrySubmit = data.onRetrySubmit;
+    this.onShowLeaderboard = data.onShowLeaderboard;
   }
 
   create(): void {
@@ -137,6 +140,9 @@ export class GameScene extends Phaser.Scene {
 
     this.input.keyboard?.on('keydown-R', () => this.restart());
     this.input.keyboard?.on('keydown-ESC', () => this.onExit?.());
+    this.input.keyboard?.on('keydown-L', () => {
+      if (this.state.finished) this.onShowLeaderboard?.(this.level.id);
+    });
     this.input.keyboard?.on('keydown-S', () => {
       if (this.state.finished) this.onRetrySubmit?.();
     });
@@ -248,8 +254,8 @@ export class GameScene extends Phaser.Scene {
         width / 2,
         height / 2 + 70,
         next
-          ? 'Enter or tap: next level   ·   R: try again'
-          : 'Enter or tap: start over   ·   R: try again',
+          ? 'Enter or tap: next level  ·  R: again  ·  L: leaderboard'
+          : 'Enter or tap: start over  ·  R: again  ·  L: leaderboard',
         {
           ...HUD_FONT,
           color: PALETTE.inkSoft,

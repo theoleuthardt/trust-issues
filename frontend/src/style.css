@@ -249,3 +249,37 @@ body:not([data-screen='game']) .touch-controls {
   opacity: 0.5;
   cursor: default;
 }
+
+.table-wrap {
+  width: min(720px, 100%);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.board {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+}
+
+.board th,
+.board td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 2px solid var(--ti-ink);
+}
+
+.board th {
+  color: var(--ti-inkSoft);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.row-you {
+  background: var(--ti-ink);
+  color: var(--ti-paper);
+}
+
+.row-you td {
+  border-bottom-color: var(--ti-ink);
+}

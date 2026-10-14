@@ -6,7 +6,8 @@ import { validateCredentials } from './api/credentials';
 import { SessionStore } from './api/session';
 import { syncAccount } from './app/accountSync';
 import { ProgressStore, accountKey, firstOpenIndex, levelCards } from './app/progress';
-import { authScreen, levelSelect, mainMenu, titleScreen } from './app/screens';
+import { leaderboardRows } from './app/leaderboard';
+import { authScreen, leaderboardScreen, levelSelect, mainMenu, titleScreen } from './app/screens';
 import { memoryStorage } from './app/storage';
 import { RunSubmitter } from './app/submitter';
 import type { StorageLike } from './app/storage';
@@ -23,7 +24,7 @@ const LEVEL_WIDTH_TILES = 32;
 const LEVEL_HEIGHT_TILES = 18;
 const TILE_PX = 32;
 
-type Screen = 'title' | 'auth' | 'menu' | 'levels' | 'game';
+type Screen = 'title' | 'auth' | 'menu' | 'levels' | 'board' | 'game';
 
 applyPaletteToCss(document.documentElement);
 
@@ -43,7 +44,10 @@ const api = new ApiClient(
 );
 let game: Phaser.Game | undefined;
 
+let navigation = 0;
+
 const setScreen = (screen: Screen) => {
+  navigation += 1;
   document.body.dataset.screen = screen;
 };
 
@@ -183,6 +187,7 @@ function showMenu(): void {
       continueLabel: started ? `Continue · Level ${next + 1}` : 'Start',
       onContinue: () => startLevel(next),
       onLevels: showLevels,
+      onLeaderboards: showLeaderboardPicker,
       onBack: showTitle,
     }),
   );
@@ -202,6 +207,33 @@ const submitter = new RunSubmitter({
     if (scene instanceof GameScene) scene.setStatus(text);
   },
 });
+
+function showLeaderboardPicker(): void {
+  const cards = levelCards(LEVELS, currentStore().load()).map((card) =>
+    card.status === 'locked' ? { ...card, status: 'open' as const } : card,
+  );
+  show('levels', levelSelect(cards, showLeaderboard, showMenu, 'Leaderboards'));
+}
+
+function showLeaderboard(index: number, back: () => void = showLeaderboardPicker): void {
+  const level = LEVELS[index];
+  if (!level) return;
+  const title = `${index + 1}. ${level.name}`;
+  show('board', leaderboardScreen({ title, state: { kind: 'loading' }, onBack: back }));
+  const requested = navigation;
+  api
+    .leaderboard(level.id)
+    .then((entries) => {
+      if (navigation !== requested) return;
+      const rows = leaderboardRows(entries, sessions.current()?.username);
+      show('board', leaderboardScreen({ title, state: { kind: 'ready', rows }, onBack: back }));
+    })
+    .catch((error: unknown) => {
+      if (navigation !== requested) return;
+      const message = error instanceof ApiError ? error.message : 'Something went wrong.';
+      show('board', leaderboardScreen({ title, state: { kind: 'error', message }, onBack: back }));
+    });
+}
 
 function startLevel(index: number): void {
   setScreen('game');
@@ -224,6 +256,12 @@ function startLevel(index: number): void {
       void submitter.send(event);
     },
     onRetrySubmit: () => submitter.retry(),
+    onShowLeaderboard: (levelId: string) => {
+      const index = LEVELS.findIndex((level) => level.id === levelId);
+      input.reset();
+      game?.scene.stop(SCENE_KEY);
+      showLeaderboard(index, showLevels);
+    },
     onExit: leaveLevel,
   });
 }
