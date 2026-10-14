@@ -23,6 +23,15 @@ class LoginRequest(Struct):
     password: Annotated[str, Meta(max_length=128)]
 
 
+class ChangePasswordRequest(Struct):
+    current_password: Annotated[str, Meta(max_length=128)]
+    new_password: Password
+
+
+class DeleteAccountRequest(Struct):
+    password: Annotated[str, Meta(max_length=128)]
+
+
 class TokenResponse(Struct):
     access_token: str
     token_type: str = "bearer"

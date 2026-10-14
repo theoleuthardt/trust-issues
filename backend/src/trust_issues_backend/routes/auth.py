@@ -61,6 +61,24 @@ def _too_many(seconds: int) -> TooManyRequestsException:
     )
 
 
+def ensure_not_locked(user: User, now: datetime) -> None:
+    """Raises 429 while the account is locked."""
+    if user.locked_until is None:
+        return
+    remaining = (_aware(user.locked_until) - now).total_seconds()
+    if remaining > 0:
+        raise _too_many(int(remaining) + 1)
+
+
+async def register_failed_attempt(session: AsyncSession, user: User, now: datetime) -> None:
+    """Counts a wrong password and locks the account after too many."""
+    user.failed_logins += 1
+    if user.failed_logins >= MAX_FAILED_LOGINS:
+        user.locked_until = now + LOCKOUT
+        user.failed_logins = 0
+    await session.commit()
+
+
 @post("/api/auth/login", status_code=200)
 async def login(
     data: LoginRequest, request: Request, session: NamedDependency[AsyncSession], state: State
@@ -77,20 +95,14 @@ async def login(
 
     now: datetime = state.clock()
     user = await session.scalar(select(User).where(User.username_key == data.username.lower()))
-    if user is not None and user.locked_until is not None:
-        remaining = (_aware(user.locked_until) - now).total_seconds()
-        if remaining > 0:
-            raise _too_many(int(remaining) + 1)
+    if user is not None:
+        ensure_not_locked(user, now)
 
     password_hash = user.password_hash if user else DUMMY_HASH
     valid = await asyncio.to_thread(verify_password, password_hash, data.password)
     if user is None or not valid:
         if user is not None:
-            user.failed_logins += 1
-            if user.failed_logins >= MAX_FAILED_LOGINS:
-                user.locked_until = now + LOCKOUT
-                user.failed_logins = 0
-            await session.commit()
+            await register_failed_attempt(session, user, now)
         raise NotAuthorizedException(detail="invalid username or password")
 
     if user.failed_logins or user.locked_until is not None:

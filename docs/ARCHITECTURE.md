@@ -65,15 +65,18 @@ test fails when the models and the migrations drift apart.
 
 ## HTTP API
 
-| Method | Path                          | Auth | Purpose                                 |
-| ------ | ----------------------------- | ---- | --------------------------------------- |
-| GET    | `/health`                     | no   | Liveness plus database round trip       |
-| POST   | `/api/auth/register`          | no   | Create an account                       |
-| POST   | `/api/auth/login`             | no   | Exchange credentials for a bearer token |
-| GET    | `/api/auth/me`                | yes  | Current user                            |
-| POST   | `/api/runs`                   | yes  | Submit a replay                         |
-| GET    | `/api/progress`               | yes  | Own completed levels with best runs     |
-| GET    | `/api/leaderboard/{level_id}` | no   | Best scores, `?limit=1..100`            |
+| Method | Path                          | Auth | Purpose                                  |
+| ------ | ----------------------------- | ---- | ---------------------------------------- |
+| GET    | `/health`                     | no   | Liveness plus database round trip        |
+| POST   | `/api/auth/register`          | no   | Create an account                        |
+| POST   | `/api/auth/login`             | no   | Exchange credentials for a bearer token  |
+| GET    | `/api/auth/me`                | yes  | Current user                             |
+| POST   | `/api/auth/logout-all`        | yes  | Revoke every token of the caller         |
+| POST   | `/api/auth/password`          | yes  | Change the password, returns a new token |
+| POST   | `/api/auth/delete`            | yes  | Delete the account and its runs          |
+| POST   | `/api/runs`                   | yes  | Submit a replay                          |
+| GET    | `/api/progress`               | yes  | Own completed levels with best runs      |
+| GET    | `/api/leaderboard/{level_id}` | no   | Best scores, `?limit=1..100`             |
 
 The OpenAPI schema is served at `/schema` only when `ENABLE_DOCS=true`.
 
