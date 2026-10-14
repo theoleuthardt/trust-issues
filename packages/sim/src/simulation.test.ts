@@ -9,12 +9,26 @@ import {
   buildLevel,
   createState,
   simulate,
+  stageOf,
   step,
 } from './index';
 import type { LevelDef, TrapDef } from './index';
 
 const level = (rows: string[], traps: TrapDef[] = []) =>
-  buildLevel({ id: 't', name: 't', rows, traps, maxFrames: 3600 } satisfies LevelDef);
+  buildLevel({
+    id: 't',
+    name: 't',
+    stages: [{ rows, traps }],
+    maxFrames: 3600,
+  } satisfies LevelDef);
+
+const multiStage = (stages: { rows: string[]; traps?: TrapDef[] }[]) =>
+  buildLevel({
+    id: 't',
+    name: 't',
+    stages: stages.map(({ rows, traps }) => ({ rows, traps: traps ?? [] })),
+    maxFrames: 3600,
+  } satisfies LevelDef);
 
 const FLAT = ['..........', '.S......E.', '##########'];
 
@@ -34,8 +48,8 @@ describe('step', () => {
 
     run(lvl, state, 0, 30);
 
-    expect(state.y).toBe(lvl.spawn.y);
-    expect(state.x).toBe(lvl.spawn.x);
+    expect(state.y).toBe(stageOf(lvl, 0).spawn.y);
+    expect(state.x).toBe(stageOf(lvl, 0).spawn.x);
     expect(state.onGround).toBe(true);
     expect(state.tick).toBe(30);
   });
@@ -46,7 +60,7 @@ describe('step', () => {
 
     run(lvl, state, Input.Right, 10);
 
-    expect(state.x).toBe(lvl.spawn.x + 10 * MOVE_SPEED);
+    expect(state.x).toBe(stageOf(lvl, 0).spawn.x + 10 * MOVE_SPEED);
   });
 
   it('cancels out when left and right are held together', () => {
@@ -55,7 +69,7 @@ describe('step', () => {
 
     run(lvl, state, Input.Left | Input.Right, 10);
 
-    expect(state.x).toBe(lvl.spawn.x);
+    expect(state.x).toBe(stageOf(lvl, 0).spawn.x);
   });
 
   it('stops at the left level border', () => {
@@ -90,8 +104,8 @@ describe('step', () => {
       apex = Math.min(apex, state.y);
     }
 
-    expect(apex).toBeLessThan(lvl.spawn.y - 2 * TILE_SIZE);
-    expect(state.y).toBe(lvl.spawn.y);
+    expect(apex).toBeLessThan(stageOf(lvl, 0).spawn.y - 2 * TILE_SIZE);
+    expect(state.y).toBe(stageOf(lvl, 0).spawn.y);
     expect(state.onGround).toBe(true);
   });
 
@@ -142,8 +156,8 @@ describe('hazards', () => {
     for (let i = 0; i < 100 && state.deaths === 0; i++) step(lvl, state, Input.Right);
 
     expect(state.deaths).toBe(1);
-    expect(state.x).toBe(lvl.spawn.x);
-    expect(state.y).toBe(lvl.spawn.y);
+    expect(state.x).toBe(stageOf(lvl, 0).spawn.x);
+    expect(state.y).toBe(stageOf(lvl, 0).spawn.y);
     expect(state.finished).toBe(false);
   });
 
@@ -268,5 +282,100 @@ describe('simulate', () => {
     const second = simulate(lvl, inputs);
 
     expect(second).toEqual(first);
+  });
+});
+
+describe('stages', () => {
+  const FIRST = ['..........', '.S......E.', '##########'];
+  const SECOND = ['..........', '..S.....E.', '##########'];
+
+  it('starts in the first stage', () => {
+    const state = createState(multiStage([{ rows: FIRST }, { rows: SECOND }]));
+
+    expect(state.stage).toBe(0);
+  });
+
+  it('loads the next stage when the exit of a non-final stage is reached', () => {
+    const lvl = multiStage([{ rows: FIRST }, { rows: SECOND }]);
+    const state = createState(lvl);
+
+    run(lvl, state, Input.Right, 66);
+
+    expect(state.stage).toBe(1);
+    expect(state.finished).toBe(false);
+    expect(state.tick).toBe(66);
+    expect(state.x).toBe(stageOf(lvl, 1).spawn.x);
+    expect(state.y).toBe(stageOf(lvl, 1).spawn.y);
+    expect(state.vx).toBe(0);
+  });
+
+  it('keeps counting ticks across stages and finishes at the last exit', () => {
+    const lvl = multiStage([{ rows: FIRST }, { rows: SECOND }]);
+
+    const result = simulate(lvl, new Array<number>(300).fill(Input.Right));
+
+    expect(result).toEqual({ finished: true, frames: 66 + 55, deaths: 0 });
+  });
+
+  it('does not finish the run at the exit of a non-final stage', () => {
+    const lvl = multiStage([{ rows: FIRST }, { rows: SECOND }, { rows: FIRST }]);
+    const state = createState(lvl);
+
+    run(lvl, state, Input.Right, 66 + 55);
+
+    expect(state.stage).toBe(2);
+    expect(state.finished).toBe(false);
+  });
+
+  it('respawns in the current stage when dying and keeps earlier stages done', () => {
+    const spiked = ['..........', '..S.^...E.', '##########'];
+    const lvl = multiStage([{ rows: FIRST }, { rows: spiked }]);
+    const state = createState(lvl);
+
+    for (let i = 0; i < 200 && state.deaths === 0; i++) step(lvl, state, Input.Right);
+
+    expect(state.deaths).toBe(1);
+    expect(state.stage).toBe(1);
+    expect(state.x).toBe(stageOf(lvl, 1).spawn.x);
+    expect(state.finished).toBe(false);
+  });
+
+  it('restores the tiles and re-arms the traps of a later stage when dying in it', () => {
+    const trap: TrapDef = {
+      id: 'floor',
+      trigger: { x: 3, y: 1, width: 1, height: 1 },
+      action: 'remove_tiles',
+      tiles: [[6, 2]],
+    };
+    const spiked = ['..........', '..S..^..E.', '##########'];
+    const lvl = multiStage([{ rows: FIRST }, { rows: spiked, traps: [trap] }]);
+    const state = createState(lvl);
+    run(lvl, state, Input.Right, 66);
+
+    for (let i = 0; i < 200 && state.deaths === 0; i++) step(lvl, state, Input.Right);
+
+    expect(state.deaths).toBe(1);
+    expect(state.stage).toBe(1);
+    expect(state.fired.size).toBe(0);
+    expect(Array.from(state.tiles)).toEqual(Array.from(stageOf(lvl, 1).tiles));
+  });
+
+  it('arrives in a fresh stage with its own tiles and re-armed traps', () => {
+    const trap: TrapDef = {
+      id: 'sky-spike',
+      trigger: { x: 3, y: 1, width: 1, height: 1 },
+      action: 'add_spikes',
+      tiles: [[6, 0]],
+    };
+    const lvl = multiStage([{ rows: FIRST, traps: [trap] }, { rows: SECOND }]);
+    const state = createState(lvl);
+
+    run(lvl, state, Input.Right, 20);
+    expect(state.fired.has('sky-spike')).toBe(true);
+    run(lvl, state, Input.Right, 46);
+
+    expect(state.stage).toBe(1);
+    expect(state.fired.size).toBe(0);
+    expect(Array.from(state.tiles)).toEqual(Array.from(stageOf(lvl, 1).tiles));
   });
 });

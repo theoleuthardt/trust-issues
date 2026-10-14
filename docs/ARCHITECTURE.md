@@ -41,8 +41,10 @@ verification cheap and drift-free (see [ADR 0002](adr/0002-node-verifier-reusing
 
 - Fixed tick, 60 per second. A tick is the unit of time and of replay entries.
 - Tile based collision (32 px tiles), 24x28 player box, per-axis movement and resolution.
-- A run spans all lives. Dying resets position and all traps; the tick counter and the
-  death counter keep running.
+- A level has one to four stages. Reaching a stage's exit loads the next stage, the last exit
+  finishes the run.
+- A run spans all lives. Dying resets position and the traps of the current stage; the tick
+  counter and the death counter keep running.
 - Traps are one-shot per life: when the player overlaps the trigger rectangle, a set of
   tiles is removed, made solid, or turned into spikes.
 

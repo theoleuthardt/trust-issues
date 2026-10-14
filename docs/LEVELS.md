@@ -5,19 +5,30 @@ Levels are plain TypeScript objects in `packages/sim/src/levels/`. They are vali
 
 ## Format
 
+A level is a chapter of one to four **stages** (Teillevel) that are played back to back in
+one continuous run. Reaching the exit of a stage loads the next one; the exit of the last
+stage finishes the level. Shipped levels have three or four stages.
+
 ```ts
 export const trustNothing: LevelDef = {
   id: 'trust-nothing', // lower case letters, digits and '-', used in URLs and the database
   name: 'Trust Nothing', // shown in the HUD
-  maxFrames: 3600, // frame budget: 60 seconds, replays above it are rejected
-  rows: ['....', '.S.E', '####'],
-  traps: [/* see below */],
+  maxFrames: 3600, // frame budget for the whole level, replays above it are rejected
+  stages: [
+    { rows: ['....', '.S.E', '####'], traps: [] },
+    { rows: ['....', '..SE', '####'], traps: [/* see below */] },
+  ],
 };
 ```
 
+- All stages of a level have the same size.
+- The tick counter and the death counter run across stages. Dying resets only the stage you
+  are in, finished stages stay finished.
+- A stage's traps are armed when the stage is entered and re-armed when you die in it.
+
 ### Rows
 
-All rows must have the same width. One character is one 32 px tile.
+All rows of a stage must have the same width. One character is one 32 px tile.
 
 | Char | Meaning                                                     |
 | ---- | ----------------------------------------------------------- |
@@ -44,11 +55,11 @@ until scrolling cameras are implemented.
 - A trap fires once per life, the moment the player's box overlaps the trigger.
 - `remove_tiles` makes tiles air, `add_tiles` makes them solid, `add_spikes` turns **air**
   tiles into spikes (it never replaces solid tiles).
-- Dying re-arms every trap and restores the level.
+- Dying re-arms every trap of the stage and restores its tiles.
 
 ## Adding a level
 
-1. Create `packages/sim/src/levels/<id>.ts` exporting a `LevelDef`.
+1. Create `packages/sim/src/levels/<id>.ts` exporting a `LevelDef` with its stages.
 2. Register it in `packages/sim/src/levels/index.ts` (order is play order).
 3. Add a reference solution for it to `SOLUTIONS` in `packages/sim/src/testing.ts`.
    A throwaway search script that tries input sequences is the easiest way to find one.

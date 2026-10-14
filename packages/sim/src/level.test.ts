@@ -1,63 +1,76 @@
 import { describe, expect, it } from 'vitest';
-import { PLAYER_HEIGHT, PLAYER_WIDTH, TILE_SIZE, Tile, buildLevel } from './index';
-import type { LevelDef } from './index';
+import {
+  MAX_STAGES,
+  PLAYER_HEIGHT,
+  PLAYER_WIDTH,
+  TILE_SIZE,
+  Tile,
+  buildLevel,
+  stageOf,
+} from './index';
+import type { LevelDef, StageDef } from './index';
+
+const stageDef = (overrides: Partial<StageDef> = {}): StageDef => ({
+  rows: ['.....', '.S..E', '#####'],
+  traps: [],
+  ...overrides,
+});
 
 const def = (overrides: Partial<LevelDef> = {}): LevelDef => ({
   id: 'test',
   name: 'Test',
-  rows: ['.....', '.S..E', '#####'],
-  traps: [],
+  stages: [stageDef()],
   maxFrames: 600,
   ...overrides,
 });
 
-describe('buildLevel', () => {
-  it('parses dimensions and tile kinds', () => {
-    const level = buildLevel(def({ rows: ['..^..', '.S..E', '##.##'] }));
+const withRows = (rows: string[]) => def({ stages: [stageDef({ rows })] });
 
-    expect(level.width).toBe(5);
-    expect(level.height).toBe(3);
-    expect(level.tiles[2]).toBe(Tile.Spike);
-    expect(level.tiles[10]).toBe(Tile.Solid);
-    expect(level.tiles[12]).toBe(Tile.Air);
+describe('buildLevel', () => {
+  it('parses dimensions and tile kinds of a stage', () => {
+    const stage = stageOf(buildLevel(withRows(['..^..', '.S..E', '##.##'])), 0);
+
+    expect(stage.width).toBe(5);
+    expect(stage.height).toBe(3);
+    expect(stage.tiles[2]).toBe(Tile.Spike);
+    expect(stage.tiles[10]).toBe(Tile.Solid);
+    expect(stage.tiles[12]).toBe(Tile.Air);
   });
 
   it('places the player standing on the ground of the spawn tile, horizontally centred', () => {
-    const level = buildLevel(def());
+    const stage = stageOf(buildLevel(def()), 0);
 
-    expect(level.spawn.x).toBe(1 * TILE_SIZE + (TILE_SIZE - PLAYER_WIDTH) / 2);
-    expect(level.spawn.y).toBe(2 * TILE_SIZE - PLAYER_HEIGHT);
+    expect(stage.spawn.x).toBe(1 * TILE_SIZE + (TILE_SIZE - PLAYER_WIDTH) / 2);
+    expect(stage.spawn.y).toBe(2 * TILE_SIZE - PLAYER_HEIGHT);
   });
 
   it('records the exit tile', () => {
-    const level = buildLevel(def());
-
-    expect(level.exit).toEqual({ x: 4, y: 1 });
+    expect(stageOf(buildLevel(def()), 0).exit).toEqual({ x: 4, y: 1 });
   });
 
   it('treats spawn and exit markers as air', () => {
-    const level = buildLevel(def());
+    const stage = stageOf(buildLevel(def()), 0);
 
-    expect(level.tiles[1 * 5 + 1]).toBe(Tile.Air);
-    expect(level.tiles[1 * 5 + 4]).toBe(Tile.Air);
+    expect(stage.tiles[1 * 5 + 1]).toBe(Tile.Air);
+    expect(stage.tiles[1 * 5 + 4]).toBe(Tile.Air);
   });
 
   it('rejects ragged rows', () => {
-    expect(() => buildLevel(def({ rows: ['.....', '.S.E', '#####'] }))).toThrow(/same width/);
+    expect(() => buildLevel(withRows(['.....', '.S.E', '#####']))).toThrow(/same width/);
   });
 
   it('rejects unknown characters', () => {
-    expect(() => buildLevel(def({ rows: ['.....', '.S?.E', '#####'] }))).toThrow(/unknown tile/);
+    expect(() => buildLevel(withRows(['.....', '.S?.E', '#####']))).toThrow(/unknown tile/);
   });
 
-  it('requires exactly one spawn and one exit', () => {
-    expect(() => buildLevel(def({ rows: ['.....', '....E', '#####'] }))).toThrow(/spawn/);
-    expect(() => buildLevel(def({ rows: ['.....', '.S.SE', '#####'] }))).toThrow(/spawn/);
-    expect(() => buildLevel(def({ rows: ['.....', '.S...', '#####'] }))).toThrow(/exit/);
-    expect(() => buildLevel(def({ rows: ['....E', '.S..E', '#####'] }))).toThrow(/exit/);
+  it('requires exactly one spawn and one exit per stage', () => {
+    expect(() => buildLevel(withRows(['.....', '....E', '#####']))).toThrow(/spawn/);
+    expect(() => buildLevel(withRows(['.....', '.S.SE', '#####']))).toThrow(/spawn/);
+    expect(() => buildLevel(withRows(['.....', '.S...', '#####']))).toThrow(/exit/);
+    expect(() => buildLevel(withRows(['....E', '.S..E', '#####']))).toThrow(/exit/);
   });
 
-  it('rejects traps that reference tiles outside the level', () => {
+  it('rejects traps that reference tiles outside the stage', () => {
     const trap = {
       id: 'bad',
       trigger: { x: 0, y: 0, width: 1, height: 1 },
@@ -65,10 +78,10 @@ describe('buildLevel', () => {
       tiles: [[9, 0]] as const,
     };
 
-    expect(() => buildLevel(def({ traps: [trap] }))).toThrow(/outside/);
+    expect(() => buildLevel(def({ stages: [stageDef({ traps: [trap] })] }))).toThrow(/outside/);
   });
 
-  it('rejects duplicate trap ids', () => {
+  it('rejects duplicate trap ids within a stage', () => {
     const trap = {
       id: 'dup',
       trigger: { x: 0, y: 0, width: 1, height: 1 },
@@ -76,11 +89,58 @@ describe('buildLevel', () => {
       tiles: [[2, 1]] as const,
     };
 
-    expect(() => buildLevel(def({ traps: [trap, trap] }))).toThrow(/duplicate/);
+    expect(() => buildLevel(def({ stages: [stageDef({ traps: [trap, trap] })] }))).toThrow(
+      /duplicate/,
+    );
   });
 
   it('requires a positive integer frame budget', () => {
     expect(() => buildLevel(def({ maxFrames: 0 }))).toThrow(/maxFrames/);
     expect(() => buildLevel(def({ maxFrames: 1.5 }))).toThrow(/maxFrames/);
+  });
+});
+
+describe('stages', () => {
+  it('builds every stage in order', () => {
+    const level = buildLevel(
+      def({
+        stages: [stageDef(), stageDef({ rows: ['.....', '..S.E', '#####'] })],
+      }),
+    );
+
+    expect(level.stages).toHaveLength(2);
+    expect(stageOf(level, 1).spawn.x).toBe(2 * TILE_SIZE + 4);
+  });
+
+  it('names the problem when a level is still written in the old single-stage format', () => {
+    const legacy = { id: 'old', name: 'Old', rows: ['.S.E', '####'], traps: [], maxFrames: 100 };
+
+    expect(() => buildLevel(legacy as unknown as LevelDef)).toThrow(/stage/);
+  });
+
+  it('requires at least one stage', () => {
+    expect(() => buildLevel(def({ stages: [] }))).toThrow(/stage/);
+  });
+
+  it(`allows at most ${MAX_STAGES} stages`, () => {
+    const stages = Array.from({ length: MAX_STAGES + 1 }, () => stageDef());
+
+    expect(() => buildLevel(def({ stages }))).toThrow(/stages/);
+  });
+
+  it('requires every stage to have the size of the first one', () => {
+    const stages = [stageDef(), stageDef({ rows: ['......', '.S...E', '######'] })];
+
+    expect(() => buildLevel(def({ stages }))).toThrow(/size/);
+  });
+
+  it('names the stage in validation errors', () => {
+    const stages = [stageDef(), stageDef({ rows: ['.....', '....E', '#####'] })];
+
+    expect(() => buildLevel(def({ stages }))).toThrow(/stage 2/);
+  });
+
+  it('throws for a stage index that does not exist', () => {
+    expect(() => stageOf(buildLevel(def()), 3)).toThrow(/stage/);
   });
 });
