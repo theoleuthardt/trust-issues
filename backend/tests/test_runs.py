@@ -224,7 +224,7 @@ async def test_concurrent_submissions_of_one_player_keep_the_best(
     responses = await asyncio.gather(
         *(
             client.post("/api/runs", json=submission(replay=[2, 100 + n]), headers=headers)
-            for n in range(12)
+            for n in (7, 3, 0, 11, 5, 9, 1, 8, 4, 10, 2, 6)
         )
     )
 

@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 
 import pytest
 from litestar.testing import AsyncTestClient
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import StaticPool
 
@@ -59,10 +60,18 @@ async def client(settings: Settings, verifier: FakeVerifier) -> AsyncIterator[As
             connect_args={"check_same_thread": False},
         )
     else:
+        database = make_url(settings.database_url).database or ""
+        if "test" not in database:
+            raise RuntimeError(
+                f"refusing to reset database '{database}': TEST_DATABASE_URL must name a "
+                "database that contains 'test'"
+            )
         cleanup = create_async_engine(settings.database_url)
-        async with cleanup.begin() as connection:
-            await connection.run_sync(Base.metadata.drop_all)
-        await cleanup.dispose()
+        try:
+            async with cleanup.begin() as connection:
+                await connection.run_sync(Base.metadata.drop_all)
+        finally:
+            await cleanup.dispose()
         engine = create_async_engine(settings.database_url)
     app = create_app(settings, verifier=verifier, engine=engine)
     async with AsyncTestClient(app=app) as test_client:
