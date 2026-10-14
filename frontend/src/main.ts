@@ -5,7 +5,7 @@ import type { AuthMode } from './api/credentials';
 import { validateCredentials } from './api/credentials';
 import { SessionStore } from './api/session';
 import { syncAccount } from './app/accountSync';
-import { PROGRESS_KEY, ProgressStore, firstOpenIndex, levelCards } from './app/progress';
+import { ProgressStore, accountKey, firstOpenIndex, levelCards } from './app/progress';
 import { authScreen, levelSelect, mainMenu, titleScreen } from './app/screens';
 import { memoryStorage } from './app/storage';
 import { RunSubmitter } from './app/submitter';
@@ -71,10 +71,11 @@ function browserStorage(): StorageLike {
 }
 
 function storeFor(username: string): ProgressStore {
-  let store = accountStores.get(username);
+  const key = accountKey(username);
+  let store = accountStores.get(key);
   if (!store) {
-    store = new ProgressStore(storage, `${PROGRESS_KEY}.${username}`);
-    accountStores.set(username, store);
+    store = new ProgressStore(storage, key);
+    accountStores.set(key, store);
   }
   return store;
 }

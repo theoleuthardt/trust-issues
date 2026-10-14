@@ -23,9 +23,9 @@ function beats(candidate: RunRecord, other: RunRecord | undefined): boolean {
 
 /**
  * Brings the progress of a signed-in player together: what the server knows, what the
- * account kept locally and what was played as a guest. Guest runs with a replay that beat the
- * server are sent; all guest progress then moves into the account. Without a reachable
- * server nothing changes.
+ * account kept locally and what was played as a guest. All guest progress moves into the
+ * account, then every local run with a replay that beats the server is sent, so a run whose
+ * sending failed is tried again at the next sync. Without a reachable server nothing changes.
  */
 export async function syncAccount(deps: SyncDeps): Promise<SyncOutcome> {
   let server: ServerRun[];
@@ -42,10 +42,14 @@ export async function syncAccount(deps: SyncDeps): Promise<SyncOutcome> {
     deps.account.record(run.levelId, record);
   }
 
-  let submitted = 0;
-  let failed = 0;
   for (const [levelId, record] of Object.entries(deps.guest.load())) {
     deps.account.record(levelId, record);
+  }
+  deps.guest.clear();
+
+  let submitted = 0;
+  let failed = 0;
+  for (const [levelId, record] of Object.entries(deps.account.load())) {
     if (!record.replay || !beats(record, known.get(levelId))) continue;
     try {
       await deps.submit(levelId, record.replay);
@@ -54,6 +58,5 @@ export async function syncAccount(deps: SyncDeps): Promise<SyncOutcome> {
       failed += 1;
     }
   }
-  deps.guest.clear();
   return { reachable: true, submitted, failed };
 }

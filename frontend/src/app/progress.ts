@@ -28,6 +28,11 @@ interface LevelInfo {
 
 export const PROGRESS_KEY = 'trust-issues.progress.v1';
 
+/** Storage key of a signed-in player's progress; usernames are case-insensitive. */
+export function accountKey(username: string): string {
+  return `${PROGRESS_KEY}.${username.trim().toLowerCase()}`;
+}
+
 function isBetter(candidate: RunRecord, current: RunRecord): boolean {
   if (candidate.score !== current.score) return candidate.score > current.score;
   return candidate.frames < current.frames;

@@ -87,6 +87,43 @@ describe('syncAccount', () => {
     expect(guest.load()).toEqual({});
   });
 
+  it('sends a run that failed before at the next sync', async () => {
+    const storage = new MemoryStorage();
+    const guest = new ProgressStore(storage, 'guest');
+    const account = new ProgressStore(storage, 'account');
+    guest.record('a', { score: 900, frames: 930, deaths: 0, replay: [2, 930] });
+    const failing = vi.fn(() => Promise.reject(new Error('busy')));
+    await syncAccount({ fetchServer: () => Promise.resolve([]), submit: failing, guest, account });
+
+    const working = vi.fn(() => Promise.resolve(RESULT));
+    const outcome = await syncAccount({
+      fetchServer: () => Promise.resolve([]),
+      submit: working,
+      guest,
+      account,
+    });
+
+    expect(working).toHaveBeenCalledWith('a', [2, 930]);
+    expect(outcome.submitted).toBe(1);
+  });
+
+  it('does not send a run again once the server has it', async () => {
+    const storage = new MemoryStorage();
+    const guest = new ProgressStore(storage, 'guest');
+    const account = new ProgressStore(storage, 'account');
+    account.record('a', { score: 900, frames: 930, deaths: 0, replay: [2, 930] });
+    const submit = vi.fn(() => Promise.resolve(RESULT));
+
+    await syncAccount({
+      fetchServer: () => Promise.resolve([{ levelId: 'a', score: 900, frames: 930, deaths: 0 }]),
+      submit,
+      guest,
+      account,
+    });
+
+    expect(submit).not.toHaveBeenCalled();
+  });
+
   it('leaves everything alone when the server cannot be reached', async () => {
     const storage = new MemoryStorage();
     const guest = new ProgressStore(storage, 'guest');

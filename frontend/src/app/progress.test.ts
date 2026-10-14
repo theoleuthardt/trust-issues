@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   PROGRESS_KEY,
+  accountKey,
   ProgressStore,
   firstOpenIndex,
   isUnlocked,
@@ -187,5 +188,17 @@ describe('ProgressStore', () => {
 
     storage.setItem(PROGRESS_KEY, JSON.stringify({ a: { score: 'x' }, b: run(10), c: 5 }));
     expect(new ProgressStore(storage).load()).toEqual({ b: run(10) });
+  });
+});
+
+describe('accountKey', () => {
+  it('is the same for any spelling of a username', () => {
+    expect(accountKey('Mallory')).toBe(accountKey('mallory'));
+    expect(accountKey('  MALLORY ')).toBe(accountKey('mallory'));
+  });
+
+  it('differs between usernames and from the guest key', () => {
+    expect(accountKey('alice')).not.toBe(accountKey('bob'));
+    expect(accountKey('alice')).not.toBe(PROGRESS_KEY);
   });
 });
