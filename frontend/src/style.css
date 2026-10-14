@@ -204,3 +204,48 @@ body:not([data-screen='game']) .touch-controls {
   border: 2px solid var(--ti-ink);
   opacity: 0.7;
 }
+
+.account-line {
+  margin: 0;
+  color: var(--ti-inkSoft);
+  font-size: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 14px;
+  color: var(--ti-inkSoft);
+}
+
+.input {
+  font: inherit;
+  font-size: 18px;
+  padding: 12px 14px;
+  background: var(--ti-paper);
+  color: var(--ti-ink);
+  border: 3px solid var(--ti-ink);
+  border-radius: 0;
+}
+
+.input:focus-visible {
+  outline: 3px solid var(--ti-inkSoft);
+  outline-offset: 2px;
+}
+
+.form-error {
+  margin: 0;
+  min-height: 1.4em;
+  color: var(--ti-ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

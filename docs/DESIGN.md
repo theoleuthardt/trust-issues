@@ -73,13 +73,14 @@ or the replay:
 
 ## Screens
 
-Plain HTML over the canvas in the same paper and ink: a title screen, a main menu and the
-level select. Buttons are ink outlines that invert on hover and focus, locked levels have a
+Plain HTML over the canvas in the same paper and ink: a title screen, the sign-in and
+registration forms, a main menu and the level select. Buttons are ink outlines that invert on hover and focus, locked levels have a
 dashed border and their name hidden, cleared levels carry a filled square and show their best
 score and time.
 
 ![Title screen](images/title.png)
 ![Level select](images/levels.png)
+![Register form](images/register.png)
 
 ## Touch
 
