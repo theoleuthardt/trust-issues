@@ -1,58 +1,62 @@
 # Design
 
-The look recalls the stripped-down clarity of _Level Devil_: flat shapes, no gradients, one
-screen, instantly readable hazards. The identity is its own, a night sky with sticker-like
-characters: "Dusk Sticker".
+The look is "Paper & Ink", inspired by the stripped-down clarity of _Level Devil_: a flat
+paper background, solid ink shapes, and a single accent colour that means danger. There is
+nothing to look at that is not either the way forward or a way to die.
+
+![Start of level 1](images/start.png)
+![A trap has fired](images/running.png)
 
 ## Principles
 
-- **Readability first.** Solid ground, hazards, the player and the exit must be told apart
-  at a glance, on a phone in sunlight.
-- **Flat shapes, one outline.** Everything is a simple shape with at most one darker
-  outline or shade. No textures.
-- **Few colours, fixed roles.** Every colour has one job (below). A new colour needs a new
-  job.
+- **Minimal on purpose.** Six colours in total, no gradients, no outlines, no glow, no
+  decoration. If a shape does not carry gameplay information, it is not drawn.
+- **Readability first.** Ground, hazard, player and exit must be told apart at a glance, on
+  a phone in sunlight.
+- **The accent means danger.** Red-orange appears on things that kill and nowhere else.
 - **Shape carries meaning too.** Hazards are triangles, goals are arches, so the game stays
-  readable for colour-blind players.
+  readable without colour perception.
 
 ## Palette
 
 The single source of truth is `frontend/src/theme.ts`. It feeds Phaser (as numbers) and CSS
-(as `--ti-*` custom properties).
+(as `--ti-*` custom properties). A test keeps it at six colours and checks contrast.
 
-| Role             | Name              | Colour               |
-| ---------------- | ----------------- | -------------------- |
-| Sky              | `night`           | `#1b1633`            |
-| Far band         | `nightFar`        | `#2a2250`            |
-| Stars            | `star`            | `#5b4fa0`            |
-| Ground           | `ground`          | `#22355a`            |
-| Ground tile line | `groundLine`      | `#162340`            |
-| Ground top edge  | `groundTop`       | `#2ee6a6`            |
-| Spike            | `spike`           | `#ff4d8d`            |
-| Spike shade      | `spikeShade`      | `#c42a64`            |
-| Player           | `player`          | `#ffe8a3`            |
-| Player shade     | `playerShade`     | `#d9b95e`            |
-| Eye / outline    | `eye`, `outline`  | `#1b1633`, `#0e0a1f` |
-| Exit door        | `door`            | `#ffb347`            |
-| Exit inside      | `doorInside`      | `#0e0a1f`            |
-| Exit glow        | `glow`            | `#ffd98a`            |
-| Text             | `text`, `textDim` | `#f4efff`, `#a79bd8` |
+![Palette](images/palette.png)
 
-## The player
+| Role        | Name         | Colour      | Used for                                |
+| ----------- | ------------ | ----------- | --------------------------------------- |
+| Background  | `paper`      | `#f4f1ea`   | Canvas, page, door interior, overlays   |
+| Shade       | `paperShade` | `#e7e2d6`   | Reserved for panels and secondary areas |
+| Ink         | `ink`        | `#14141c`   | Solid tiles, player, door, main text    |
+| Soft ink    | `inkSoft`    | `#6b675c`   | Level name, hints                       |
+| Accent      | `accent`     | `#ff3d2e`   | Spikes and the finish title             |
+| Touch panel | `panel`      | `#f4f1eacc` | Background of the on-screen buttons     |
 
-A cream-coloured rounded block with two eyes that look in the direction of travel. It
-stretches vertically while moving fast through the air and squashes back on landing. No
-animation frames, just geometry, which keeps the game fast and the sprites free of assets.
+Contrast (enforced in `theme.test.ts`): ink on paper at least 12:1, soft ink on paper at
+least 4.5:1, accent against paper and against ink at least 3:1.
 
-## UI
+## Elements
 
-- HUD at the top: time on the left, level name in the middle, deaths on the right,
-  monospace.
-- Finish screen: dimmed scene, the time and deaths, a hint to retry.
-- Touch controls: two circular buttons left (move), one right (jump), 64 px, semi
-  transparent, placed over the lower corners so the play field stays full size.
+| Element       | Drawing                                                  |
+| ------------- | -------------------------------------------------------- |
+| Solid tile    | Full ink square, no seams, no outline                    |
+| Spike         | Accent triangle standing on its tile                     |
+| Exit          | Ink arch with a paper opening                            |
+| Player        | Ink figure that looks in the direction of travel         |
+| HUD           | Time left, level name middle, deaths right, monospace    |
+| Finish screen | Paper veil, accent title, ink time and deaths, soft hint |
+
+## Touch
+
+Two circular buttons left (move) and one right (jump), 64 px, semi-transparent paper with an
+ink ring. Pressed buttons invert to ink. Touch controls appear on touch devices and with
+`?touch=1`.
+
+![Touch controls](images/touch.png)
 
 ## Changing the look
 
-Change colours in `theme.ts` only. Drawing code must use `colorNumber('<role>')`; CSS must
-use `var(--ti-<role>)`. Hard-coded colours in components are a review finding.
+Change colours in `theme.ts` only. Drawing code uses `colorNumber('<role>')`, CSS uses
+`var(--ti-<role>)`. Hard-coded colours in components are a review finding, and so is a
+seventh colour.

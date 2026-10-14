@@ -38,7 +38,7 @@ const game = new Phaser.Game({
   parent: 'game',
   width: LEVEL_WIDTH_TILES * TILE_PX,
   height: LEVEL_HEIGHT_TILES * TILE_PX,
-  backgroundColor: PALETTE.night,
+  backgroundColor: PALETTE.paper,
   banner: false,
   audio: { noAudio: true },
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
