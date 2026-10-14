@@ -41,14 +41,15 @@ curl -fsSI http://127.0.0.1:8080/           # static frontend
 
 ## Configuration
 
-| Variable            | Used by           | Meaning                                                           |
-| ------------------- | ----------------- | ----------------------------------------------------------------- |
-| `POSTGRES_PASSWORD` | db, backend       | Database password                                                 |
-| `JWT_SECRET`        | backend           | Signs access tokens; 32+ random characters                        |
-| `VERIFIER_TOKEN`    | backend, verifier | Shared secret for the internal verify call; 32+ random characters |
-| `WEB_PORT`          | frontend          | Loopback host port, default `8080`                                |
-| `API_PORT`          | backend           | Loopback host port, default `8000`                                |
-| `ENABLE_DOCS`       | backend           | `true` serves the OpenAPI schema at `/schema`                     |
+| Variable            | Used by           | Meaning                                                                                                                                                  |
+| ------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POSTGRES_PASSWORD` | db, backend       | Database password                                                                                                                                        |
+| `JWT_SECRET`        | backend           | Signs access tokens; 32+ random characters                                                                                                               |
+| `VERIFIER_TOKEN`    | backend, verifier | Shared secret for the internal verify call; 32+ random characters                                                                                        |
+| `WEB_PORT`          | frontend          | Loopback host port, default `8080`                                                                                                                       |
+| `API_PORT`          | backend           | Loopback host port, default `8000`                                                                                                                       |
+| `ENABLE_DOCS`       | backend           | `true` serves the OpenAPI schema at `/schema`                                                                                                            |
+| `TRUSTED_PROXY_IPS` | backend           | Comma separated addresses or networks of your reverse proxy or tunnel; only these may set the client address via `CF-Connecting-IP` or `X-Forwarded-For` |
 
 The backend and the verifier exit at startup when a secret is missing, shorter than 32
 characters or contains `change-me`/`example`/`placeholder`.

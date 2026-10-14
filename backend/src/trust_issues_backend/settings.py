@@ -22,6 +22,7 @@ class Settings:
     verifier_token: str
     enable_docs: bool = False
     access_token_minutes: int = ACCESS_TOKEN_MINUTES
+    trusted_proxy_ips: tuple[str, ...] = ()
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "Settings":
@@ -48,4 +49,9 @@ class Settings:
             verifier_url=required("VERIFIER_URL"),
             verifier_token=secret("VERIFIER_TOKEN"),
             enable_docs=source.get("ENABLE_DOCS", "").lower() == "true",
+            trusted_proxy_ips=tuple(
+                part.strip()
+                for part in source.get("TRUSTED_PROXY_IPS", "").split(",")
+                if part.strip()
+            ),
         )

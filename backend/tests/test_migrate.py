@@ -2,9 +2,11 @@ import asyncio
 from pathlib import Path
 
 import pytest
+from alembic.script import ScriptDirectory
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from alembic import command
 from tests.conftest import TEST_DATABASE_URL, require_test_database
 from trust_issues_backend.migrate import (
     DatabaseUnavailableError,
@@ -14,6 +16,8 @@ from trust_issues_backend.migrate import (
     wait_for_database,
 )
 from trust_issues_backend.models import Base
+
+HEAD = ScriptDirectory.from_config(alembic_config("sqlite://")).get_current_head()
 
 
 async def fresh_url(tmp_path: Path) -> str:
@@ -58,7 +62,7 @@ async def test_migrates_an_empty_database_to_head(tmp_path: Path) -> None:
 
     await run_migrate(url)
 
-    assert await scalar(url, "SELECT version_num FROM alembic_version") == "0001"
+    assert await scalar(url, "SELECT version_num FROM alembic_version") == HEAD
     assert await scalar(url, "SELECT count(*) FROM users") == 0
 
 
@@ -68,7 +72,7 @@ async def test_running_it_again_changes_nothing(tmp_path: Path) -> None:
 
     await run_migrate(url)
 
-    assert await scalar(url, "SELECT version_num FROM alembic_version") == "0001"
+    assert await scalar(url, "SELECT version_num FROM alembic_version") == HEAD
 
 
 async def test_adopts_a_database_that_was_created_from_the_models(tmp_path: Path) -> None:
@@ -88,8 +92,29 @@ async def test_adopts_a_database_that_was_created_from_the_models(tmp_path: Path
 
     await run_migrate(url)
 
-    assert await scalar(url, "SELECT version_num FROM alembic_version") == "0001"
+    assert await scalar(url, "SELECT version_num FROM alembic_version") == HEAD
     assert await scalar(url, "SELECT username FROM users") == "Old"
+
+
+async def test_adopts_a_database_from_the_baseline_era_and_upgrades_it(tmp_path: Path) -> None:
+    url = await fresh_url(tmp_path)
+    await asyncio.to_thread(command.upgrade, alembic_config(url), "0001")
+    engine = create_async_engine(url)
+    try:
+        async with engine.begin() as connection:
+            await connection.exec_driver_sql(
+                "INSERT INTO users (username, username_key, password_hash, token_version, "
+                "created_at) VALUES ('Old', 'old', 'x', 0, CURRENT_TIMESTAMP)"
+            )
+            await connection.exec_driver_sql("DROP TABLE alembic_version")
+    finally:
+        await engine.dispose()
+
+    await run_migrate(url)
+
+    assert await scalar(url, "SELECT version_num FROM alembic_version") == HEAD
+    assert await scalar(url, "SELECT failed_logins FROM users WHERE username_key = 'old'") == 0
+    assert await scalar(url, "SELECT locked_until FROM users WHERE username_key = 'old'") is None
 
 
 async def test_refuses_a_database_from_before_the_score_column(tmp_path: Path) -> None:

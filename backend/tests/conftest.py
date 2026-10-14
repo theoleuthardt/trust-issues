@@ -1,6 +1,7 @@
 import os
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from litestar.testing import AsyncTestClient
@@ -46,6 +47,24 @@ class FakeVerifier:
         return self.next
 
 
+class FakeClock:
+    """A controllable wall clock for lockouts."""
+
+    def __init__(self) -> None:
+        self.now = datetime(2026, 10, 15, 12, 0, tzinfo=UTC)
+
+    def __call__(self) -> datetime:
+        return self.now
+
+    def advance(self, **kwargs: float) -> None:
+        self.now += timedelta(**kwargs)
+
+
+@pytest.fixture
+def clock() -> FakeClock:
+    return FakeClock()
+
+
 @pytest.fixture
 def settings() -> Settings:
     return Settings(
@@ -62,7 +81,9 @@ def verifier() -> FakeVerifier:
 
 
 @pytest.fixture
-async def client(settings: Settings, verifier: FakeVerifier) -> AsyncIterator[AsyncTestClient]:
+async def client(
+    settings: Settings, verifier: FakeVerifier, clock: FakeClock
+) -> AsyncIterator[AsyncTestClient]:
     if settings.database_url.startswith("sqlite"):
         engine = create_async_engine(
             settings.database_url,
@@ -78,7 +99,7 @@ async def client(settings: Settings, verifier: FakeVerifier) -> AsyncIterator[As
         finally:
             await cleanup.dispose()
         engine = create_async_engine(settings.database_url)
-    app = create_app(settings, verifier=verifier, engine=engine, create_schema=True)
+    app = create_app(settings, verifier=verifier, engine=engine, create_schema=True, clock=clock)
     async with AsyncTestClient(app=app) as test_client:
         yield test_client
 

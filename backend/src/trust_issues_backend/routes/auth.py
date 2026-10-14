@@ -1,14 +1,20 @@
 import asyncio
+from datetime import UTC, datetime, timedelta
 
 from litestar import Request, get, post
 from litestar.datastructures import State
 from litestar.di import NamedDependency
-from litestar.exceptions import ClientException, NotAuthorizedException
+from litestar.exceptions import (
+    ClientException,
+    NotAuthorizedException,
+    TooManyRequestsException,
+)
 from litestar.security.jwt import Token
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from trust_issues_backend.client_ip import client_ip
 from trust_issues_backend.models import User
 from trust_issues_backend.schemas import (
     LoginRequest,
@@ -40,16 +46,57 @@ async def register(data: RegisterRequest, session: NamedDependency[AsyncSession]
     return UserResponse(id=user.id, username=user.username)
 
 
+MAX_FAILED_LOGINS = 5
+LOCKOUT = timedelta(minutes=15)
+
+
+def _aware(value: datetime) -> datetime:
+    return value if value.tzinfo else value.replace(tzinfo=UTC)
+
+
+def _too_many(seconds: int) -> TooManyRequestsException:
+    return TooManyRequestsException(
+        detail="too many attempts, please try again later",
+        headers={"Retry-After": str(max(1, seconds))},
+    )
+
+
 @post("/api/auth/login", status_code=200)
 async def login(
-    data: LoginRequest, session: NamedDependency[AsyncSession], state: State
+    data: LoginRequest, request: Request, session: NamedDependency[AsyncSession], state: State
 ) -> TokenResponse:
-    """Exchanges credentials for a bearer token; unknown users and wrong passwords look alike."""
+    """
+    Exchanges credentials for a bearer token. Unknown users and wrong passwords look alike;
+    five wrong passwords lock the account for fifteen minutes and every address is limited.
+    """
+    peer = request.client.host if request.client else None
+    address = client_ip(peer, request.headers, state.trusted_proxies)
+    wait = state.login_limiter.hit(address)
+    if wait is not None:
+        raise _too_many(wait)
+
+    now: datetime = state.clock()
     user = await session.scalar(select(User).where(User.username_key == data.username.lower()))
+    if user is not None and user.locked_until is not None:
+        remaining = (_aware(user.locked_until) - now).total_seconds()
+        if remaining > 0:
+            raise _too_many(int(remaining) + 1)
+
     password_hash = user.password_hash if user else DUMMY_HASH
     valid = await asyncio.to_thread(verify_password, password_hash, data.password)
     if user is None or not valid:
+        if user is not None:
+            user.failed_logins += 1
+            if user.failed_logins >= MAX_FAILED_LOGINS:
+                user.locked_until = now + LOCKOUT
+                user.failed_logins = 0
+            await session.commit()
         raise NotAuthorizedException(detail="invalid username or password")
+
+    if user.failed_logins or user.locked_until is not None:
+        user.failed_logins = 0
+        user.locked_until = None
+        await session.commit()
 
     token = state.jwt_auth.create_token(
         identifier=str(user.id),

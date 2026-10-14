@@ -1,7 +1,7 @@
 """Application factory."""
 
-from collections.abc import AsyncGenerator
-from datetime import timedelta
+from collections.abc import AsyncGenerator, Callable
+from datetime import datetime, timedelta
 
 import httpx
 from litestar import Litestar
@@ -18,13 +18,17 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from trust_issues_backend.models import Base, User
+from trust_issues_backend.models import Base, User, utcnow
+from trust_issues_backend.ratelimit import SlidingWindowLimiter
 from trust_issues_backend.routes.auth import login, me, register
 from trust_issues_backend.routes.health import health
 from trust_issues_backend.routes.leaderboard import leaderboard, progress
 from trust_issues_backend.routes.runs import submit_run
 from trust_issues_backend.settings import Settings
 from trust_issues_backend.verifier import HttpVerifier, Verifier
+
+LOGIN_ATTEMPTS_PER_MINUTE = 20
+RUN_SUBMISSIONS_PER_MINUTE = 30
 
 PUBLIC_PATHS = [
     r"^/health$",
@@ -41,6 +45,7 @@ def create_app(
     verifier: Verifier | None = None,
     engine: AsyncEngine | None = None,
     create_schema: bool = False,
+    clock: Callable[[], datetime] = utcnow,
 ) -> Litestar:
     """
     Builds the app; verifier and engine are injectable so tests need no network.
@@ -95,6 +100,10 @@ def create_app(
                 "jwt_auth": jwt_auth,
                 "verifier": verifier,
                 "token_lifetime": timedelta(minutes=settings.access_token_minutes),
+                "clock": clock,
+                "trusted_proxies": settings.trusted_proxy_ips,
+                "login_limiter": SlidingWindowLimiter(LOGIN_ATTEMPTS_PER_MINUTE, 60),
+                "run_limiter": SlidingWindowLimiter(RUN_SUBMISSIONS_PER_MINUTE, 60),
             }
         ),
         request_max_body_size=MAX_REQUEST_BODY_BYTES,

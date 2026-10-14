@@ -29,7 +29,9 @@ what we defend against, how, and what we explicitly cannot prevent.
    the verifier (body size and the level's `maxFrames`). Masks must be integers within the
    defined bit set, counts positive integers within a cap. Invalid input is rejected, not
    repaired.
-6. **Authenticated and separated.** Submissions need a bearer token. The verifier is not
+6. **Limited.** A player may submit thirty runs per minute and every address twenty login
+   attempts; five wrong passwords lock an account for fifteen minutes (see SECURITY.md).
+7. **Authenticated and separated.** Submissions need a bearer token. The verifier is not
    exposed and requires its own shared token. Every user has at most one best run per
    level, and a run is only stored for the authenticated user.
 
@@ -65,7 +67,6 @@ Tracked on the board as part of the anti-cheat epic:
 
 - Version the simulation and the levels, so changed physics cannot silently invalidate or
   re-validate old replays.
-- Rate limits for submissions and for login attempts, account lockout.
 - Plausibility checks on replays (minimum frame count per level, input pattern heuristics).
 - Replay viewer and moderation tools (flag, hide, delete an entry).
 - An audit log of rejected submissions.

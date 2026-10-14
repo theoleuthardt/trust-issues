@@ -5,6 +5,7 @@ from litestar.exceptions import (
     ClientException,
     NotFoundException,
     ServiceUnavailableException,
+    TooManyRequestsException,
 )
 from litestar.security.jwt import Token
 from sqlalchemy import and_, func, or_, select
@@ -54,7 +55,13 @@ async def submit_run(
     session: NamedDependency[AsyncSession],
     state: State,
 ) -> RunResponse:
-    """Replays the submission on the server; time and deaths come from that replay only."""
+    """Replays the submission on the server; time and score come from that replay only."""
+    wait = state.run_limiter.hit(str(request.user.id))
+    if wait is not None:
+        raise TooManyRequestsException(
+            detail="too many runs, please try again later",
+            headers={"Retry-After": str(wait)},
+        )
     try:
         run = await state.verifier.verify(data.level_id, data.replay)
     except UnknownLevelError as error:

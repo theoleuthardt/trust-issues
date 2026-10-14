@@ -23,3 +23,16 @@ known limits are in [docs/ANTI_CHEAT.md](docs/ANTI_CHEAT.md).
 `JWT_SECRET`, `VERIFIER_TOKEN` and `POSTGRES_PASSWORD` are random values generated per
 deployment and kept in `.env`, which is git-ignored. The backend and the verifier refuse to
 start with short or placeholder values.
+
+## Abuse protection
+
+- **Login:** five wrong passwords lock an account for fifteen minutes (HTTP 429 with
+  `Retry-After`); a correct password resets the counter. Every client address may try at most
+  twenty logins per minute.
+- **Runs:** a player may submit at most thirty runs per minute; refused submissions never reach
+  the verifier.
+- **Client address:** behind a reverse proxy or tunnel the peer is always the proxy. Set
+  `TRUSTED_PROXY_IPS` to its address or network so the limits use the real client address
+  (`CF-Connecting-IP`, then `X-Forwarded-For`); headers from any other peer are ignored.
+- The limits are kept in the memory of one backend process, which is how this deployment
+  runs. Several processes would each count separately.
