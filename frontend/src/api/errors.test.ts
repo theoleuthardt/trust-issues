@@ -35,3 +35,23 @@ describe('messageFor', () => {
     expect(messageFor(418, {})).toMatch(/went wrong/i);
   });
 });
+
+describe('messageFor with a context', () => {
+  it('asks to sign in again when a run is rejected as unauthorised', () => {
+    expect(messageFor(401, { detail: 'Unauthorized' }, 'run')).toMatch(/sign in again/i);
+  });
+
+  it('says a run was not accepted and why', () => {
+    expect(messageFor(422, { detail: 'replay does not finish the level' }, 'run')).toBe(
+      'The run was not accepted: replay does not finish the level.',
+    );
+  });
+
+  it('does not talk about usernames for a conflict while sending a run', () => {
+    expect(messageFor(409, {}, 'run')).not.toMatch(/username/i);
+  });
+
+  it('says the level is unknown to the server', () => {
+    expect(messageFor(404, { detail: 'unknown level' }, 'run')).toMatch(/level/i);
+  });
+});

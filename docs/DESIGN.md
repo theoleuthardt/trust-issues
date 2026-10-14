@@ -82,6 +82,11 @@ score and time.
 ![Level select](images/levels.png)
 ![Register form](images/register.png)
 
+The finish screen shows time, deaths and score from the simulation and, once the server has
+replayed the run, the verified rank:
+
+![Finish screen](images/finish.png)
+
 ## Touch
 
 Two circular buttons left (move) and one right (jump), 64 px, semi-transparent paper with an

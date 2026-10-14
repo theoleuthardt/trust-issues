@@ -48,6 +48,7 @@ export interface GameSceneData {
   startIndex: number;
   input: InputState;
   onFinished?: (event: RunFinishedEvent) => void;
+  onRetrySubmit?: () => void;
   onExit?: () => void;
 }
 
@@ -82,6 +83,8 @@ export class GameScene extends Phaser.Scene {
   private controls!: InputState;
   private onFinished: ((event: RunFinishedEvent) => void) | undefined;
   private onExit: (() => void) | undefined;
+  private onRetrySubmit: (() => void) | undefined;
+  private statusText: Phaser.GameObjects.Text | undefined;
   private state!: GameState;
   private recorded: number[] = [];
   private facing: 1 | -1 = 1;
@@ -112,9 +115,13 @@ export class GameScene extends Phaser.Scene {
     this.controls = data.input;
     this.onFinished = data.onFinished;
     this.onExit = data.onExit;
+    this.onRetrySubmit = data.onRetrySubmit;
   }
 
   create(): void {
+    this.events.once('shutdown', () => {
+      this.statusText = undefined;
+    });
     this.drawBackground();
     this.world = this.add.graphics();
     this.levelText = this.add
@@ -130,6 +137,9 @@ export class GameScene extends Phaser.Scene {
 
     this.input.keyboard?.on('keydown-R', () => this.restart());
     this.input.keyboard?.on('keydown-ESC', () => this.onExit?.());
+    this.input.keyboard?.on('keydown-S', () => {
+      if (this.state.finished) this.onRetrySubmit?.();
+    });
     this.input.keyboard?.on('keydown-ENTER', () => {
       if (this.state.finished) this.advance();
     });
@@ -171,6 +181,11 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  /** Shows a line below the result on the finish screen, for example the rank. */
+  setStatus(text: string): void {
+    this.statusText?.setText(text);
+  }
+
   private levelTitle(): string {
     return `${this.levels.indexOf(this.level) + 1}. ${this.level.name}`;
   }
@@ -186,6 +201,7 @@ export class GameScene extends Phaser.Scene {
   private restart(): void {
     for (const object of this.overlay) object.destroy();
     this.overlay = [];
+    this.statusText = undefined;
     this.state = createState(this.level);
     this.recorded = [];
     this.facing = 1;
@@ -240,7 +256,10 @@ export class GameScene extends Phaser.Scene {
         },
       )
       .setOrigin(0.5);
-    this.overlay = [shade, title, summary, hint];
+    this.statusText = this.add
+      .text(width / 2, height / 2 + 36, '', { ...HUD_FONT, color: PALETTE.ink })
+      .setOrigin(0.5);
+    this.overlay = [shade, title, summary, hint, this.statusText];
 
     const event: RunFinishedEvent = {
       levelId: this.level.id,

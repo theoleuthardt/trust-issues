@@ -7,6 +7,7 @@ import { SessionStore } from './api/session';
 import { ProgressStore, firstOpenIndex, levelCards } from './app/progress';
 import { authScreen, levelSelect, mainMenu, titleScreen } from './app/screens';
 import { memoryStorage } from './app/storage';
+import { RunSubmitter } from './app/submitter';
 import type { StorageLike } from './app/storage';
 import { GameScene, SCENE_KEY } from './game/GameScene';
 import type { RunFinishedEvent } from './game/GameScene';
@@ -161,6 +162,17 @@ function showLevels(): void {
   show('levels', levelSelect(levelCards(LEVELS, store.load()), startLevel, showMenu));
 }
 
+const submitter = new RunSubmitter({
+  signedIn: () => sessions.current() !== undefined,
+  submit: (levelId, replay) => api.submitRun(levelId, replay),
+  signOut: () => sessions.clear(),
+  setStatus: (text) => {
+    if (!game?.scene.isActive(SCENE_KEY)) return;
+    const scene = game.scene.getScene(SCENE_KEY);
+    if (scene instanceof GameScene) scene.setStatus(text);
+  },
+});
+
 function startLevel(index: number): void {
   setScreen('game');
   if (ui) {
@@ -178,7 +190,9 @@ function startLevel(index: number): void {
         frames: event.frames,
         deaths: event.deaths,
       });
+      void submitter.send(event);
     },
+    onRetrySubmit: () => submitter.retry(),
     onExit: leaveLevel,
   });
 }

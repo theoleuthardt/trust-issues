@@ -74,6 +74,37 @@ describe('ApiClient', () => {
     expect((error as ApiError).message).toMatch(/reach the server/i);
   });
 
+  it('submits a run and maps the answer', async () => {
+    const { fetchFn, calls } = fakeFetch(201, {
+      frames: 903,
+      deaths: 1,
+      score: 934,
+      personal_best: true,
+      rank: 4,
+    });
+    const client = new ApiClient(fetchFn, () => 'tok');
+
+    const result = await client.submitRun('trust-nothing', [2, 62, 6, 1]);
+
+    expect(result).toEqual({ frames: 903, deaths: 1, score: 934, personalBest: true, rank: 4 });
+    expect(calls[0]?.url).toBe('/api/runs');
+    expect(JSON.parse(String(calls[0]?.init.body))).toEqual({
+      level_id: 'trust-nothing',
+      replay: [2, 62, 6, 1],
+    });
+    expect(new Headers(calls[0]?.init.headers).get('authorization')).toBe('Bearer tok');
+  });
+
+  it('reports a rejected run with the reason of the server', async () => {
+    const { fetchFn } = fakeFetch(422, { detail: 'replay does not finish the level' });
+    const client = new ApiClient(fetchFn, () => 'tok');
+
+    await expect(client.submitRun('trust-nothing', [2, 5])).rejects.toMatchObject({
+      status: 422,
+      message: expect.stringMatching(/not accepted.*does not finish/i),
+    });
+  });
+
   it('turns a failure while reading the body into an ApiError', async () => {
     const broken = {
       ok: true,

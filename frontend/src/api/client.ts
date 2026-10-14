@@ -1,4 +1,5 @@
 import { messageFor } from './errors';
+import type { ErrorContext } from './errors';
 
 export class ApiError extends Error {
   constructor(
@@ -12,6 +13,14 @@ export class ApiError extends Error {
 export interface User {
   id: number;
   username: string;
+}
+
+export interface RunResult {
+  frames: number;
+  deaths: number;
+  score: number;
+  personalBest: boolean;
+  rank: number;
 }
 
 /** Typed access to the REST API under `/api`; errors come back as `ApiError`. */
@@ -38,7 +47,30 @@ export class ApiClient {
     return this.request<User>('GET', '/auth/me');
   }
 
-  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  /** Sends a recorded run; the server replays it and answers with what it derived. */
+  async submitRun(levelId: string, replay: number[]): Promise<RunResult> {
+    const body = await this.request<{
+      frames: number;
+      deaths: number;
+      score: number;
+      personal_best: boolean;
+      rank: number;
+    }>('POST', '/runs', { level_id: levelId, replay }, 'run');
+    return {
+      frames: body.frames,
+      deaths: body.deaths,
+      score: body.score,
+      personalBest: body.personal_best,
+      rank: body.rank,
+    };
+  }
+
+  private async request<T>(
+    method: string,
+    path: string,
+    body?: unknown,
+    context: ErrorContext = 'credentials',
+  ): Promise<T> {
     const headers = new Headers({ accept: 'application/json' });
     if (body !== undefined) headers.set('content-type', 'application/json');
     const token = this.token();
@@ -69,7 +101,7 @@ export class ApiClient {
     }
     if (!response.ok) {
       const errorBody = typeof parsed === 'object' && parsed !== null ? parsed : undefined;
-      throw new ApiError(response.status, messageFor(response.status, errorBody));
+      throw new ApiError(response.status, messageFor(response.status, errorBody, context));
     }
     return parsed as T;
   }
