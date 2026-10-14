@@ -15,14 +15,15 @@ Requirements: Node 22.12+, uv, go-task. Podman is only needed for the full stack
 
 ## Repository layout
 
-| Path           | Contents                                                   |
-| -------------- | ---------------------------------------------------------- |
-| `packages/sim` | Deterministic game simulation, levels, replay format       |
-| `frontend`     | Phaser game, input, touch controls                         |
-| `verifier`     | Node service that replays submitted runs                   |
-| `backend`      | Litestar API with accounts, runs and leaderboard           |
-| `docs`         | Architecture, anti-cheat, levels, design, deployment, ADRs |
-| `scripts`      | Smoke test and board helper                                |
+| Path                             | Contents                                                   |
+| -------------------------------- | ---------------------------------------------------------- |
+| `packages/sim`                   | Deterministic game simulation, levels, replay format       |
+| `frontend`                       | Phaser game, input, touch controls                         |
+| `verifier`                       | Node service that replays submitted runs                   |
+| `backend`                        | Litestar API with accounts, runs and leaderboard           |
+| `docs`                           | Architecture, anti-cheat, levels, design, deployment, ADRs |
+| `scripts`                        | Smoke test and board helper                                |
+| `*/Containerfile`, `compose.yml` | Image definitions per service and the Podman compose stack |
 
 ## Standards
 

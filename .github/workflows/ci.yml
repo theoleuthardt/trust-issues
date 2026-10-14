@@ -66,6 +66,6 @@ jobs:
     needs: [web, backend]
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -f frontend/Dockerfile -t trust-issues-frontend .
-      - run: docker build -f verifier/Dockerfile -t trust-issues-verifier .
-      - run: docker build -t trust-issues-backend backend
+      - run: podman build -f frontend/Containerfile -t trust-issues-frontend .
+      - run: podman build -f verifier/Containerfile -t trust-issues-verifier .
+      - run: podman build -f backend/Containerfile -t trust-issues-backend backend

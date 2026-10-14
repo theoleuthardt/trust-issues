@@ -26,6 +26,13 @@ levels, more of them.
 
 How the pieces fit together: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+## Repository
+
+Everything lives in this one monorepo: the game, the shared simulation, the verifier, the
+backend, the container definitions (`Containerfile` per service, plus `compose.yml`), the
+docs and the CI. Frontend, simulation and verifier are npm workspaces; the backend is a uv
+project.
+
 ## Quick start
 
 Requirements: Node 22.12+, [uv](https://docs.astral.sh/uv/), [go-task](https://taskfile.dev),
