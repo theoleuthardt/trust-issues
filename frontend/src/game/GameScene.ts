@@ -7,9 +7,10 @@ import {
   Tile,
   createState,
   encodeReplay,
+  stageOf,
   step,
 } from '@trust-issues/sim';
-import type { GameState, Level } from '@trust-issues/sim';
+import type { GameState, Level, Stage } from '@trust-issues/sim';
 import { Input } from '@trust-issues/sim';
 import { formatTime } from '../format';
 import type { InputState } from '../input/InputState';
@@ -79,12 +80,17 @@ export class GameScene extends Phaser.Scene {
   private overlay: Phaser.GameObjects.GameObject[] = [];
   private previousTiles: Uint8Array | undefined;
   private knownDeaths = 0;
+  private knownStage = 0;
   private lastPosition = { x: 0, y: 0 };
   private tileEffects = new Map<number, TileEffect>();
   private particles: LiveParticle[] = [];
 
   constructor() {
     super(SCENE_KEY);
+  }
+
+  private get stage(): Stage {
+    return stageOf(this.level, this.state.stage);
   }
 
   init(data: GameSceneData): void {
@@ -139,6 +145,7 @@ export class GameScene extends Phaser.Scene {
     this.phase = 0;
     this.previousTiles = undefined;
     this.knownDeaths = 0;
+    this.knownStage = 0;
     this.lastPosition = { x: this.state.x, y: this.state.y };
     this.tileEffects.clear();
     this.particles = [];
@@ -189,7 +196,7 @@ export class GameScene extends Phaser.Scene {
     g.fillStyle(colorNumber('paper'));
     g.fillRect(0, 0, width, height);
     g.fillStyle(colorNumber('paperShade'));
-    for (let tx = 0; tx < this.level.width; tx += 2) {
+    for (let tx = 0; tx < stageOf(this.level, 0).width; tx += 2) {
       const tiles = SKYLINE[(tx / 2) % SKYLINE.length] ?? 3;
       g.fillRect(tx * TILE_SIZE, height - tiles * TILE_SIZE, TILE_SIZE * 2, tiles * TILE_SIZE);
     }
@@ -210,7 +217,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private trackEffects(now: number): void {
-    if (this.state.deaths !== this.knownDeaths) {
+    if (this.state.stage !== this.knownStage) {
+      this.knownStage = this.state.stage;
+      this.knownDeaths = this.state.deaths;
+      this.tileEffects.clear();
+    } else if (this.state.deaths !== this.knownDeaths) {
       this.knownDeaths = this.state.deaths;
       const origin = {
         x: this.lastPosition.x + PLAYER_WIDTH / 2,
@@ -234,7 +245,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderTiles(g: Phaser.GameObjects.Graphics, now: number): void {
-    const { width, height } = this.level;
+    const { width, height } = this.stage;
     for (let ty = 0; ty < height; ty++) {
       for (let tx = 0; tx < width; tx++) {
         const index = ty * width + tx;
@@ -289,15 +300,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderHalo(g: Phaser.GameObjects.Graphics, now: number): void {
-    const x = this.level.exit.x * TILE_SIZE + TILE_SIZE / 2;
-    const y = this.level.exit.y * TILE_SIZE + TILE_SIZE / 2;
+    const x = this.stage.exit.x * TILE_SIZE + TILE_SIZE / 2;
+    const y = this.stage.exit.y * TILE_SIZE + TILE_SIZE / 2;
     g.fillStyle(colorNumber('paper'));
     g.fillCircle(x, y, TILE_SIZE * 0.85 + Math.sin(now / 350) * 2);
   }
 
   private renderExit(g: Phaser.GameObjects.Graphics): void {
-    const x = this.level.exit.x * TILE_SIZE;
-    const y = this.level.exit.y * TILE_SIZE;
+    const x = this.stage.exit.x * TILE_SIZE;
+    const y = this.stage.exit.y * TILE_SIZE;
     g.fillStyle(colorNumber('ink'));
     g.fillRoundedRect(x + 4, y + 2, TILE_SIZE - 8, TILE_SIZE - 2, { tl: 12, tr: 12, bl: 0, br: 0 });
     g.fillStyle(colorNumber('paper'));
