@@ -38,14 +38,14 @@ least 4.5:1, accent against paper and against ink at least 3:1.
 
 ## Elements
 
-| Element       | Drawing                                                  |
-| ------------- | -------------------------------------------------------- |
-| Solid tile    | Full ink square, no seams, no outline                    |
-| Spike         | Accent triangle standing on its tile                     |
-| Exit          | Ink arch with a paper opening                            |
-| Player        | Ink figure that looks in the direction of travel         |
-| HUD           | Time left, level name middle, deaths right, monospace    |
-| Finish screen | Paper veil, accent title, ink time and deaths, soft hint |
+| Element       | Drawing                                                                                                                                           |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Solid tile    | Full ink square, no seams, no outline                                                                                                             |
+| Spike         | Accent triangle standing on its tile                                                                                                              |
+| Exit          | Ink arch with a paper opening                                                                                                                     |
+| Player        | Faceless ink silhouette: head block, torso block, two short legs, no arms. Legs alternate while walking, tuck when rising and spread when falling |
+| HUD           | Time left, level name middle, deaths right, monospace                                                                                             |
+| Finish screen | Paper veil, accent title, ink time and deaths, soft hint                                                                                          |
 
 ## Touch
 

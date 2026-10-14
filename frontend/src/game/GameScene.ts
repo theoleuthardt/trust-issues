@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import {
-  PLAYER_HEIGHT,
   PLAYER_WIDTH,
   TICKS_PER_SECOND,
   TILE_SIZE,
@@ -14,6 +13,7 @@ import { Input } from '@trust-issues/sim';
 import { formatTime } from '../format';
 import type { InputState } from '../input/InputState';
 import { FixedStepper } from '../loop';
+import { advancePhase, figurePose, legFoot } from './figure';
 import { PALETTE, colorNumber } from '../theme';
 
 export const SCENE_KEY = 'game';
@@ -33,6 +33,12 @@ export interface GameSceneData {
   input: InputState;
 }
 
+const HEAD_WIDTH = 8;
+const HEAD_HEIGHT = 6;
+const TORSO_WIDTH = 14;
+const TORSO_HEIGHT = 14;
+const LEG_WIDTH = 5;
+const LEG_SPACING = 4;
 const HUD_FONT = { fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: '20px' };
 const MAX_TICKS_PER_FRAME = 5;
 
@@ -41,7 +47,8 @@ export class GameScene extends Phaser.Scene {
   private controls!: InputState;
   private state!: GameState;
   private recorded: number[] = [];
-  private facing = 1;
+  private facing: 1 | -1 = 1;
+  private phase = 0;
   private readonly stepper = new FixedStepper(1000 / TICKS_PER_SECOND, MAX_TICKS_PER_FRAME);
   private world!: Phaser.GameObjects.Graphics;
   private timeText!: Phaser.GameObjects.Text;
@@ -87,6 +94,7 @@ export class GameScene extends Phaser.Scene {
         if ((mask & Input.Left) !== 0 && (mask & Input.Right) === 0) this.facing = -1;
         this.recorded.push(mask);
         step(this.level, this.state, mask);
+        this.phase = advancePhase(this.phase, this.state.vx, this.state.onGround);
       }
       if (this.state.finished) this.finishRun();
       else if (this.state.tick >= this.level.maxFrames) this.restart();
@@ -100,6 +108,7 @@ export class GameScene extends Phaser.Scene {
     this.state = createState(this.level);
     this.recorded = [];
     this.facing = 1;
+    this.phase = 0;
     this.stepper.reset();
   }
 
@@ -192,18 +201,26 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderPlayer(g: Phaser.GameObjects.Graphics): void {
-    const stretch = 1 + Math.min(Math.abs(this.state.vy), 9.5) / 32;
-    const width = PLAYER_WIDTH / Math.sqrt(stretch);
-    const height = PLAYER_HEIGHT * Math.sqrt(stretch);
-    const x = this.state.x + (PLAYER_WIDTH - width) / 2;
-    const y = this.state.y + PLAYER_HEIGHT - height;
+    const pose = figurePose(
+      { vx: this.state.vx, vy: this.state.vy, onGround: this.state.onGround },
+      this.phase,
+    );
+    const centre = this.state.x + PLAYER_WIDTH / 2;
+    const top = this.state.y + pose.bob;
+    const hipY = top + HEAD_HEIGHT + TORSO_HEIGHT - 1;
 
     g.fillStyle(colorNumber('ink'));
-    g.fillRoundedRect(x, y, width, height, 7);
+    g.fillRect(centre - HEAD_WIDTH / 2, top, HEAD_WIDTH, HEAD_HEIGHT);
+    g.fillRect(centre - TORSO_WIDTH / 2, top + HEAD_HEIGHT, TORSO_WIDTH, TORSO_HEIGHT);
 
-    const eyeShift = this.facing * 2;
-    g.fillStyle(colorNumber('paper'));
-    g.fillRect(x + width * 0.28 + eyeShift, y + height * 0.28, 4, 7);
-    g.fillRect(x + width * 0.62 + eyeShift, y + height * 0.28, 4, 7);
+    g.lineStyle(LEG_WIDTH, colorNumber('ink'));
+    for (const [leg, side] of [
+      [pose.back, 1],
+      [pose.front, -1],
+    ] as const) {
+      const hip = { x: centre + side * LEG_SPACING, y: hipY };
+      const foot = legFoot(hip, leg, this.facing);
+      g.lineBetween(hip.x, hip.y, foot.x, foot.y);
+    }
   }
 }
