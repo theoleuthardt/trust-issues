@@ -30,6 +30,9 @@ export interface StageDef {
   traps: readonly TrapDef[];
 }
 
+/** What an author writes: a level without its par time, which comes from the solver. */
+export type LevelContent = Omit<LevelDef, 'parFrames'>;
+
 /** Authoring format of a level: a chapter of one to `MAX_STAGES` stages played in order. */
 export interface LevelDef {
   id: string;

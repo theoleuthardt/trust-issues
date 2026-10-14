@@ -1,10 +1,9 @@
-import type { LevelDef } from '../level';
+import type { LevelContent } from '../level';
 
-export const trustNothing: LevelDef = {
+export const trustNothing: LevelContent = {
   id: 'trust-nothing',
   name: 'Trust Nothing',
   maxFrames: 3600,
-  parFrames: 290,
   stages: [
     {
       rows: [

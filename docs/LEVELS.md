@@ -59,13 +59,22 @@ until scrolling cameras are implemented.
 
 ## Adding a level
 
-1. Create `packages/sim/src/levels/<id>.ts` exporting a `LevelDef` with its stages.
-2. Register it in `packages/sim/src/levels/index.ts` (order is play order).
-3. Add a reference solution for it to `SOLUTIONS` in `packages/sim/src/testing.ts`.
-   A throwaway search script that tries input sequences is the easiest way to find one.
+1. Create `packages/sim/src/levels/<id>.ts` exporting a `LevelContent` (a level without its
+   par time) with its stages.
+2. Register it in `packages/sim/src/levels/content.ts`; the order is the play order.
+3. Run `task levels:solve` (or `task levels:solve -- <level-id>` for one level). The solver
+   finds a zero-death solution for every stage, checks the combined replay in the
+   simulation and writes the level's par time (`levels/pars.json`) and its reference
+   solution (`solutions.json`). A stage it cannot solve is reported with its number: that
+   stage is not beatable and has to be fixed.
 4. Run `task test`. The level tests check that ids are unique, the level builds, the
-   solution finishes it with the recorded frame count, and that simply holding "right" does
-   not beat it.
+   solution finishes it with the recorded frame count, that the par time equals it, and
+   that simply holding "right" does not beat it.
+
+The solver searches in macro steps (hold a direction, optionally jump, for 1 to 20 ticks),
+so its solutions are near-optimal rather than perfect. The par time is therefore a fair
+target that skilled players can beat; beating it scores more than 1000 points (see
+[SCORING.md](SCORING.md)).
 
 ## Design guidance
 
