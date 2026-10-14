@@ -107,23 +107,32 @@ function showTitle(): void {
   );
 }
 
-function showAuth(mode: AuthMode): void {
+function showAuth(mode: AuthMode, notice?: string): void {
   show(
     'auth',
     authScreen({
       mode,
+      notice,
       onSwitchMode: () => showAuth(mode === 'login' ? 'register' : 'login'),
       onBack: showTitle,
       onSubmit: async (username, password) => {
         const problem = validateCredentials(mode, username, password);
         if (problem) return problem;
         const name = username.trim();
+        let registered = false;
         try {
-          if (mode === 'register') await api.register(name, password);
+          if (mode === 'register') {
+            await api.register(name, password);
+            registered = true;
+          }
           sessions.save(await api.login(name, password), name);
           showMenu();
           return undefined;
         } catch (error) {
+          if (registered) {
+            showAuth('login', 'Your account was created, but signing in failed. Please sign in.');
+            return undefined;
+          }
           return error instanceof ApiError ? error.message : 'Something went wrong.';
         }
       },

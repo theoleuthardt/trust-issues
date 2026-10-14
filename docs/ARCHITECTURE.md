@@ -73,6 +73,16 @@ with Alembic are planned (see the backend epic on the board).
 
 The OpenAPI schema is served at `/schema` only when `ENABLE_DOCS=true`.
 
+## Client session
+
+The game keeps the access token in `localStorage` (or in memory when the browser refuses
+storage) so a reload does not sign the player out. It reads only the expiry of the token and
+signs out by itself when it has passed; the server decides what a token is worth. Any script
+running on the page could read the token, which is the usual trade-off of this approach; the
+site serves no third-party scripts, and a strict content security policy is planned (see the
+backend foundation epic). Signing out removes the local copy; `logout-all`, which revokes every token
+through `token_version`, is tracked in the accounts epic.
+
 ## Network layout
 
 The frontend container serves the static build and nothing else; it carries no proxy

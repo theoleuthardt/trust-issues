@@ -74,6 +74,17 @@ describe('ApiClient', () => {
     expect((error as ApiError).message).toMatch(/reach the server/i);
   });
 
+  it('turns a failure while reading the body into an ApiError', async () => {
+    const broken = {
+      ok: true,
+      status: 200,
+      text: () => Promise.reject(new TypeError('connection reset')),
+    } as unknown as Response;
+    const client = new ApiClient((() => Promise.resolve(broken)) as typeof fetch, () => undefined);
+
+    await expect(client.me()).rejects.toMatchObject({ status: 0 });
+  });
+
   it('survives an error body that is not JSON', async () => {
     const fetchFn = (() =>
       Promise.resolve(new Response('<html>bad gateway</html>', { status: 502 }))) as typeof fetch;

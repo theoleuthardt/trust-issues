@@ -55,7 +55,12 @@ export class ApiClient {
       throw new ApiError(0, 'Could not reach the server.');
     }
 
-    const text = await response.text();
+    let text: string;
+    try {
+      text = await response.text();
+    } catch {
+      throw new ApiError(0, 'Could not reach the server.');
+    }
     let parsed: unknown;
     try {
       parsed = text === '' ? undefined : JSON.parse(text);

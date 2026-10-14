@@ -47,6 +47,8 @@ export interface AuthScreenOptions {
   onSubmit: (username: string, password: string) => Promise<string | undefined>;
   onSwitchMode: () => void;
   onBack: () => void;
+  /** Shown in the message area when the screen opens. */
+  notice?: string;
 }
 
 function field(label: string, input: HTMLInputElement): HTMLElement {
@@ -73,7 +75,7 @@ export function authScreen(options: AuthScreenOptions): HTMLElement {
   password.autocomplete = registering ? 'new-password' : 'current-password';
   password.required = true;
 
-  const error = h('p', { class: 'form-error' });
+  const error = h('p', { class: 'form-error', text: options.notice ?? '' });
   error.setAttribute('role', 'alert');
   const submit = h('button', {
     class: 'button button-primary',
@@ -98,6 +100,9 @@ export function authScreen(options: AuthScreenOptions): HTMLElement {
       .onSubmit(username.value, password.value)
       .then((message) => {
         if (message) error.textContent = message;
+      })
+      .catch(() => {
+        error.textContent = 'Something went wrong.';
       })
       .finally(() => {
         submit.disabled = false;
