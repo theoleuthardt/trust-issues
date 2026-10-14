@@ -10,6 +10,10 @@ const parsPath = fileURLToPath(new URL('../src/levels/pars.json', import.meta.ur
 const solutionsPath = fileURLToPath(new URL('../src/solutions.json', import.meta.url));
 
 const only = process.argv[2];
+if (only !== undefined && !LEVEL_CONTENT.some((content) => content.id === only)) {
+  console.error(`unknown level id '${only}'`);
+  process.exit(1);
+}
 const pars: Record<string, number> = JSON.parse(readFileSync(parsPath, 'utf8'));
 const solutions: Record<string, unknown> = JSON.parse(readFileSync(solutionsPath, 'utf8'));
 
@@ -23,7 +27,7 @@ for (const content of LEVEL_CONTENT) {
   let expansions = 0;
 
   for (const [index, stage] of level.stages.entries()) {
-    const result = solveStage(stage);
+    const result = solveStage(stage, { maxFrames: content.maxFrames });
     expansions += result.expansions;
     if (!result.solved) {
       console.error(`FAIL  ${content.id} stage ${index + 1}: ${result.reason}`);
@@ -58,4 +62,4 @@ const ordered = (record: Record<string, unknown>) =>
   );
 writeFileSync(parsPath, `${JSON.stringify(ordered(pars), null, 2)}\n`);
 writeFileSync(solutionsPath, `${JSON.stringify(ordered(solutions), null, 2)}\n`);
-if (failed) process.exit(1);
+if (failed) process.exitCode = 1;

@@ -14,7 +14,14 @@ export type SolveResult =
   | { solved: true; inputs: number[]; expansions: number }
   | { solved: false; reason: 'exhausted' | 'budget'; expansions: number };
 
-const MASKS = [Input.Right, Input.Left, Input.Right | Input.Jump, Input.Left | Input.Jump, 0];
+const MASKS = [
+  Input.Right,
+  Input.Left,
+  Input.Right | Input.Jump,
+  Input.Left | Input.Jump,
+  Input.Jump,
+  0,
+];
 const COUNTS = [1, 2, 5, 12];
 const DEFAULT_MAX_FRAMES = 1800;
 const DEFAULT_MAX_EXPANSIONS = 400_000;
@@ -116,6 +123,7 @@ export function solveStage(stage: Stage, options: SolveOptions = {}): SolveResul
   let expansions = 0;
   for (let node = open.pop(); node !== undefined; node = open.pop()) {
     if (node.state.finished) return { solved: true, inputs: reconstruct(node), expansions };
+    if (!node.state.finished && (best.get(keyOf(node.state)) ?? Infinity) < node.g) continue;
     if (++expansions > maxExpansions) return { solved: false, reason: 'budget', expansions };
 
     for (const mask of MASKS) {
