@@ -69,6 +69,11 @@ gh api -X POST repos/theoleuthardt/trust-issues/issues/<epic-number>/sub_issues 
 
    One issue, one branch, one PR. A PR that also refactors something unrelated is split.
 
+   **Stacked PRs.** When a change depends on another one that is not merged yet, branch
+   from that branch and open the PR with `--base <that-branch>`. CI runs for every pull
+   request, so the stack is checked as it grows. Merge bottom-up with squash merges; the
+   branch of a merged PR is deleted and GitHub retargets the PR above it to `main`.
+
 8. **CI must be green** and review findings resolved, then the PR is squash-merged and the
    branch deleted. After the merge: `scripts/kanban-status.sh 42 done`.
 
