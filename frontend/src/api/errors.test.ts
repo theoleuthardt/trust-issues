@@ -25,10 +25,14 @@ describe('messageFor', () => {
     expect(messageFor(400, { detail: 'Bad Request' })).toMatch(/check/i);
   });
 
-  it('asks to try again later for server errors and rate limits', () => {
+  it('tells a player who is locked out or sending too often to wait', () => {
+    expect(messageFor(429, { detail: 'too many attempts' })).toMatch(/too many attempts/i);
+    expect(messageFor(429, {}, 'run')).toMatch(/too many/i);
+  });
+
+  it('asks to try again later for server errors', () => {
     expect(messageFor(503, {})).toMatch(/later/i);
     expect(messageFor(500, undefined)).toMatch(/later/i);
-    expect(messageFor(429, {})).toMatch(/later/i);
   });
 
   it('has a message for anything else', () => {

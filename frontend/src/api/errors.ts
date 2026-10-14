@@ -33,7 +33,8 @@ export function messageFor(
       const reason = detailOf(body);
       return reason ? `The run was not accepted: ${reason}.` : 'The run was not accepted.';
     }
-    if (status === 429 || status >= 500) return 'The server is busy, please try again later.';
+    if (status === 429) return 'Too many runs in a short time, please wait a moment.';
+    if (status >= 500) return 'The server is busy, please try again later.';
     return 'The run could not be sent.';
   }
   if (status === 409) return 'That username is taken.';
@@ -41,6 +42,7 @@ export function messageFor(
   if (status === 400) {
     return firstValidationMessage(body) ?? 'Please check what you entered.';
   }
-  if (status === 429 || status >= 500) return 'The server is busy, please try again later.';
+  if (status === 429) return 'Too many attempts. Please wait a few minutes and try again.';
+  if (status >= 500) return 'The server is busy, please try again later.';
   return 'Something went wrong.';
 }

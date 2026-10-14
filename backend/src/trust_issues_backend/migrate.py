@@ -60,6 +60,7 @@ BASELINE_COLUMNS = {
 }
 BASELINE_INDEXES = {"best_runs": {"ix_best_runs_level_score"}}
 BASELINE_UNIQUE = {"users": {("username_key",)}, "best_runs": {("user_id", "level_id")}}
+LOCKOUT_COLUMNS = {"failed_logins", "locked_until"}
 
 
 def alembic_config(url: str) -> Config:
@@ -70,14 +71,18 @@ def alembic_config(url: str) -> Config:
     return config
 
 
-def _matches_baseline(sync: Connection) -> bool:
+def _adoptable_revision(sync: Connection) -> str | None:
+    """
+    The revision a database created from the models corresponds to: the baseline, or the
+    lockout revision when its columns are all there. None when the schema is incomplete.
+    """
     inspector = inspect(sync)
     for table, columns in BASELINE_COLUMNS.items():
         if columns - {column["name"] for column in inspector.get_columns(table)}:
-            return False
+            return None
         indexes = {index["name"] for index in inspector.get_indexes(table)}
         if BASELINE_INDEXES.get(table, set()) - indexes:
-            return False
+            return None
         unique = {tuple(item["column_names"]) for item in inspector.get_unique_constraints(table)}
         unique |= {
             tuple(index["column_names"])
@@ -85,25 +90,30 @@ def _matches_baseline(sync: Connection) -> bool:
             if index.get("unique")
         }
         if BASELINE_UNIQUE[table] - unique:
-            return False
-    return True
+            return None
+    present = LOCKOUT_COLUMNS & {column["name"] for column in inspector.get_columns("users")}
+    if not present:
+        return "0001"
+    return "0002" if present == LOCKOUT_COLUMNS else None
 
 
-async def _state(url: str) -> str:
-    """`managed`, `empty`, `legacy` (matches the baseline) or `outdated`."""
+async def _state(url: str) -> tuple[str, str | None]:
+    """`managed`, `empty`, `legacy` (with the revision it matches) or `outdated`."""
     engine = create_async_engine(url)
     try:
         async with engine.connect() as connection:
 
-            def inspect_schema(sync: Connection) -> str:
+            def inspect_schema(sync: Connection) -> tuple[str, str | None]:
                 tables = set(inspect(sync).get_table_names())
                 if "alembic_version" in tables:
-                    return "managed"
+                    return "managed", None
                 if not tables & {"users", "best_runs"}:
-                    return "empty"
-                if {"users", "best_runs"} <= tables and _matches_baseline(sync):
-                    return "legacy"
-                return "outdated"
+                    return "empty", None
+                if {"users", "best_runs"} <= tables:
+                    revision = _adoptable_revision(sync)
+                    if revision is not None:
+                        return "legacy", revision
+                return "outdated", None
 
             return await connection.run_sync(inspect_schema)
     finally:
@@ -116,15 +126,15 @@ def migrate(url: str) -> None:
     before migrations existed is adopted by marking it as the baseline; one that does not
     match the baseline is refused instead of being touched.
     """
-    state = asyncio.run(_state(url))
+    state, revision = asyncio.run(_state(url))
     config = alembic_config(url)
     if state == "outdated":
         raise OutdatedDatabaseError(
             "the database has tables from before migrations that do not match the baseline; "
             "recreate it or migrate it by hand"
         )
-    if state == "legacy":
-        command.stamp(config, "0001")
+    if state == "legacy" and revision is not None:
+        command.stamp(config, revision)
     command.upgrade(config, "head")
 
 
