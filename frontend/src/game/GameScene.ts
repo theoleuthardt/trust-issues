@@ -139,6 +139,7 @@ export class GameScene extends Phaser.Scene {
     this.phase = 0;
     this.previousTiles = undefined;
     this.knownDeaths = 0;
+    this.lastPosition = { x: this.state.x, y: this.state.y };
     this.tileEffects.clear();
     this.particles = [];
     this.stepper.reset();
@@ -199,8 +200,9 @@ export class GameScene extends Phaser.Scene {
     this.trackEffects(now);
     const g = this.world;
     g.clear();
+    this.renderHalo(g, now);
     this.renderTiles(g, now);
-    this.renderExit(g, now);
+    this.renderExit(g);
     this.renderParticles(g, now);
     this.renderPlayer(g);
     this.timeText.setText(formatTime(this.state.tick));
@@ -286,12 +288,16 @@ export class GameScene extends Phaser.Scene {
     g.fillTriangle(middle, apexY, right, baseY, middle, baseY);
   }
 
-  private renderExit(g: Phaser.GameObjects.Graphics, now: number): void {
+  private renderHalo(g: Phaser.GameObjects.Graphics, now: number): void {
+    const x = this.level.exit.x * TILE_SIZE + TILE_SIZE / 2;
+    const y = this.level.exit.y * TILE_SIZE + TILE_SIZE / 2;
+    g.fillStyle(colorNumber('paper'));
+    g.fillCircle(x, y, TILE_SIZE * 0.85 + Math.sin(now / 350) * 2);
+  }
+
+  private renderExit(g: Phaser.GameObjects.Graphics): void {
     const x = this.level.exit.x * TILE_SIZE;
     const y = this.level.exit.y * TILE_SIZE;
-    const halo = TILE_SIZE * 0.85 + Math.sin(now / 350) * 2;
-    g.fillStyle(colorNumber('paper'));
-    g.fillCircle(x + TILE_SIZE / 2, y + TILE_SIZE / 2, halo);
     g.fillStyle(colorNumber('ink'));
     g.fillRoundedRect(x + 4, y + 2, TILE_SIZE - 8, TILE_SIZE - 2, { tl: 12, tr: 12, bl: 0, br: 0 });
     g.fillStyle(colorNumber('paper'));
