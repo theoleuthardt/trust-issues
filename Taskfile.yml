@@ -84,6 +84,11 @@ tasks:
     cmds:
       - npm run build
 
+  levels:solve:
+    desc: Solve every level, write par times and reference solutions
+    cmds:
+      - npx tsx packages/sim/scripts/solve-levels.ts {{.CLI_ARGS}}
+
   smoke:
     desc: Start verifier and backend for real and submit a winning replay
     cmds:
