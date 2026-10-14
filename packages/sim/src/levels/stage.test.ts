@@ -12,6 +12,7 @@ import {
   sky,
   spikes,
   stage,
+  trap,
   vanish,
   wall,
 } from './stage';
@@ -162,5 +163,26 @@ describe('trap features', () => {
     const { traps } = stage([pop(5, 9), drop(12, 16), rise(20, 24, 2)]);
 
     expect(traps.map((trap) => trap.id)).toEqual(['t1', 't2', 't3']);
+  });
+});
+
+describe('trap', () => {
+  it('adds a trap with an explicit trigger rectangle', () => {
+    const { traps } = stage([trap('add_spikes', { x: 9, y: 9, width: 3, height: 3 }, [[14, 9]])]);
+
+    expect(traps).toEqual([
+      {
+        id: 't1',
+        trigger: { x: 9, y: 9, width: 3, height: 3 },
+        action: 'add_spikes',
+        tiles: [[14, 9]],
+      },
+    ]);
+  });
+
+  it('rejects tiles outside the stage', () => {
+    expect(() =>
+      stage([trap('add_tiles', { x: 0, y: 0, width: 1, height: 1 }, [[40, 2]])]),
+    ).toThrow(/outside/);
   });
 });

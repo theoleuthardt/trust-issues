@@ -1,4 +1,4 @@
-import type { StageDef, TrapAction, TrapDef } from '../level';
+import type { StageDef, TileRect, TrapAction, TrapDef } from '../level';
 
 /** Stages are authored on the canvas of the game: 32 x 18 tiles. */
 export const STAGE_WIDTH = 32;
@@ -25,7 +25,12 @@ function put(canvas: Canvas, x: number, y: number, char: string): void {
   row[x] = char;
 }
 
-function addTrap(canvas: Canvas, action: TrapAction, at: number, tiles: [number, number][]): void {
+function addTrap(
+  canvas: Canvas,
+  action: TrapAction,
+  at: number | TileRect,
+  tiles: [number, number][],
+): void {
   for (const [x, y] of tiles) {
     if (x < 0 || x >= STAGE_WIDTH || y < 0 || y >= STAGE_HEIGHT) {
       throw new Error(`trap tile ${x},${y} is outside the stage`);
@@ -33,12 +38,15 @@ function addTrap(canvas: Canvas, action: TrapAction, at: number, tiles: [number,
   }
   canvas.traps.push({
     id: `t${canvas.traps.length + 1}`,
-    trigger: {
-      x: at,
-      y: FLOOR_ROW - TRIGGER_HEIGHT + 1,
-      width: TRIGGER_WIDTH,
-      height: TRIGGER_HEIGHT,
-    },
+    trigger:
+      typeof at === 'number'
+        ? {
+            x: at,
+            y: FLOOR_ROW - TRIGGER_HEIGHT + 1,
+            width: TRIGGER_WIDTH,
+            height: TRIGGER_HEIGHT,
+          }
+        : at,
     action,
     tiles,
   });
@@ -114,6 +122,16 @@ export const rise =
       at,
       Array.from({ length: height }, (_, i): [number, number] => [x, FLOOR_ROW - height + 1 + i]),
     );
+  };
+
+/**
+ * A trap with an explicit trigger rectangle (in tiles), for traps that belong to a platform
+ * rather than to the floor.
+ */
+export const trap =
+  (action: TrapAction, trigger: TileRect, tiles: [number, number][]): Feature =>
+  (canvas) => {
+    addTrap(canvas, action, trigger, tiles);
   };
 
 /** A spike appears in mid-air at (`x`, `y`) once the player reaches `at`. */
