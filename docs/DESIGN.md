@@ -4,6 +4,19 @@ The look recalls the stripped-down clarity of _Level Devil_: flat shapes, no gra
 screen, instantly readable hazards. The identity is its own, a night sky with sticker-like
 characters: "Dusk Sticker".
 
+## Screenshots
+
+Start of level 1 (desktop), and a moment later: the spike popped out of the ground.
+
+![Start of level 1](images/start.png)
+![Running, trap fired](images/running.png)
+
+Touch mode on a phone in landscape (`?touch=1`):
+
+![Touch controls](images/touch.png)
+
+![Palette](images/palette.png)
+
 ## Principles
 
 - **Readability first.** Solid ground, hazards, the player and the exit must be told apart
