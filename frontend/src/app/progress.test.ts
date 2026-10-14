@@ -94,6 +94,38 @@ describe('levelCards', () => {
   });
 });
 
+describe('ProgressStore with replays and keys', () => {
+  it('keeps the replay of the best run', () => {
+    const store = new ProgressStore(new MemoryStorage());
+    store.record('a', { ...run(900), replay: [2, 60] });
+
+    expect(store.load()).toEqual({ a: { ...run(900), replay: [2, 60] } });
+  });
+
+  it('keeps progress of different keys apart and can clear one', () => {
+    const storage = new MemoryStorage();
+    const guest = new ProgressStore(storage);
+    const account = new ProgressStore(storage, 'user.mallory');
+    guest.record('a', run(900));
+    account.record('b', run(800));
+
+    expect(guest.load()).toEqual({ a: run(900) });
+    expect(account.load()).toEqual({ b: run(800) });
+
+    guest.clear();
+
+    expect(guest.load()).toEqual({});
+    expect(account.load()).toEqual({ b: run(800) });
+  });
+
+  it('ignores a damaged replay but keeps the result', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(PROGRESS_KEY, JSON.stringify({ a: { ...run(900), replay: 'nope' } }));
+
+    expect(new ProgressStore(storage).load()).toEqual({ a: run(900) });
+  });
+});
+
 describe('ProgressStore', () => {
   it('starts empty', () => {
     expect(new ProgressStore(new MemoryStorage()).load()).toEqual({});

@@ -15,6 +15,13 @@ export interface User {
   username: string;
 }
 
+export interface ServerRun {
+  levelId: string;
+  score: number;
+  frames: number;
+  deaths: number;
+}
+
 export interface RunResult {
   frames: number;
   deaths: number;
@@ -45,6 +52,19 @@ export class ApiClient {
 
   me(): Promise<User> {
     return this.request<User>('GET', '/auth/me');
+  }
+
+  /** The best verified run of the signed-in player on every level they cleared. */
+  async progress(): Promise<ServerRun[]> {
+    const rows = await this.request<
+      { level_id: string; score: number; frames: number; deaths: number }[]
+    >('GET', '/progress', undefined, 'run');
+    return rows.map((row) => ({
+      levelId: row.level_id,
+      score: row.score,
+      frames: row.frames,
+      deaths: row.deaths,
+    }));
   }
 
   /** Sends a recorded run; the server replays it and answers with what it derived. */
