@@ -70,6 +70,7 @@ the Vite proxy.
 | Move        | `←` `→` or `A` `D`  | on-screen arrows    |
 | Jump        | `Space`, `↑` or `W` | on-screen jump      |
 | Restart run | `R`                 | tap after finishing |
+| Next level  | `Enter`             | tap after finishing |
 
 Touch controls show up on touch devices automatically; force them with `?touch=1` or hide
 them with `?touch=0`.

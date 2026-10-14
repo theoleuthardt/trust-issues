@@ -27,6 +27,7 @@ import {
 } from './effects';
 import type { Particle } from './effects';
 import { advancePhase, figurePose, legFoot } from './figure';
+import { nextLevel, stageDots } from './progress';
 import { PALETTE, colorNumber } from '../theme';
 
 export const SCENE_KEY = 'game';
@@ -43,7 +44,8 @@ export interface RunFinishedEvent {
 }
 
 export interface GameSceneData {
-  level: Level;
+  levels: readonly Level[];
+  startIndex: number;
   input: InputState;
 }
 
@@ -55,6 +57,9 @@ const LEG_WIDTH = 5;
 const LEG_SPACING = 4;
 const HUD_FONT = { fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: '20px' };
 const MAX_TICKS_PER_FRAME = 5;
+const DOT_SIZE = 10;
+const DOT_GAP = 8;
+const DOT_TOP = 46;
 const DEATH_PARTICLES = 10;
 const SKYLINE = [3, 5, 2, 4, 6, 3, 5, 2, 4, 3, 6, 2, 5, 4, 3, 6];
 
@@ -69,7 +74,9 @@ interface LiveParticle {
 }
 
 export class GameScene extends Phaser.Scene {
+  private levels: readonly Level[] = [];
   private level!: Level;
+  private levelText!: Phaser.GameObjects.Text;
   private controls!: InputState;
   private state!: GameState;
   private recorded: number[] = [];
@@ -96,15 +103,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   init(data: GameSceneData): void {
-    this.level = data.level;
+    this.levels = data.levels;
+    this.level = data.levels[data.startIndex] ?? (data.levels[0] as Level);
     this.controls = data.input;
   }
 
   create(): void {
     this.drawBackground();
     this.world = this.add.graphics();
-    this.add
-      .text(this.scale.width / 2, 14, this.level.name, {
+    this.levelText = this.add
+      .text(this.scale.width / 2, 14, this.levelTitle(), {
         ...HUD_FONT,
         color: PALETTE.inkSoft,
       })
@@ -115,8 +123,11 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(1, 0);
 
     this.input.keyboard?.on('keydown-R', () => this.restart());
+    this.input.keyboard?.on('keydown-ENTER', () => {
+      if (this.state.finished) this.advance();
+    });
     this.input.on('pointerdown', () => {
-      if (this.state.finished) this.restart();
+      if (this.state.finished) this.advance();
     });
     this.restart();
   }
@@ -136,6 +147,33 @@ export class GameScene extends Phaser.Scene {
       else if (this.state.tick >= this.level.maxFrames) this.restart();
     }
     this.render();
+  }
+
+  /** Fades a short text in the upper middle of the screen; render only. */
+  private announce(text: string): void {
+    const label = this.add
+      .text(this.scale.width / 2, 92, text, { ...HUD_FONT, fontSize: '32px', color: PALETTE.ink })
+      .setOrigin(0.5, 0);
+    this.tweens.add({
+      targets: label,
+      alpha: 0,
+      y: 78,
+      duration: 900,
+      ease: 'Quad.easeIn',
+      onComplete: () => label.destroy(),
+    });
+  }
+
+  private levelTitle(): string {
+    return `${this.levels.indexOf(this.level) + 1}. ${this.level.name}`;
+  }
+
+  /** After a finished level: the next level, or the first one again after the last. */
+  private advance(): void {
+    const next = nextLevel(this.levels, this.level.id) ?? this.levels[0];
+    if (next) this.level = next;
+    this.levelText.setText(this.levelTitle());
+    this.restart();
   }
 
   private restart(): void {
@@ -162,8 +200,9 @@ export class GameScene extends Phaser.Scene {
     const shade = this.add
       .rectangle(0, 0, width, height, colorNumber('paper'), 0.88)
       .setOrigin(0, 0);
+    const next = nextLevel(this.levels, this.level.id);
     const title = this.add
-      .text(width / 2, height / 2 - 70, 'Cleared. Somehow.', {
+      .text(width / 2, height / 2 - 70, next ? 'Cleared. Somehow.' : 'That was the last one.', {
         ...HUD_FONT,
         fontSize: '44px',
         color: PALETTE.ink,
@@ -182,10 +221,17 @@ export class GameScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
     const hint = this.add
-      .text(width / 2, height / 2 + 70, 'Press R or tap to try again', {
-        ...HUD_FONT,
-        color: PALETTE.inkSoft,
-      })
+      .text(
+        width / 2,
+        height / 2 + 70,
+        next
+          ? 'Enter or tap: next level   ·   R: try again'
+          : 'Enter or tap: start over   ·   R: try again',
+        {
+          ...HUD_FONT,
+          color: PALETTE.inkSoft,
+        },
+      )
       .setOrigin(0.5);
     this.overlay = [shade, title, summary, hint];
 
@@ -221,12 +267,14 @@ export class GameScene extends Phaser.Scene {
     this.renderExit(g);
     this.renderParticles(g, now);
     this.renderPlayer(g);
+    this.renderStageDots(g);
     this.timeText.setText(formatTime(this.state.tick));
     this.deathText.setText(`Deaths ${this.state.deaths}`);
   }
 
   private trackEffects(now: number): void {
     if (this.state.stage !== this.knownStage) {
+      this.announce(`Stage ${this.state.stage + 1}`);
       this.knownStage = this.state.stage;
       this.knownDeaths = this.state.deaths;
       this.tileEffects.clear();
@@ -331,6 +379,22 @@ export class GameScene extends Phaser.Scene {
       g.fillStyle(colorNumber('ink'), at.alpha);
       g.fillRect(at.x - 2, at.y - 2, 4, 4);
       return true;
+    });
+  }
+
+  private renderStageDots(g: Phaser.GameObjects.Graphics): void {
+    const dots = stageDots(this.state.stage, this.level.stages.length);
+    const total = dots.length * DOT_SIZE + (dots.length - 1) * DOT_GAP;
+    const left = (this.scale.width - total) / 2;
+    dots.forEach((dot, index) => {
+      const x = left + index * (DOT_SIZE + DOT_GAP);
+      if (dot === 'todo') {
+        g.lineStyle(2, colorNumber('ink'));
+        g.strokeRect(x + 1, DOT_TOP + 1, DOT_SIZE - 2, DOT_SIZE - 2);
+      } else {
+        g.fillStyle(colorNumber('ink'));
+        g.fillRect(x, DOT_TOP, DOT_SIZE, DOT_SIZE);
+      }
     });
   }
 

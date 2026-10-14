@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { LEVELS } from '@trust-issues/sim';
 import { GameScene, SCENE_KEY } from './game/GameScene';
+import { startIndex } from './game/progress';
 import { InputState } from './input/InputState';
 import './style.css';
 import { PALETTE, applyPaletteToCss } from './theme';
@@ -13,8 +14,7 @@ const TILE_PX = 32;
 
 applyPaletteToCss(document.documentElement);
 
-const level = LEVELS[0];
-if (!level) throw new Error('no levels defined');
+if (LEVELS.length === 0) throw new Error('no levels defined');
 
 const input = new InputState();
 
@@ -41,7 +41,12 @@ const game = new Phaser.Game({
   backgroundColor: PALETTE.paper,
   banner: false,
   audio: { noAudio: true },
+  fps: { smoothStep: false },
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   scene: [],
 });
-game.scene.add(SCENE_KEY, GameScene, true, { level, input });
+game.scene.add(SCENE_KEY, GameScene, true, {
+  levels: LEVELS,
+  startIndex: startIndex(LEVELS, window.location.search),
+  input,
+});

@@ -43,15 +43,15 @@ to the colour they shade.
 
 ## Elements
 
-| Element       | Drawing                                                                 |
-| ------------- | ----------------------------------------------------------------------- |
-| Background    | Paper with a quiet skyline of distant blocks in the shade colour        |
-| Solid tile    | Ink square with a faint seam; a soft edge on the surface that is walked |
-| Spike         | Accent triangle with a darker facet                                     |
-| Exit          | Ink arch with a paper opening inside a paper halo that breathes         |
-| Player        | Faceless ink silhouette: head block, torso block, two short legs        |
-| HUD           | Time left, level name middle, deaths right, monospace                   |
-| Finish screen | Paper veil, ink title, ink time and deaths, soft hint                   |
+| Element       | Drawing                                                                                             |
+| ------------- | --------------------------------------------------------------------------------------------------- |
+| Background    | Paper with a quiet skyline of distant blocks in the shade colour                                    |
+| Solid tile    | Ink square with a faint seam; a soft edge on the surface that is walked                             |
+| Spike         | Accent triangle with a darker facet                                                                 |
+| Exit          | Ink arch with a paper opening inside a paper halo that breathes                                     |
+| Player        | Faceless ink silhouette: head block, torso block, two short legs                                    |
+| HUD           | Time left, level number and name middle with one square per stage below it, deaths right, monospace |
+| Finish screen | Paper veil, ink title, ink time and deaths, soft hint                                               |
 
 ## The figure
 

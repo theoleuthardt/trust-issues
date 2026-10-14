@@ -1,3 +1,5 @@
+const ROUNDING_TOLERANCE = 1e-6;
+
 /**
  * Converts variable frame deltas into whole simulation ticks. Rendering speed never changes
  * the simulation: one tick is always one replay entry. After a long stall the backlog is
@@ -13,12 +15,12 @@ export class FixedStepper {
 
   advance(deltaMs: number): number {
     this.accumulated += Math.max(0, deltaMs);
-    const ticks = Math.floor(this.accumulated / this.tickMs);
+    const ticks = Math.floor(this.accumulated / this.tickMs + ROUNDING_TOLERANCE);
     if (ticks > this.maxTicksPerFrame) {
       this.accumulated = 0;
       return this.maxTicksPerFrame;
     }
-    this.accumulated -= ticks * this.tickMs;
+    this.accumulated = Math.max(0, this.accumulated - ticks * this.tickMs);
     return ticks;
   }
 
