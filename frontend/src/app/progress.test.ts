@@ -130,6 +130,24 @@ describe('ProgressStore', () => {
     expect(store.load()).toEqual({ a: run(900) });
   });
 
+  it('does not overwrite saved progress when only reading failed', () => {
+    const writes: string[] = [];
+    const flaky = {
+      getItem: (): string | null => {
+        throw new Error('denied');
+      },
+      setItem: (_key: string, value: string): void => {
+        writes.push(value);
+      },
+    };
+    const store = new ProgressStore(flaky);
+
+    store.record('a', run(900));
+
+    expect(writes).toEqual([]);
+    expect(store.load()).toEqual({ a: run(900) });
+  });
+
   it('ignores damaged or foreign data', () => {
     const storage = new MemoryStorage();
     storage.setItem(PROGRESS_KEY, '{not json');

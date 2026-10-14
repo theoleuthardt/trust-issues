@@ -75,6 +75,7 @@ the Vite proxy.
 | Menu        | `Esc`               | -                   |
 | Next level  | `Enter`             | tap after finishing |
 
+`?level=<id>` starts a level directly (handy for testing, it ignores the unlock order).
 Touch controls show up on touch devices automatically; force them with `?touch=1` or hide
 them with `?touch=0`.
 

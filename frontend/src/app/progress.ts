@@ -89,14 +89,18 @@ type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
  */
 export class ProgressStore {
   private memory: Progress | undefined;
+  private unreadable = false;
 
   constructor(private readonly storage: StorageLike) {}
 
   load(): Progress {
     if (this.memory) return this.memory;
     try {
-      return this.parse(this.storage.getItem(PROGRESS_KEY));
+      const progress = this.parse(this.storage.getItem(PROGRESS_KEY));
+      this.unreadable = false;
+      return progress;
     } catch {
+      this.unreadable = true;
       return {};
     }
   }
@@ -104,6 +108,7 @@ export class ProgressStore {
   record(levelId: string, run: RunRecord): Progress {
     const next = recordRun(this.load(), levelId, run);
     this.memory = next;
+    if (this.unreadable) return next;
     try {
       this.storage.setItem(PROGRESS_KEY, JSON.stringify(next));
       this.memory = undefined;

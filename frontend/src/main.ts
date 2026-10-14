@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { LEVELS } from '@trust-issues/sim';
 import { ProgressStore, firstOpenIndex, levelCards } from './app/progress';
+import { memoryStorage } from './app/storage';
+import type { StorageLike } from './app/storage';
 import { levelSelect, mainMenu, titleScreen } from './app/screens';
 import { GameScene, SCENE_KEY } from './game/GameScene';
 import type { RunFinishedEvent } from './game/GameScene';
@@ -47,11 +49,11 @@ if (shouldShowTouchControls(window.location.search, coarse)) {
   mountTouchControls(document.body, input, leaveLevel);
 }
 
-function browserStorage(): Pick<Storage, 'getItem' | 'setItem'> {
+function browserStorage(): StorageLike {
   try {
     return window.localStorage;
   } catch {
-    return { getItem: () => null, setItem: () => undefined };
+    return memoryStorage();
   }
 }
 
@@ -76,6 +78,7 @@ function show(screen: Screen, element: HTMLElement): void {
   setScreen(screen);
   ui?.replaceChildren(element);
   if (ui) ui.hidden = false;
+  element.querySelector<HTMLElement>('input, button:not(:disabled)')?.focus();
 }
 
 function showTitle(): void {
