@@ -1,8 +1,9 @@
-/** The best result of a player on one level. */
+/** The best result of a player on one level; the replay is kept to be sent after signing in. */
 export interface RunRecord {
   score: number;
   frames: number;
   deaths: number;
+  replay?: number[];
 }
 
 export type Progress = Readonly<Record<string, RunRecord>>;
@@ -26,6 +27,11 @@ interface LevelInfo {
 }
 
 export const PROGRESS_KEY = 'trust-issues.progress.v1';
+
+/** Storage key of a signed-in player's progress; usernames are case-insensitive. */
+export function accountKey(username: string): string {
+  return `${PROGRESS_KEY}.${username.trim().toLowerCase()}`;
+}
 
 function isBetter(candidate: RunRecord, current: RunRecord): boolean {
   if (candidate.score !== current.score) return candidate.score > current.score;
@@ -80,6 +86,13 @@ function isRunRecord(value: unknown): value is RunRecord {
   return ['score', 'frames', 'deaths'].every((key) => Number.isFinite(record[key]));
 }
 
+function replayOf(value: unknown): number[] | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const replay = (value as Record<string, unknown>).replay;
+  if (!Array.isArray(replay)) return undefined;
+  return replay.every((entry) => Number.isInteger(entry)) ? (replay as number[]) : undefined;
+}
+
 type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
 
 /**
@@ -91,12 +104,15 @@ export class ProgressStore {
   private memory: Progress | undefined;
   private unreadable = false;
 
-  constructor(private readonly storage: StorageLike) {}
+  constructor(
+    private readonly storage: StorageLike,
+    private readonly key: string = PROGRESS_KEY,
+  ) {}
 
   load(): Progress {
     if (this.memory) return this.memory;
     try {
-      const progress = this.parse(this.storage.getItem(PROGRESS_KEY));
+      const progress = this.parse(this.storage.getItem(this.key));
       this.unreadable = false;
       return progress;
     } catch {
@@ -110,12 +126,24 @@ export class ProgressStore {
     this.memory = next;
     if (this.unreadable) return next;
     try {
-      this.storage.setItem(PROGRESS_KEY, JSON.stringify(next));
+      this.storage.setItem(this.key, JSON.stringify(next));
       this.memory = undefined;
     } catch {
       return next;
     }
     return next;
+  }
+
+  /** Forgets all progress under this key, for example after it was merged into an account. */
+  clear(): void {
+    this.memory = {};
+    if (this.unreadable) return;
+    try {
+      this.storage.setItem(this.key, '{}');
+      this.memory = undefined;
+    } catch {
+      return;
+    }
   }
 
   private parse(raw: string | null): Progress {
@@ -126,7 +154,13 @@ export class ProgressStore {
       const progress: Record<string, RunRecord> = {};
       for (const [id, value] of Object.entries(parsed)) {
         if (isRunRecord(value)) {
-          progress[id] = { score: value.score, frames: value.frames, deaths: value.deaths };
+          const replay = replayOf(value);
+          progress[id] = {
+            score: value.score,
+            frames: value.frames,
+            deaths: value.deaths,
+            ...(replay ? { replay } : {}),
+          };
         }
       }
       return progress;

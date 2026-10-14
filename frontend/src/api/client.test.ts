@@ -105,6 +105,24 @@ describe('ApiClient', () => {
     });
   });
 
+  it('loads the progress of the player', async () => {
+    const { fetchFn, calls } = fakeFetch(200, [
+      {
+        level_id: 'trust-nothing',
+        score: 993,
+        frames: 909,
+        deaths: 0,
+        completed_at: '2026-10-15T00:00:00Z',
+      },
+    ]);
+    const client = new ApiClient(fetchFn, () => 'tok');
+
+    const progress = await client.progress();
+
+    expect(progress).toEqual([{ levelId: 'trust-nothing', score: 993, frames: 909, deaths: 0 }]);
+    expect(calls[0]?.url).toBe('/api/progress');
+  });
+
   it('turns a failure while reading the body into an ApiError', async () => {
     const broken = {
       ok: true,

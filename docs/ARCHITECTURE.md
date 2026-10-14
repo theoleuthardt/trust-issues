@@ -73,6 +73,15 @@ with Alembic are planned (see the backend epic on the board).
 
 The OpenAPI schema is served at `/schema` only when `ENABLE_DOCS=true`.
 
+## Progress
+
+Progress is the best verified run per level. A guest's progress and replays live in the
+browser. After signing in or registering, the game loads `GET /api/progress`, sends the guest
+runs that beat what the server has (the server verifies them like any other run) and moves
+all guest progress into a store kept per account (`trust-issues.progress.v1.<username>`), so a
+second device or a fresh browser starts from the server's state. If the server cannot be
+reached, nothing is changed and the sync runs again at the next start.
+
 ## Client session
 
 The game keeps the access token in `localStorage` (or in memory when the browser refuses

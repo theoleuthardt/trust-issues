@@ -4,7 +4,8 @@ import { ApiClient, ApiError } from './api/client';
 import type { AuthMode } from './api/credentials';
 import { validateCredentials } from './api/credentials';
 import { SessionStore } from './api/session';
-import { ProgressStore, firstOpenIndex, levelCards } from './app/progress';
+import { syncAccount } from './app/accountSync';
+import { ProgressStore, accountKey, firstOpenIndex, levelCards } from './app/progress';
 import { authScreen, levelSelect, mainMenu, titleScreen } from './app/screens';
 import { memoryStorage } from './app/storage';
 import { RunSubmitter } from './app/submitter';
@@ -33,7 +34,8 @@ if (!ui) throw new Error('missing #ui container');
 
 const input = new InputState();
 const storage = browserStorage();
-const store = new ProgressStore(storage);
+const guestStore = new ProgressStore(storage);
+const accountStores = new Map<string, ProgressStore>();
 const sessions = new SessionStore(storage);
 const api = new ApiClient(
   (...args) => window.fetch(...args),
@@ -66,6 +68,33 @@ function browserStorage(): StorageLike {
   } catch {
     return memoryStorage();
   }
+}
+
+function storeFor(username: string): ProgressStore {
+  const key = accountKey(username);
+  let store = accountStores.get(key);
+  if (!store) {
+    store = new ProgressStore(storage, key);
+    accountStores.set(key, store);
+  }
+  return store;
+}
+
+/** The progress of the signed-in player, or the guest progress of this browser. */
+function currentStore(): ProgressStore {
+  const username = sessions.current()?.username;
+  return username ? storeFor(username) : guestStore;
+}
+
+async function syncProgress(): Promise<void> {
+  const username = sessions.current()?.username;
+  if (!username) return;
+  await syncAccount({
+    fetchServer: () => api.progress(),
+    submit: (levelId, replay) => api.submitRun(levelId, replay),
+    guest: guestStore,
+    account: storeFor(username),
+  });
 }
 
 function createGame(): Phaser.Game {
@@ -127,6 +156,7 @@ function showAuth(mode: AuthMode, notice?: string): void {
             registered = true;
           }
           sessions.save(await api.login(name, password), name);
+          await syncProgress();
           showMenu();
           return undefined;
         } catch (error) {
@@ -142,7 +172,7 @@ function showAuth(mode: AuthMode, notice?: string): void {
 }
 
 function showMenu(): void {
-  const progress = store.load();
+  const progress = currentStore().load();
   const next = firstOpenIndex(LEVELS, progress);
   const started = Object.keys(progress).length > 0;
   const account = sessions.current();
@@ -159,7 +189,7 @@ function showMenu(): void {
 }
 
 function showLevels(): void {
-  show('levels', levelSelect(levelCards(LEVELS, store.load()), startLevel, showMenu));
+  show('levels', levelSelect(levelCards(LEVELS, currentStore().load()), startLevel, showMenu));
 }
 
 const submitter = new RunSubmitter({
@@ -185,10 +215,11 @@ function startLevel(index: number): void {
     startIndex: index,
     input,
     onFinished: (event: RunFinishedEvent) => {
-      store.record(event.levelId, {
+      currentStore().record(event.levelId, {
         score: event.score,
         frames: event.frames,
         deaths: event.deaths,
+        replay: event.replay,
       });
       void submitter.send(event);
     },
@@ -202,6 +233,8 @@ function leaveLevel(): void {
   game?.scene.stop(SCENE_KEY);
   showLevels();
 }
+
+void syncProgress();
 
 if (new URLSearchParams(window.location.search).has('level')) {
   startLevel(startIndex(LEVELS, window.location.search));
