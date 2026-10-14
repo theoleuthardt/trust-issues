@@ -28,16 +28,17 @@ async def _store_if_best(
     replay: list[int],
     run: VerifiedRun,
 ) -> tuple[BestRun, bool]:
-    """Keeps the fastest run per user and level; returns the stored best and whether it is new."""
+    """Keeps the best-scoring run per user and level; returns it and whether it is new."""
     best = await session.scalar(
         select(BestRun).where(BestRun.user_id == user_id, BestRun.level_id == level_id)
     )
-    if best is not None and best.frames <= run.frames:
+    if best is not None and (best.score, -best.frames) >= (run.score, -run.frames):
         return best, False
 
     if best is None:
         best = BestRun(user_id=user_id, level_id=level_id)
         session.add(best)
+    best.score = run.score
     best.frames = run.frames
     best.deaths = run.deaths
     best.replay = replay
@@ -82,14 +83,20 @@ async def submit_run(
         .where(
             BestRun.level_id == data.level_id,
             or_(
-                BestRun.frames < best.frames,
-                and_(BestRun.frames == best.frames, BestRun.submitted_at < best.submitted_at),
+                BestRun.score > best.score,
+                and_(BestRun.score == best.score, BestRun.frames < best.frames),
+                and_(
+                    BestRun.score == best.score,
+                    BestRun.frames == best.frames,
+                    BestRun.submitted_at < best.submitted_at,
+                ),
             ),
         )
     )
     return RunResponse(
         frames=run.frames,
         deaths=run.deaths,
+        score=run.score,
         personal_best=personal_best,
         rank=(faster or 0) + 1,
     )

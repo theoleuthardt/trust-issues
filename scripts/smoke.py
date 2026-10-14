@@ -42,6 +42,7 @@ def main() -> None:
     status, body = call("POST", f"{base}/api/runs", {"level_id": "trust-nothing", "replay": replay}, token)
     expect("winning replay is accepted", status, 201)
     expect("rank", body["rank"], 1)
+    expect("score at par", body["score"], 1000)
     print(f"     {body['frames']} frames, {body['deaths']} deaths")
 
     status, body = call("GET", f"{base}/api/leaderboard/trust-nothing")

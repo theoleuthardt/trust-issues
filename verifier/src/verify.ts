@@ -1,8 +1,9 @@
-import { ReplayError, decodeReplay, getLevel, simulate } from '@trust-issues/sim';
+import { ReplayError, decodeReplay, getLevel, scoreRun, simulate } from '@trust-issues/sim';
 import type { RunResult } from '@trust-issues/sim';
 
 export type VerifyOutcome =
-  { status: 200; body: RunResult } | { status: 400 | 404; body: { error: string } };
+  | { status: 200; body: RunResult & { score: number } }
+  | { status: 400 | 404; body: { error: string } };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -26,7 +27,9 @@ export function verifyRun(body: unknown): VerifyOutcome {
 
   try {
     const inputs = decodeReplay(replay as number[], level.maxFrames);
-    return { status: 200, body: simulate(level, inputs) };
+    const result = simulate(level, inputs);
+    const score = result.finished ? scoreRun(level.parFrames, result) : 0;
+    return { status: 200, body: { ...result, score } };
   } catch (error) {
     if (error instanceof ReplayError) return { status: 400, body: { error: error.message } };
     throw error;

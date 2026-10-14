@@ -20,6 +20,7 @@ const level = (rows: string[], traps: TrapDef[] = []) =>
     name: 't',
     stages: [{ rows, traps }],
     maxFrames: 3600,
+    parFrames: 100,
   } satisfies LevelDef);
 
 const multiStage = (stages: { rows: string[]; traps?: TrapDef[] }[]) =>
@@ -28,6 +29,7 @@ const multiStage = (stages: { rows: string[]; traps?: TrapDef[] }[]) =>
     name: 't',
     stages: stages.map(({ rows, traps }) => ({ rows, traps: traps ?? [] })),
     maxFrames: 3600,
+    parFrames: 100,
   } satisfies LevelDef);
 
 const FLAT = ['..........', '.S......E.', '##########'];

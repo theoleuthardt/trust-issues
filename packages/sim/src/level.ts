@@ -36,6 +36,8 @@ export interface LevelDef {
   name: string;
   stages: readonly StageDef[];
   maxFrames: number;
+  /** Reference time in frames that scores the par score; equals the recorded reference solution. */
+  parFrames: number;
 }
 
 /** Parsed, validated stage. `tiles` is the initial row-major tile grid. */
@@ -54,6 +56,7 @@ export interface Level {
   name: string;
   stages: readonly Stage[];
   maxFrames: number;
+  parFrames: number;
 }
 
 /** Most stages one level may have. */
@@ -126,6 +129,9 @@ export function buildLevel(def: LevelDef): Level {
   if (!Number.isInteger(def.maxFrames) || def.maxFrames <= 0) {
     throw new Error(`level ${def.id}: maxFrames must be a positive integer`);
   }
+  if (!Number.isInteger(def.parFrames) || def.parFrames <= 0 || def.parFrames > def.maxFrames) {
+    throw new Error(`level ${def.id}: parFrames must be a positive integer within maxFrames`);
+  }
   if (!Array.isArray(def.stages) || def.stages.length < 1) {
     throw new Error(`level ${def.id}: at least one stage required`);
   }
@@ -141,7 +147,13 @@ export function buildLevel(def: LevelDef): Level {
     }
   });
 
-  return { id: def.id, name: def.name, stages, maxFrames: def.maxFrames };
+  return {
+    id: def.id,
+    name: def.name,
+    stages,
+    maxFrames: def.maxFrames,
+    parFrames: def.parFrames,
+  };
 }
 
 /** Returns the stage at `index`; throws when the level has no such stage. */

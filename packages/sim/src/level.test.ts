@@ -21,6 +21,7 @@ const def = (overrides: Partial<LevelDef> = {}): LevelDef => ({
   name: 'Test',
   stages: [stageDef()],
   maxFrames: 600,
+  parFrames: 120,
   ...overrides,
 });
 
@@ -94,6 +95,19 @@ describe('buildLevel', () => {
     );
   });
 
+  it('requires a positive integer par time', () => {
+    expect(() => buildLevel(def({ parFrames: 0 }))).toThrow(/parFrames/);
+    expect(() => buildLevel(def({ parFrames: 2.5 }))).toThrow(/parFrames/);
+  });
+
+  it('requires the par time to fit into the frame budget', () => {
+    expect(() => buildLevel(def({ parFrames: 601 }))).toThrow(/parFrames/);
+  });
+
+  it('keeps the par time on the built level', () => {
+    expect(buildLevel(def()).parFrames).toBe(120);
+  });
+
   it('requires a positive integer frame budget', () => {
     expect(() => buildLevel(def({ maxFrames: 0 }))).toThrow(/maxFrames/);
     expect(() => buildLevel(def({ maxFrames: 1.5 }))).toThrow(/maxFrames/);
@@ -113,7 +127,14 @@ describe('stages', () => {
   });
 
   it('names the problem when a level is still written in the old single-stage format', () => {
-    const legacy = { id: 'old', name: 'Old', rows: ['.S.E', '####'], traps: [], maxFrames: 100 };
+    const legacy = {
+      id: 'old',
+      name: 'Old',
+      rows: ['.S.E', '####'],
+      traps: [],
+      maxFrames: 100,
+      parFrames: 50,
+    };
 
     expect(() => buildLevel(legacy as unknown as LevelDef)).toThrow(/stage/);
   });

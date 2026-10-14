@@ -18,7 +18,7 @@ class FakeVerifier:
     """Verifier double: answers with `next` (a result or an exception to raise)."""
 
     next: VerifiedRun | Exception = field(
-        default_factory=lambda: VerifiedRun(finished=True, frames=300, deaths=0)
+        default_factory=lambda: VerifiedRun(finished=True, frames=300, deaths=0, score=1000)
     )
     calls: list[tuple[str, list[int]]] = field(default_factory=list)
 

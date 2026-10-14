@@ -38,7 +38,12 @@ describe('verifier server', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ finished: true, frames: 290, deaths: 0 });
+    expect(await response.json()).toEqual({
+      finished: true,
+      frames: 290,
+      deaths: 0,
+      score: 1000,
+    });
   });
 
   it('rejects a missing or wrong token', async () => {

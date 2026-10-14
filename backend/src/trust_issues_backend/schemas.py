@@ -41,6 +41,7 @@ class RunSubmission(Struct):
 class RunResponse(Struct):
     frames: int
     deaths: int
+    score: int
     personal_best: bool
     rank: int
 
@@ -48,12 +49,14 @@ class RunResponse(Struct):
 class LeaderboardEntry(Struct):
     rank: int
     username: str
+    score: int
     frames: int
     deaths: int
 
 
 class ProgressEntry(Struct):
     level_id: str
+    score: int
     frames: int
     deaths: int
     completed_at: datetime

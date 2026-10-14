@@ -11,14 +11,17 @@ describe('verifyRun', () => {
 
     expect(outcome).toEqual({
       status: 200,
-      body: { finished: true, frames: 290, deaths: 0 },
+      body: { finished: true, frames: 290, deaths: 0, score: 1000 },
     });
   });
 
   it('reports an unfinished run as not finished', () => {
     const outcome = verifyRun({ levelId: 'trust-nothing', replay: [Input.Right, 30] });
 
-    expect(outcome).toEqual({ status: 200, body: { finished: false, frames: 30, deaths: 0 } });
+    expect(outcome).toEqual({
+      status: 200,
+      body: { finished: false, frames: 30, deaths: 0, score: 0 },
+    });
   });
 
   it('answers 404 for an unknown level', () => {
