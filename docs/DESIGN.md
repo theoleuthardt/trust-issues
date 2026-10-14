@@ -33,7 +33,7 @@ The single source of truth is `frontend/src/theme.ts`. It feeds Phaser (as numbe
 | Ink          | `ink`        | `#14141c`   | Solid tiles, player, door, main text   |
 | Ink seam     | `inkLift`    | `#262633`   | Seams between tiles                    |
 | Soft ink     | `inkSoft`    | `#6b675c`   | Surface edge of the ground, level name |
-| Accent       | `accent`     | `#ff3d2e`   | Spikes and the finish title            |
+| Accent       | `accent`     | `#ff3d2e`   | Spikes                                 |
 | Accent shade | `accentDark` | `#c92a1d`   | Shaded facet of a spike                |
 | Touch panel  | `panel`      | `#f4f1eacc` | Background of the on-screen buttons    |
 
@@ -51,7 +51,7 @@ to the colour they shade.
 | Exit          | Ink arch with a paper opening inside a paper halo that breathes         |
 | Player        | Faceless ink silhouette: head block, torso block, two short legs        |
 | HUD           | Time left, level name middle, deaths right, monospace                   |
-| Finish screen | Paper veil, accent title, ink time and deaths, soft hint                |
+| Finish screen | Paper veil, ink title, ink time and deaths, soft hint                   |
 
 ## The figure
 
@@ -83,4 +83,4 @@ ink ring. Pressed buttons invert to ink. Touch controls appear on touch devices 
 
 Change colours in `theme.ts` only. Drawing code uses `colorNumber('<role>')`, CSS uses
 `var(--ti-<role>)`. Hard-coded colours in components are a review finding, and so is a
-seventh colour.
+ninth colour.

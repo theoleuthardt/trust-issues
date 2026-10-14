@@ -156,7 +156,7 @@ export class GameScene extends Phaser.Scene {
       .text(width / 2, height / 2 - 70, 'Cleared. Somehow.', {
         ...HUD_FONT,
         fontSize: '44px',
-        color: PALETTE.accent,
+        color: PALETTE.ink,
       })
       .setOrigin(0.5);
     const summary = this.add
