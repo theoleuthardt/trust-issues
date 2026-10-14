@@ -340,6 +340,26 @@ describe('stages', () => {
     expect(state.finished).toBe(false);
   });
 
+  it('restores the tiles and re-arms the traps of a later stage when dying in it', () => {
+    const trap: TrapDef = {
+      id: 'floor',
+      trigger: { x: 3, y: 1, width: 1, height: 1 },
+      action: 'remove_tiles',
+      tiles: [[6, 2]],
+    };
+    const spiked = ['..........', '..S..^..E.', '##########'];
+    const lvl = multiStage([{ rows: FIRST }, { rows: spiked, traps: [trap] }]);
+    const state = createState(lvl);
+    run(lvl, state, Input.Right, 66);
+
+    for (let i = 0; i < 200 && state.deaths === 0; i++) step(lvl, state, Input.Right);
+
+    expect(state.deaths).toBe(1);
+    expect(state.stage).toBe(1);
+    expect(state.fired.size).toBe(0);
+    expect(Array.from(state.tiles)).toEqual(Array.from(stageOf(lvl, 1).tiles));
+  });
+
   it('arrives in a fresh stage with its own tiles and re-armed traps', () => {
     const trap: TrapDef = {
       id: 'sky-spike',

@@ -126,7 +126,7 @@ export function buildLevel(def: LevelDef): Level {
   if (!Number.isInteger(def.maxFrames) || def.maxFrames <= 0) {
     throw new Error(`level ${def.id}: maxFrames must be a positive integer`);
   }
-  if (def.stages.length < 1) {
+  if (!Array.isArray(def.stages) || def.stages.length < 1) {
     throw new Error(`level ${def.id}: at least one stage required`);
   }
   if (def.stages.length > MAX_STAGES) {

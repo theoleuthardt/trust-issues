@@ -112,6 +112,12 @@ describe('stages', () => {
     expect(stageOf(level, 1).spawn.x).toBe(2 * TILE_SIZE + 4);
   });
 
+  it('names the problem when a level is still written in the old single-stage format', () => {
+    const legacy = { id: 'old', name: 'Old', rows: ['.S.E', '####'], traps: [], maxFrames: 100 };
+
+    expect(() => buildLevel(legacy as unknown as LevelDef)).toThrow(/stage/);
+  });
+
   it('requires at least one stage', () => {
     expect(() => buildLevel(def({ stages: [] }))).toThrow(/stage/);
   });
