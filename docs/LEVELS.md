@@ -63,18 +63,19 @@ Stages are written with the small DSL in `packages/sim/src/levels/stage.ts` inst
 hand-drawn ASCII. A stage is a two-row floor plus features; the spawn is in column 1 and the
 exit in column 30 unless told otherwise.
 
-| Feature               | Effect                                                   |
-| --------------------- | -------------------------------------------------------- |
-| `gap(x, w)`           | permanent hole in the floor                              |
-| `spikes(x, w)`        | permanent spikes on the floor                            |
-| `wall(x, h)`          | permanent wall on the floor                              |
-| `block(x, y, w, h)`   | free-floating solid block                                |
-| `pop(at, x, w)`       | spikes appear at `x` when the player reaches column `at` |
-| `drop(at, x, w)`      | the floor vanishes at `x`                                |
-| `rise(at, x, h)`      | a wall rises at `x`                                      |
-| `sky(at, x, y)`       | a spike appears in mid-air at (`x`, `y`)                 |
-| `vanish(at, x, y, w)` | tiles of a platform vanish                               |
-| `seal(at, x, y, h)`   | tiles appear at (`x`, `y`) downwards                     |
+| Feature                     | Effect                                                             |
+| --------------------------- | ------------------------------------------------------------------ |
+| `gap(x, w)`                 | permanent hole in the floor                                        |
+| `spikes(x, w)`              | permanent spikes on the floor                                      |
+| `wall(x, h)`                | permanent wall on the floor                                        |
+| `block(x, y, w, h)`         | free-floating solid block                                          |
+| `pop(at, x, w)`             | spikes appear at `x` when the player reaches column `at`           |
+| `drop(at, x, w)`            | the floor vanishes at `x`                                          |
+| `rise(at, x, h)`            | a wall rises at `x`                                                |
+| `sky(at, x, y)`             | a spike appears in mid-air at (`x`, `y`)                           |
+| `vanish(at, x, y, w)`       | tiles of a platform vanish                                         |
+| `trap(action, rect, tiles)` | raw trap with its own trigger rectangle (for platforms and stairs) |
+| `seal(at, x, y, h)`         | tiles appear at (`x`, `y`) downwards                               |
 
 A trap fires when the player overlaps columns `at` and `at + 1` within three tiles above
 the floor. Reference: a jump clears a wall of 2 tiles and a gap of 3 tiles.
@@ -100,13 +101,18 @@ target that skilled players can beat; beating it scores more than 1000 points (s
 
 ## The levels
 
-| #   | Id              | Name          | Stages | Idea                                                 |
-| --- | --------------- | ------------- | ------ | ---------------------------------------------------- |
-| 1   | `trust-nothing` | Trust Nothing | 3      | A spike appears, then the floor goes: the tutorial   |
-| 2   | `ground-rules`  | Ground Rules  | 3      | Plain walls and gaps first, then traps in between    |
-| 3   | `hole-punch`    | Hole Punch    | 4      | The floor drops away right in front of you           |
-| 4   | `spike-season`  | Spike Season  | 3      | Spikes pop up in rows and pairs                      |
-| 5   | `wall-street`   | Wall Street   | 4      | Walls rise out of the floor, sometimes behind a hole |
+| #   | Id                    | Name                | Stages | Idea                                                 |
+| --- | --------------------- | ------------------- | ------ | ---------------------------------------------------- |
+| 1   | `trust-nothing`       | Trust Nothing       | 3      | A spike appears, then the floor goes: the tutorial   |
+| 2   | `ground-rules`        | Ground Rules        | 3      | Plain walls and gaps first, then traps in between    |
+| 3   | `hole-punch`          | Hole Punch          | 4      | The floor drops away right in front of you           |
+| 4   | `spike-season`        | Spike Season        | 3      | Spikes pop up in rows and pairs                      |
+| 5   | `wall-street`         | Wall Street         | 4      | Walls rise out of the floor, sometimes behind a hole |
+| 6   | `sky-is-falling`      | Sky Is Falling      | 4      | Spikes appear in mid-air, so jump late               |
+| 7   | `stairway-to-nowhere` | Stairway to Nowhere | 3      | Climb stairs while the steps turn on you             |
+| 8   | `low-ceiling`         | Low Ceiling         | 3      | Ceilings cut your jumps short                        |
+| 9   | `domino-effect`       | Domino Effect       | 4      | One trap leads straight into the next                |
+| 10  | `fake-friends`        | Fake Friends        | 3      | Stepping stones that bite back                       |
 
 ## Design guidance
 
