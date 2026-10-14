@@ -1,0 +1,105 @@
+version: '3'
+
+vars:
+  COMPOSE: podman compose
+
+tasks:
+  default:
+    desc: List all tasks
+    cmds:
+      - task --list
+    silent: true
+
+  install:
+    desc: Install frontend, verifier and backend dependencies
+    cmds:
+      - npm ci
+      - cd backend && uv sync
+
+  dev:
+    desc: Vite dev server (port 3000, proxies /api to the backend)
+    cmds:
+      - npm run dev --workspace @trust-issues/frontend
+
+  verifier:dev:
+    desc: Verifier with reload (needs VERIFIER_TOKEN)
+    cmds:
+      - npm run dev --workspace @trust-issues/verifier
+
+  backend:dev:
+    desc: Litestar dev server (needs DATABASE_URL, JWT_SECRET, VERIFIER_URL, VERIFIER_TOKEN)
+    dir: backend
+    cmds:
+      - uv run uvicorn trust_issues_backend.main:app --reload --port 8000
+
+  db:up:
+    desc: Start the local Postgres
+    cmds:
+      - '{{.COMPOSE}} up -d db'
+
+  db:down:
+    desc: Stop the local Postgres
+    cmds:
+      - '{{.COMPOSE}} stop db'
+
+  test:
+    desc: Run all unit and integration tests
+    cmds:
+      - npm test
+      - cd backend && uv run pytest
+
+  lint:
+    desc: ESLint and ruff
+    cmds:
+      - npm run lint
+      - cd backend && uv run ruff check .
+
+  typecheck:
+    desc: TypeScript type check of every workspace
+    cmds:
+      - npm run typecheck
+
+  format:
+    desc: Format TypeScript, Markdown and Python
+    cmds:
+      - npm run format:write
+      - cd backend && uv run ruff format .
+
+  format:check:
+    desc: Verify formatting without writing
+    cmds:
+      - npm run format:check
+      - cd backend && uv run ruff format --check .
+
+  check:
+    desc: Everything CI runs, locally (lint, format, types, tests)
+    cmds:
+      - task: lint
+      - task: format:check
+      - task: typecheck
+      - task: test
+
+  build:
+    desc: Production builds of the frontend and the verifier
+    cmds:
+      - npm run build
+
+  smoke:
+    desc: Start verifier and backend for real and submit a winning replay
+    cmds:
+      - ./scripts/smoke.sh
+
+  up:
+    desc: Build and start the whole stack
+    cmds:
+      - '{{.COMPOSE}} up -d --build'
+
+  down:
+    desc: Stop the whole stack
+    cmds:
+      - '{{.COMPOSE}} down'
+
+  logs:
+    desc: Follow the stack logs
+    cmds:
+      - '{{.COMPOSE}} logs -f'

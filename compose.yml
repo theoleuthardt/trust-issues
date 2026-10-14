@@ -1,0 +1,53 @@
+name: trust-issues
+
+services:
+  db:
+    image: docker.io/library/postgres:17-alpine
+    environment:
+      POSTGRES_USER: trust
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: trustissues
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - '127.0.0.1:5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U trust -d trustissues']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  verifier:
+    build:
+      context: .
+      dockerfile: verifier/Dockerfile
+    environment:
+      VERIFIER_TOKEN: ${VERIFIER_TOKEN:?set VERIFIER_TOKEN in .env}
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://trust:${POSTGRES_PASSWORD}@db:5432/trustissues
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      VERIFIER_URL: http://verifier:8081
+      VERIFIER_TOKEN: ${VERIFIER_TOKEN}
+    depends_on:
+      - db
+      - verifier
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - '${WEB_PORT:-8080}:8080'
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db-data:

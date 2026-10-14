@@ -1,0 +1,18 @@
+FROM docker.io/library/node:22-alpine AS build
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY packages/sim/package.json packages/sim/
+COPY frontend/package.json frontend/
+COPY verifier/package.json verifier/
+RUN npm ci
+
+COPY tsconfig.base.json ./
+COPY packages/sim packages/sim
+COPY frontend frontend
+RUN npm run build --workspace @trust-issues/frontend
+
+FROM docker.io/nginxinc/nginx-unprivileged:1.27-alpine
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/frontend/dist /usr/share/nginx/html
+EXPOSE 8080

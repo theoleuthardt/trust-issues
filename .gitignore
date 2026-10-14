@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+.env.prod
+*.log
+.DS_Store
+
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+.claude/settings.local.json

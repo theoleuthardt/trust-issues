@@ -1,0 +1,54 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--ti-night, #1b1633);
+  color: var(--ti-text, #f4efff);
+  overscroll-behavior: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#game {
+  position: fixed;
+  inset: 0;
+}
+
+#game canvas {
+  display: block;
+}
+
+.touch-controls {
+  position: fixed;
+  inset: auto 0 0 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-bottom));
+  pointer-events: none;
+}
+
+.touch-group {
+  display: flex;
+  gap: 12px;
+}
+
+.touch-button {
+  pointer-events: auto;
+  width: 64px;
+  height: 64px;
+  opacity: 0.6;
+  border-radius: 50%;
+  border: 3px solid var(--ti-outline);
+  background: var(--ti-panel);
+  color: var(--ti-text);
+  font-size: 30px;
+  line-height: 1;
+  touch-action: none;
+}
+
+.touch-button:active {
+  background: var(--ti-groundTop);
+  color: var(--ti-night);
+}
