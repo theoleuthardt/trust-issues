@@ -47,6 +47,10 @@ describe('messageFor with a context', () => {
     );
   });
 
+  it('does not talk about usernames for a conflict while sending a run', () => {
+    expect(messageFor(409, {}, 'run')).not.toMatch(/username/i);
+  });
+
   it('says the level is unknown to the server', () => {
     expect(messageFor(404, { detail: 'unknown level' }, 'run')).toMatch(/level/i);
   });

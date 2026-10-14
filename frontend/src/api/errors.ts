@@ -33,6 +33,8 @@ export function messageFor(
       const reason = detailOf(body);
       return reason ? `The run was not accepted: ${reason}.` : 'The run was not accepted.';
     }
+    if (status === 429 || status >= 500) return 'The server is busy, please try again later.';
+    return 'The run could not be sent.';
   }
   if (status === 409) return 'That username is taken.';
   if (status === 401) return 'Wrong username or password.';

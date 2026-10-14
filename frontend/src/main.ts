@@ -7,7 +7,7 @@ import { SessionStore } from './api/session';
 import { ProgressStore, firstOpenIndex, levelCards } from './app/progress';
 import { authScreen, levelSelect, mainMenu, titleScreen } from './app/screens';
 import { memoryStorage } from './app/storage';
-import { submissionText } from './app/submission';
+import { RunSubmitter } from './app/submitter';
 import type { StorageLike } from './app/storage';
 import { GameScene, SCENE_KEY } from './game/GameScene';
 import type { RunFinishedEvent } from './game/GameScene';
@@ -162,29 +162,16 @@ function showLevels(): void {
   show('levels', levelSelect(levelCards(LEVELS, store.load()), startLevel, showMenu));
 }
 
-let lastFinished: RunFinishedEvent | undefined;
-
-function setStatus(text: string): void {
-  const scene = game?.scene.getScene(SCENE_KEY);
-  if (scene instanceof GameScene) scene.setStatus(text);
-}
-
-async function submitRun(event: RunFinishedEvent): Promise<void> {
-  lastFinished = event;
-  if (!sessions.current()) {
-    setStatus('Sign in to put your runs on the leaderboard.');
-    return;
-  }
-  setStatus('Sending the run…');
-  try {
-    setStatus(submissionText(await api.submitRun(event.levelId, event.replay)));
-  } catch (error) {
-    const unauthorised = error instanceof ApiError && error.status === 401;
-    if (unauthorised) sessions.clear();
-    const message = error instanceof ApiError ? error.message : 'Something went wrong.';
-    setStatus(unauthorised ? message : `${message} Press S to try again.`);
-  }
-}
+const submitter = new RunSubmitter({
+  signedIn: () => sessions.current() !== undefined,
+  submit: (levelId, replay) => api.submitRun(levelId, replay),
+  signOut: () => sessions.clear(),
+  setStatus: (text) => {
+    if (!game?.scene.isActive(SCENE_KEY)) return;
+    const scene = game.scene.getScene(SCENE_KEY);
+    if (scene instanceof GameScene) scene.setStatus(text);
+  },
+});
 
 function startLevel(index: number): void {
   setScreen('game');
@@ -203,11 +190,9 @@ function startLevel(index: number): void {
         frames: event.frames,
         deaths: event.deaths,
       });
-      void submitRun(event);
+      void submitter.send(event);
     },
-    onRetrySubmit: () => {
-      if (lastFinished) void submitRun(lastFinished);
-    },
+    onRetrySubmit: () => submitter.retry(),
     onExit: leaveLevel,
   });
 }

@@ -119,6 +119,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.events.once('shutdown', () => {
+      this.statusText = undefined;
+    });
     this.drawBackground();
     this.world = this.add.graphics();
     this.levelText = this.add
