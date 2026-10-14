@@ -11,6 +11,7 @@ class VerifiedRun:
     finished: bool
     frames: int
     deaths: int
+    score: int
 
 
 class VerifierError(Exception):
@@ -60,6 +61,7 @@ class HttpVerifier:
                 finished=bool(body["finished"]),
                 frames=int(body["frames"]),
                 deaths=int(body["deaths"]),
+                score=int(body["score"]),
             )
         except (ValueError, KeyError, TypeError) as error:
             raise VerifierUnavailableError("verifier sent an unusable response") from error

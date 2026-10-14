@@ -4,6 +4,7 @@ export const trustNothing: LevelDef = {
   id: 'trust-nothing',
   name: 'Trust Nothing',
   maxFrames: 3600,
+  parFrames: 290,
   stages: [
     {
       rows: [

@@ -24,11 +24,13 @@ async def test_returns_the_verified_run_and_sends_level_and_replay() -> None:
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen.append(request)
-        return httpx.Response(200, json={"finished": True, "frames": 290, "deaths": 1})
+        return httpx.Response(
+            200, json={"finished": True, "frames": 290, "deaths": 1, "score": 975}
+        )
 
     result = await make(handler).verify("trust-nothing", [2, 10])
 
-    assert result == VerifiedRun(finished=True, frames=290, deaths=1)
+    assert result == VerifiedRun(finished=True, frames=290, deaths=1, score=975)
     assert seen[0].url.path == "/verify"
     assert seen[0].headers["x-verifier-token"] == "secret-token"
     assert seen[0].read() == b'{"levelId":"trust-nothing","replay":[2,10]}'

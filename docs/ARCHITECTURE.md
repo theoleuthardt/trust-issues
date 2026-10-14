@@ -33,9 +33,10 @@ verification cheap and drift-free (see [ADR 0002](adr/0002-node-verifier-reusing
 3. The client sends `POST /api/runs` with `{level_id, replay}` and its bearer token.
 4. The backend validates size and shape, then asks the verifier to replay it.
 5. The verifier decodes the replay (strictly), looks the level up **by id on the server**,
-   simulates it and answers with `{finished, frames, deaths}`.
-6. The backend stores the result only if it finished the level and is the user's fastest
-   one. The time on the leaderboard is the number the verifier computed.
+   simulates it and answers with `{finished, frames, deaths, score}`; see
+   [SCORING.md](SCORING.md).
+6. The backend stores the result only if it finished the level and is the user's best one by
+   score. The numbers on the leaderboard are the ones the verifier computed.
 
 ## Simulation model
 
@@ -53,7 +54,7 @@ verification cheap and drift-free (see [ADR 0002](adr/0002-node-verifier-reusing
 | Table       | Columns                                                                                                        | Notes                                                                                                               |
 | ----------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `users`     | `id`, `username`, `username_key` (unique, lower case), `password_hash` (argon2), `token_version`, `created_at` | `token_version` is embedded in JWTs and allows revoking all tokens of a user.                                       |
-| `best_runs` | `id`, `user_id`, `level_id`, `frames`, `deaths`, `replay` (JSON), `submitted_at`                               | Unique per `(user_id, level_id)`. A row doubles as the completion record, so progress is derived, not stored twice. |
+| `best_runs` | `id`, `user_id`, `level_id`, `score`, `frames`, `deaths`, `replay` (JSON), `submitted_at`                      | Unique per `(user_id, level_id)`. A row doubles as the completion record, so progress is derived, not stored twice. |
 
 The schema is currently created with `Base.metadata.create_all` at startup. Migrations
 with Alembic are planned (see the backend epic on the board).
@@ -68,7 +69,7 @@ with Alembic are planned (see the backend epic on the board).
 | GET    | `/api/auth/me`                | yes  | Current user                            |
 | POST   | `/api/runs`                   | yes  | Submit a replay                         |
 | GET    | `/api/progress`               | yes  | Own completed levels with best runs     |
-| GET    | `/api/leaderboard/{level_id}` | no   | Fastest runs, `?limit=1..100`           |
+| GET    | `/api/leaderboard/{level_id}` | no   | Best scores, `?limit=1..100`            |
 
 The OpenAPI schema is served at `/schema` only when `ENABLE_DOCS=true`.
 

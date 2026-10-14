@@ -14,13 +14,14 @@ what we defend against, how, and what we explicitly cannot prevent.
 
 ## Layers of defence
 
-1. **The client never reports a time.** It only sends the recorded inputs. There is no
-   `frames` field to forge; extra fields in a submission are ignored.
+1. **The client never reports a time or a score.** It only sends the recorded inputs. There
+   is no `frames` or `score` field to forge; extra fields in a submission are ignored.
 2. **Deterministic simulation.** The same inputs always produce the same run, on any
    machine. The simulation uses a fixed tick, no randomness, no wall-clock time and no
    rendering state.
 3. **Server-side replay.** The verifier runs the submitted inputs through the same code and
-   derives `finished`, `frames` and `deaths` itself. A modified client cannot walk through
+   derives `finished`, `frames`, `deaths` and the score itself, using the level's par time
+   from the server's copy. A modified client cannot walk through
    a wall because the server's simulation has no such behaviour.
 4. **Server-owned levels.** The submission carries only a level id. Layout, traps and the
    frame budget come from the server's copy.

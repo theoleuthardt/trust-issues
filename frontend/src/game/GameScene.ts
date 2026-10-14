@@ -7,6 +7,7 @@ import {
   Tile,
   createState,
   encodeReplay,
+  scoreRun,
   stageOf,
   step,
 } from '@trust-issues/sim';
@@ -37,6 +38,7 @@ export interface RunFinishedEvent {
   levelId: string;
   frames: number;
   deaths: number;
+  score: number;
   replay: number[];
 }
 
@@ -155,6 +157,7 @@ export class GameScene extends Phaser.Scene {
   private finishRun(): void {
     const frames = this.state.tick;
     const deaths = this.state.deaths;
+    const score = scoreRun(this.level.parFrames, { frames, deaths });
     const { width, height } = this.scale;
     const shade = this.add
       .rectangle(0, 0, width, height, colorNumber('paper'), 0.88)
@@ -167,11 +170,16 @@ export class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     const summary = this.add
-      .text(width / 2, height / 2, `${formatTime(frames)}   ·   ${deaths} deaths`, {
-        ...HUD_FONT,
-        fontSize: '30px',
-        color: PALETTE.ink,
-      })
+      .text(
+        width / 2,
+        height / 2,
+        `${formatTime(frames)}   ·   ${deaths} deaths   ·   ${score} pts`,
+        {
+          ...HUD_FONT,
+          fontSize: '30px',
+          color: PALETTE.ink,
+        },
+      )
       .setOrigin(0.5);
     const hint = this.add
       .text(width / 2, height / 2 + 70, 'Press R or tap to try again', {
@@ -185,6 +193,7 @@ export class GameScene extends Phaser.Scene {
       levelId: this.level.id,
       frames,
       deaths,
+      score,
       replay: encodeReplay(this.recorded),
     };
     this.events.emit(RUN_FINISHED, event);

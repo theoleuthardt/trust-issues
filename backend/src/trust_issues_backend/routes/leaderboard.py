@@ -20,17 +20,17 @@ async def leaderboard(
     session: NamedDependency[AsyncSession],
     limit: Annotated[int, Parameter(ge=1, le=100)] = 50,
 ) -> list[LeaderboardEntry]:
-    """Fastest verified run per player, fastest first; ties go to the earlier submission."""
+    """Best verified run per player, highest score first, then fastest, then earliest."""
     rows = await session.execute(
-        select(User.username, BestRun.frames, BestRun.deaths)
+        select(User.username, BestRun.score, BestRun.frames, BestRun.deaths)
         .join(User, User.id == BestRun.user_id)
         .where(BestRun.level_id == level_id)
-        .order_by(BestRun.frames, BestRun.submitted_at)
+        .order_by(BestRun.score.desc(), BestRun.frames, BestRun.submitted_at)
         .limit(limit)
     )
     return [
-        LeaderboardEntry(rank=rank, username=username, frames=frames, deaths=deaths)
-        for rank, (username, frames, deaths) in enumerate(rows, start=1)
+        LeaderboardEntry(rank=rank, username=username, score=score, frames=frames, deaths=deaths)
+        for rank, (username, score, frames, deaths) in enumerate(rows, start=1)
     ]
 
 
@@ -45,6 +45,7 @@ async def progress(
     return [
         ProgressEntry(
             level_id=run.level_id,
+            score=run.score,
             frames=run.frames,
             deaths=run.deaths,
             completed_at=run.submitted_at,
