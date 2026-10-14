@@ -38,6 +38,7 @@ PUBLIC_PATHS = [
     r"^/schema",
 ]
 DATABASE_STARTUP_ATTEMPTS = 30
+MAX_REQUEST_BODY_BYTES = 256 * 1024
 
 
 async def _create_schema(engine: AsyncEngine) -> None:
@@ -108,6 +109,7 @@ def create_app(
                 "token_lifetime": timedelta(minutes=settings.access_token_minutes),
             }
         ),
+        request_max_body_size=MAX_REQUEST_BODY_BYTES,
         on_app_init=[jwt_auth.on_app_init],
         on_startup=[on_startup],
         on_shutdown=[on_shutdown],

@@ -13,8 +13,9 @@ containers defined in `compose.yml`: `db`, `verifier`, `backend`, `frontend`.
   rootless inside an unprivileged container.
 - Podman 4.9 or newer and the `podman compose` provider (`podman-compose` or
   `docker-compose` with the Podman socket).
-- A reverse proxy or tunnel in front for TLS (Caddy, Nginx Proxy Manager, Cloudflare
-  Tunnel). The frontend container speaks plain HTTP on `WEB_PORT`.
+- A reverse proxy or tunnel on the same host in front of the stack. It terminates TLS and
+  routes `/api/*` to `127.0.0.1:API_PORT` (the backend) and everything else to
+  `127.0.0.1:WEB_PORT` (the static frontend). Both containers speak plain HTTP.
 
 ## First start
 
@@ -34,7 +35,8 @@ Then:
 
 ```bash
 podman compose up -d --build
-curl -fsS http://localhost:8080/api/auth/me   # 401 means frontend and backend are wired
+curl -fsS http://127.0.0.1:8000/health      # backend and database
+curl -fsSI http://127.0.0.1:8080/           # static frontend
 ```
 
 ## Configuration
@@ -44,7 +46,8 @@ curl -fsS http://localhost:8080/api/auth/me   # 401 means frontend and backend a
 | `POSTGRES_PASSWORD` | db, backend       | Database password                                                 |
 | `JWT_SECRET`        | backend           | Signs access tokens; 32+ random characters                        |
 | `VERIFIER_TOKEN`    | backend, verifier | Shared secret for the internal verify call; 32+ random characters |
-| `WEB_PORT`          | frontend          | Host port, default `8080`                                         |
+| `WEB_PORT`          | frontend          | Loopback host port, default `8080`                                |
+| `API_PORT`          | backend           | Loopback host port, default `8000`                                |
 | `ENABLE_DOCS`       | backend           | `true` serves the OpenAPI schema at `/schema`                     |
 
 The backend and the verifier exit at startup when a secret is missing, shorter than 32
@@ -82,9 +85,9 @@ Restoring: create an empty database and pipe the dump into `psql`.
 
 ## Troubleshooting
 
-| Symptom                       | Likely cause                                                                  |
-| ----------------------------- | ----------------------------------------------------------------------------- |
-| Backend exits right away      | A secret is missing or too weak, see `podman compose logs backend`            |
-| Runs are answered with 503    | Verifier unreachable or `VERIFIER_TOKEN` differs between backend and verifier |
-| `frontend` restarts in a loop | nginx cannot resolve `backend` yet; it recovers once the backend is up        |
-| Short image names fail        | Images are fully qualified (`docker.io/...`) on purpose, keep it that way     |
+| Symptom                    | Likely cause                                                                  |
+| -------------------------- | ----------------------------------------------------------------------------- |
+| Backend exits right away   | A secret is missing or too weak, see `podman compose logs backend`            |
+| Runs are answered with 503 | Verifier unreachable or `VERIFIER_TOKEN` differs between backend and verifier |
+| Login or runs return 404   | The proxy does not route `/api/*` to the backend                              |
+| Short image names fail     | Images are fully qualified (`docker.io/...`) on purpose, keep it that way     |

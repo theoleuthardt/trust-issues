@@ -4,8 +4,9 @@
 
 ```mermaid
 flowchart LR
-    Player[Browser<br/>Phaser + sim] -->|HTTPS| Nginx[frontend<br/>nginx]
-    Nginx -->|/api| Backend[backend<br/>Litestar]
+    Player[Browser<br/>Phaser + sim] -->|HTTPS| Proxy[reverse proxy<br/>or tunnel]
+    Proxy -->|/| Frontend[frontend<br/>static files]
+    Proxy -->|/api| Backend[backend<br/>Litestar]
     Backend --> DB[(PostgreSQL)]
     Backend -->|replay + token| Verifier[verifier<br/>Node]
     Sim[[packages/sim]] -.shared source.- Player
@@ -71,7 +72,12 @@ The OpenAPI schema is served at `/schema` only when `ENABLE_DOCS=true`.
 
 ## Network layout
 
-Only the frontend container publishes a port. It serves the static game and proxies
-`/api/` to the backend. The verifier and the database are reachable on the compose network
-only; the verifier additionally requires the shared `VERIFIER_TOKEN`. The database port is
-bound to `127.0.0.1` for local development.
+The frontend container serves the static build and nothing else; it carries no proxy
+configuration. The frontend and the backend publish a port on `127.0.0.1` each, and
+whatever sits in front of the stack (a reverse proxy or a tunnel on the same host) routes
+`/api/*` to the backend and everything else to the frontend. The verifier and the database
+are reachable on the compose network only; the verifier additionally requires the shared
+`VERIFIER_TOKEN`. The database port is bound to `127.0.0.1` for local development.
+
+The backend limits request bodies to 256 KiB itself, so it does not depend on the proxy
+for that.

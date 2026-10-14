@@ -54,8 +54,14 @@ Full stack with Postgres:
 
 ```bash
 cp .env.example .env    # fill in the three secrets, see docs/DEPLOYMENT.md
-task up                 # podman compose up -d --build, game on http://localhost:8080
+task up                 # podman compose up -d --build
 ```
+
+The frontend (static files, `127.0.0.1:8080`) and the API (`127.0.0.1:8000`) are separate
+containers. The game calls the API on the same origin under `/api`, so whatever serves the
+site has to route `/api/*` to the API and everything else to the frontend; see
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). For local development `task dev` does this with
+the Vite proxy.
 
 ## Controls
 
