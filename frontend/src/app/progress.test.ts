@@ -114,6 +114,22 @@ describe('ProgressStore', () => {
     expect(store.load()).toEqual({ a: run(900) });
   });
 
+  it('keeps working in memory when the storage refuses to read or write', () => {
+    const broken = {
+      getItem: (): string | null => {
+        throw new Error('denied');
+      },
+      setItem: (): void => {
+        throw new Error('quota');
+      },
+    };
+    const store = new ProgressStore(broken);
+
+    expect(store.load()).toEqual({});
+    expect(() => store.record('a', run(900))).not.toThrow();
+    expect(store.load()).toEqual({ a: run(900) });
+  });
+
   it('ignores damaged or foreign data', () => {
     const storage = new MemoryStorage();
     storage.setItem(PROGRESS_KEY, '{not json');

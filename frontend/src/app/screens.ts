@@ -49,6 +49,14 @@ function cardDetail(card: LevelCard): string {
   return `${card.best.score} pts · ${formatTime(card.best.frames)}`;
 }
 
+function cardLabel(card: LevelCard): string {
+  if (card.status === 'locked') return `Level ${card.number}, locked`;
+  const result = card.best
+    ? `cleared, ${card.best.score} points in ${formatTime(card.best.frames)}`
+    : `${card.stages} stages`;
+  return `Level ${card.number}, ${card.name}, ${result}`;
+}
+
 export function levelSelect(
   cards: readonly LevelCard[],
   onPick: (index: number) => void,
@@ -68,7 +76,7 @@ export function levelSelect(
       h('span', { class: 'card-name', text: card.status === 'locked' ? '???' : card.name }),
       h('span', { class: 'card-detail', text: cardDetail(card) }),
     );
-    element.setAttribute('aria-label', `Level ${card.number}, ${card.status}`);
+    element.setAttribute('aria-label', cardLabel(card));
     grid.append(element);
   }
   return h(

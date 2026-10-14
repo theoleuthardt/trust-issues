@@ -82,12 +82,38 @@ function isRunRecord(value: unknown): value is RunRecord {
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
 
-/** Local progress of a player, kept in the browser. Damaged data is ignored. */
+/**
+ * Local progress of a player, kept in the browser. Damaged data is ignored, and when the
+ * storage cannot be read or written (private mode, quota) the progress lives in memory for
+ * the session so playing keeps working.
+ */
 export class ProgressStore {
+  private memory: Progress | undefined;
+
   constructor(private readonly storage: StorageLike) {}
 
   load(): Progress {
-    const raw = this.storage.getItem(PROGRESS_KEY);
+    if (this.memory) return this.memory;
+    try {
+      return this.parse(this.storage.getItem(PROGRESS_KEY));
+    } catch {
+      return {};
+    }
+  }
+
+  record(levelId: string, run: RunRecord): Progress {
+    const next = recordRun(this.load(), levelId, run);
+    this.memory = next;
+    try {
+      this.storage.setItem(PROGRESS_KEY, JSON.stringify(next));
+      this.memory = undefined;
+    } catch {
+      return next;
+    }
+    return next;
+  }
+
+  private parse(raw: string | null): Progress {
     if (raw === null) return {};
     try {
       const parsed: unknown = JSON.parse(raw);
@@ -102,11 +128,5 @@ export class ProgressStore {
     } catch {
       return {};
     }
-  }
-
-  record(levelId: string, run: RunRecord): Progress {
-    const next = recordRun(this.load(), levelId, run);
-    this.storage.setItem(PROGRESS_KEY, JSON.stringify(next));
-    return next;
   }
 }

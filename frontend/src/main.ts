@@ -25,7 +25,7 @@ const ui = document.getElementById('ui');
 if (!ui) throw new Error('missing #ui container');
 
 const input = new InputState();
-const store = new ProgressStore(window.localStorage);
+const store = new ProgressStore(browserStorage());
 let game: Phaser.Game | undefined;
 
 const setScreen = (screen: Screen) => {
@@ -44,7 +44,15 @@ window.addEventListener('blur', () => input.reset());
 
 const coarse = window.matchMedia('(pointer: coarse)').matches;
 if (shouldShowTouchControls(window.location.search, coarse)) {
-  mountTouchControls(document.body, input);
+  mountTouchControls(document.body, input, leaveLevel);
+}
+
+function browserStorage(): Pick<Storage, 'getItem' | 'setItem'> {
+  try {
+    return window.localStorage;
+  } catch {
+    return { getItem: () => null, setItem: () => undefined };
+  }
 }
 
 function createGame(): Phaser.Game {
@@ -111,12 +119,14 @@ function startLevel(index: number): void {
         deaths: event.deaths,
       });
     },
-    onExit: () => {
-      input.reset();
-      game?.scene.stop(SCENE_KEY);
-      showLevels();
-    },
+    onExit: leaveLevel,
   });
+}
+
+function leaveLevel(): void {
+  input.reset();
+  game?.scene.stop(SCENE_KEY);
+  showLevels();
 }
 
 if (new URLSearchParams(window.location.search).has('level')) {
