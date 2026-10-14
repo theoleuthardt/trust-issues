@@ -8,17 +8,15 @@ from sqlalchemy import inspect
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import command
-from tests.conftest import TEST_DATABASE_URL
+from tests.conftest import TEST_DATABASE_URL, require_test_database
+from trust_issues_backend.migrate import alembic_config
 from trust_issues_backend.models import Base
 
 BACKEND = Path(__file__).resolve().parents[1]
 
 
 def config_for(url: str) -> Config:
-    config = Config(str(BACKEND / "alembic.ini"))
-    config.set_main_option("script_location", str(BACKEND / "alembic"))
-    config.set_main_option("sqlalchemy.url", url)
-    return config
+    return alembic_config(url)
 
 
 async def reset(url: str) -> None:
@@ -34,6 +32,7 @@ async def reset(url: str) -> None:
 async def upgraded_url(tmp_path: Path) -> str:
     url = TEST_DATABASE_URL or f"sqlite+aiosqlite:///{tmp_path / 'migrated.db'}"
     if TEST_DATABASE_URL:
+        require_test_database(url)
         await reset(url)
     await asyncio.to_thread(command.upgrade, config_for(url), "head")
     return url

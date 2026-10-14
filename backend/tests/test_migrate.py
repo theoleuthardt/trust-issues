@@ -5,10 +5,11 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from tests.conftest import TEST_DATABASE_URL
+from tests.conftest import TEST_DATABASE_URL, require_test_database
 from trust_issues_backend.migrate import (
     DatabaseUnavailableError,
     OutdatedDatabaseError,
+    alembic_config,
     migrate,
     wait_for_database,
 )
@@ -17,6 +18,7 @@ from trust_issues_backend.models import Base
 
 async def fresh_url(tmp_path: Path) -> str:
     url = TEST_DATABASE_URL or f"sqlite+aiosqlite:///{tmp_path / 'fresh.db'}"
+    require_test_database(url)
     engine = create_async_engine(url)
     try:
         async with engine.begin() as connection:
@@ -105,3 +107,23 @@ async def test_refuses_a_database_from_before_the_score_column(tmp_path: Path) -
 
     with pytest.raises(OutdatedDatabaseError):
         await run_migrate(url)
+
+
+async def test_refuses_a_database_that_lacks_part_of_the_baseline(tmp_path: Path) -> None:
+    url = await fresh_url(tmp_path)
+    engine = create_async_engine(url)
+    try:
+        async with engine.begin() as connection:
+            await connection.run_sync(Base.metadata.create_all)
+            await connection.exec_driver_sql("DROP INDEX ix_best_runs_level_score")
+    finally:
+        await engine.dispose()
+
+    with pytest.raises(OutdatedDatabaseError):
+        await run_migrate(url)
+
+
+def test_keeps_percent_signs_of_the_database_url_intact() -> None:
+    url = "postgresql+asyncpg://trust:p%40ss%25word@localhost/trusttest"
+
+    assert alembic_config(url).get_main_option("sqlalchemy.url") == url

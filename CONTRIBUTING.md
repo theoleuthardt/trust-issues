@@ -38,12 +38,14 @@ cd backend && TEST_DATABASE_URL=postgresql+asyncpg://trust:testpw@127.0.0.1:5543
 ## Changing the database schema
 
 Models live in `backend/src/trust_issues_backend/models.py`, the schema in Alembic migrations.
-After changing a model:
+After changing a model, bring a scratch database to the current head and let Alembic propose
+the revision (the backend settings are only checked, any random 32+ character values do):
 
 ```bash
-cd backend
-DATABASE_URL=sqlite+aiosqlite:///dev.db uv run python -m trust_issues_backend.migrate   # bring a scratch DB to head
-DATABASE_URL=sqlite+aiosqlite:///dev.db uv run alembic revision --autogenerate -m "add foo"
+export DATABASE_URL=sqlite+aiosqlite:///dev.db JWT_SECRET=$(openssl rand -hex 32) \
+  VERIFIER_URL=http://127.0.0.1:8081 VERIFIER_TOKEN=$(openssl rand -hex 32)
+task backend:migrate
+task backend:migration -- "add foo"
 ```
 
 Read the generated file in `backend/alembic/versions/`, fix what autogenerate cannot know and

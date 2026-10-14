@@ -45,11 +45,48 @@ class OutdatedDatabaseError(Exception):
     """The database has tables from before migrations that do not match the baseline."""
 
 
-def _config(url: str) -> Config:
+BASELINE_COLUMNS = {
+    "users": {"id", "username", "username_key", "password_hash", "token_version", "created_at"},
+    "best_runs": {
+        "id",
+        "user_id",
+        "level_id",
+        "score",
+        "frames",
+        "deaths",
+        "replay",
+        "submitted_at",
+    },
+}
+BASELINE_INDEXES = {"best_runs": {"ix_best_runs_level_score"}}
+BASELINE_UNIQUE = {"users": {("username_key",)}, "best_runs": {("user_id", "level_id")}}
+
+
+def alembic_config(url: str) -> Config:
+    """Alembic configuration for `url`; percent signs are doubled for the config parser."""
     config = Config(str(ROOT / "alembic.ini"))
     config.set_main_option("script_location", str(ROOT / "alembic"))
-    config.set_main_option("sqlalchemy.url", url)
+    config.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
     return config
+
+
+def _matches_baseline(sync: Connection) -> bool:
+    inspector = inspect(sync)
+    for table, columns in BASELINE_COLUMNS.items():
+        if columns - {column["name"] for column in inspector.get_columns(table)}:
+            return False
+        indexes = {index["name"] for index in inspector.get_indexes(table)}
+        if BASELINE_INDEXES.get(table, set()) - indexes:
+            return False
+        unique = {tuple(item["column_names"]) for item in inspector.get_unique_constraints(table)}
+        unique |= {
+            tuple(index["column_names"])
+            for index in inspector.get_indexes(table)
+            if index.get("unique")
+        }
+        if BASELINE_UNIQUE[table] - unique:
+            return False
+    return True
 
 
 async def _state(url: str) -> str:
@@ -59,16 +96,13 @@ async def _state(url: str) -> str:
         async with engine.connect() as connection:
 
             def inspect_schema(sync: Connection) -> str:
-                inspector = inspect(sync)
-                tables = set(inspector.get_table_names())
+                tables = set(inspect(sync).get_table_names())
                 if "alembic_version" in tables:
                     return "managed"
                 if not tables & {"users", "best_runs"}:
                     return "empty"
-                if {"users", "best_runs"} <= tables:
-                    columns = {column["name"] for column in inspector.get_columns("best_runs")}
-                    if "score" in columns:
-                        return "legacy"
+                if {"users", "best_runs"} <= tables and _matches_baseline(sync):
+                    return "legacy"
                 return "outdated"
 
             return await connection.run_sync(inspect_schema)
@@ -83,7 +117,7 @@ def migrate(url: str) -> None:
     match the baseline is refused instead of being touched.
     """
     state = asyncio.run(_state(url))
-    config = _config(url)
+    config = alembic_config(url)
     if state == "outdated":
         raise OutdatedDatabaseError(
             "the database has tables from before migrations that do not match the baseline; "
