@@ -102,6 +102,10 @@ async def test_adopts_a_database_from_the_baseline_era_and_upgrades_it(tmp_path:
     engine = create_async_engine(url)
     try:
         async with engine.begin() as connection:
+            await connection.exec_driver_sql(
+                "INSERT INTO users (username, username_key, password_hash, token_version, "
+                "created_at) VALUES ('Old', 'old', 'x', 0, CURRENT_TIMESTAMP)"
+            )
             await connection.exec_driver_sql("DROP TABLE alembic_version")
     finally:
         await engine.dispose()
@@ -109,7 +113,8 @@ async def test_adopts_a_database_from_the_baseline_era_and_upgrades_it(tmp_path:
     await run_migrate(url)
 
     assert await scalar(url, "SELECT version_num FROM alembic_version") == HEAD
-    assert await scalar(url, "SELECT count(*) FROM users WHERE failed_logins = 0") == 0
+    assert await scalar(url, "SELECT failed_logins FROM users WHERE username_key = 'old'") == 0
+    assert await scalar(url, "SELECT locked_until FROM users WHERE username_key = 'old'") is None
 
 
 async def test_refuses_a_database_from_before_the_score_column(tmp_path: Path) -> None:
