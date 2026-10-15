@@ -86,6 +86,16 @@ test fails when the models and the migrations drift apart.
 
 The OpenAPI schema is served at `/schema` only when `ENABLE_DOCS=true`.
 
+## Build size
+
+The production build has two script chunks. `index-*.js` holds the menus, the account and
+leaderboard screens and the API client; `runtime-*.js` holds Phaser and the game scene and is
+fetched in the background shortly after the first screen appears, or when a level is started
+before that. If it cannot be fetched the player gets a retry screen. `npm run build` fails when
+a chunk is over its gzip budget (40 KB for the entry, 400 KB for the game, see
+`frontend/build/budget.ts`), so CI catches Phaser sneaking back into the entry chunk. The
+hashed file names allow the long cache lifetime listed in [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ## Progress
 
 Progress is the best verified run per level. A guest's progress and replays live in the

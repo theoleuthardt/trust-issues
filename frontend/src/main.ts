@@ -1,4 +1,5 @@
-import Phaser from 'phaser';
+import type Phaser from 'phaser';
+import type * as RuntimeModule from './game/runtime';
 import { LEVELS } from '@trust-issues/sim';
 import { ApiClient, ApiError } from './api/client';
 import type { AuthMode } from './api/credentials';
@@ -19,6 +20,7 @@ import {
   authScreen,
   leaderboardScreen,
   levelSelect,
+  loadErrorScreen,
   mainMenu,
   pauseScreen,
   settingsScreen,
@@ -27,19 +29,16 @@ import {
 import { memoryStorage } from './app/storage';
 import { RunSubmitter } from './app/submitter';
 import type { StorageLike } from './app/storage';
-import { GameScene, SCENE_KEY } from './game/GameScene';
-import type { RunFinishedEvent } from './game/GameScene';
+import type { GameScene, RunFinishedEvent } from './game/GameScene';
 import { formatTime } from './format';
 import { startIndex } from './game/progress';
 import { InputState } from './input/InputState';
 import './style.css';
-import { PALETTE, applyPaletteToCss } from './theme';
+import { applyPaletteToCss } from './theme';
 import { mountTouchControls } from './touch/TouchControls';
 import { shouldShowTouchControls } from './touch/touchMode';
 
-const LEVEL_WIDTH_TILES = 32;
-const LEVEL_HEIGHT_TILES = 18;
-const TILE_PX = 32;
+type GameRuntime = typeof RuntimeModule;
 
 type Screen =
   | 'title'
@@ -85,6 +84,8 @@ const api = new ApiClient(
   () => sessions.current()?.token,
 );
 let game: Phaser.Game | undefined;
+let runtime: GameRuntime | undefined;
+let runtimeLoading: Promise<GameRuntime> | undefined;
 
 let navigation = 0;
 
@@ -164,21 +165,54 @@ async function syncProgress(): Promise<void> {
   });
 }
 
-function createGame(): Phaser.Game {
-  const created = new Phaser.Game({
-    type: Phaser.AUTO,
-    parent: 'game',
-    width: LEVEL_WIDTH_TILES * TILE_PX,
-    height: LEVEL_HEIGHT_TILES * TILE_PX,
-    backgroundColor: PALETTE.paper,
-    banner: false,
-    audio: { noAudio: true },
-    fps: { smoothStep: false },
-    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-    scene: [],
-  });
-  created.scene.add(SCENE_KEY, GameScene, false);
-  return created;
+/** Fetches the chunk with Phaser and the scene once; a failed fetch can be tried again. */
+function loadRuntime(): Promise<GameRuntime> {
+  runtimeLoading ??= import('./game/runtime').then(
+    (loaded) => {
+      runtime = loaded;
+      return loaded;
+    },
+    (error: unknown) => {
+      runtimeLoading = undefined;
+      throw error;
+    },
+  );
+  return runtimeLoading;
+}
+
+/** Starts fetching the game in the background shortly after the first screen is shown. */
+function preloadRuntime(): void {
+  window.setTimeout(() => void loadRuntime().catch(() => undefined), 300);
+}
+
+/** The running game scene, if the game was loaded and has one. */
+function activeScene(): GameScene | undefined {
+  if (!runtime || !game?.scene.isActive(runtime.SCENE_KEY)) return undefined;
+  const scene = game.scene.getScene(runtime.SCENE_KEY);
+  return scene instanceof runtime.GameScene ? scene : undefined;
+}
+
+/**
+ * Shows the game screen and starts the scene with `data`, loading the game first when needed.
+ * The player may have gone elsewhere while the chunk was fetched, in which case nothing starts.
+ */
+function launchScene(screen: 'game' | 'replay', data: Record<string, unknown>): void {
+  const requested = navigation;
+  loadRuntime()
+    .then((loaded) => {
+      if (navigation !== requested) return;
+      setScreen(screen);
+      if (ui) {
+        ui.hidden = true;
+        ui.replaceChildren();
+      }
+      game ??= loaded.createGame();
+      game.scene.start(loaded.SCENE_KEY, data);
+    })
+    .catch(() => {
+      if (navigation !== requested) return;
+      show('menu', loadErrorScreen({ onRetry: () => launchScene(screen, data), onBack: showMenu }));
+    });
 }
 
 function show(screen: Screen, element: HTMLElement): void {
@@ -301,11 +335,7 @@ const submitter = new RunSubmitter({
   signedIn: () => sessions.current() !== undefined,
   submit: (levelId, replay, versions) => api.submitRun(levelId, replay, versions),
   signOut: () => sessions.clear(),
-  setStatus: (text) => {
-    if (!game?.scene.isActive(SCENE_KEY)) return;
-    const scene = game.scene.getScene(SCENE_KEY);
-    if (scene instanceof GameScene) scene.setStatus(text);
-  },
+  setStatus: (text) => activeScene()?.setStatus(text),
 });
 
 function messageOf(error: unknown): string {
@@ -434,14 +464,8 @@ function startReplay(
   caption: string,
   back: () => void,
 ): void {
-  setScreen('replay');
-  if (ui) {
-    ui.hidden = true;
-    ui.replaceChildren();
-  }
   leaveReplay = back;
-  game ??= createGame();
-  game.scene.start(SCENE_KEY, {
+  launchScene('replay', {
     levels: LEVELS,
     startIndex: index,
     input,
@@ -454,7 +478,7 @@ function startReplay(
 function closeReplay(): void {
   if (document.body.dataset.screen !== 'replay') return;
   input.reset();
-  game?.scene.stop(SCENE_KEY);
+  stopScene();
   const back = leaveReplay ?? showLevels;
   leaveReplay = undefined;
   back();
@@ -462,14 +486,12 @@ function closeReplay(): void {
 
 document.querySelector('.replay-close')?.addEventListener('click', closeReplay);
 
+function stopScene(): void {
+  if (runtime) game?.scene.stop(runtime.SCENE_KEY);
+}
+
 function startLevel(index: number): void {
-  setScreen('game');
-  if (ui) {
-    ui.hidden = true;
-    ui.replaceChildren();
-  }
-  game ??= createGame();
-  game.scene.start(SCENE_KEY, {
+  launchScene('game', {
     levels: LEVELS,
     startIndex: index,
     input,
@@ -502,18 +524,18 @@ function startLevel(index: number): void {
     onShowLeaderboard: (levelId: string) => {
       const index = LEVELS.findIndex((level) => level.id === levelId);
       input.reset();
-      game?.scene.stop(SCENE_KEY);
+      stopScene();
       showLeaderboard(index, showLevels);
     },
   });
 }
 
 function pauseGame(): void {
-  if (document.body.dataset.screen !== 'game' || !game) return;
-  const scene = game.scene.getScene(SCENE_KEY);
-  if (!(scene instanceof GameScene)) return;
+  if (document.body.dataset.screen !== 'game' || !game || !runtime) return;
+  const scene = game.scene.getScene(runtime.SCENE_KEY);
+  if (!(scene instanceof runtime.GameScene)) return;
   input.reset();
-  game.scene.pause(SCENE_KEY);
+  game.scene.pause(runtime.SCENE_KEY);
   show(
     'pause',
     pauseScreen({
@@ -534,12 +556,12 @@ function resumeGame(): void {
     ui.hidden = true;
     ui.replaceChildren();
   }
-  game?.scene.resume(SCENE_KEY);
+  if (runtime) game?.scene.resume(runtime.SCENE_KEY);
 }
 
 function leaveLevel(): void {
   input.reset();
-  game?.scene.stop(SCENE_KEY);
+  stopScene();
   showLevels();
 }
 
@@ -550,3 +572,5 @@ if (new URLSearchParams(window.location.search).has('level')) {
 } else {
   showTitle();
 }
+
+preloadRuntime();

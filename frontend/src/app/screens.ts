@@ -624,3 +624,24 @@ export function settingsScreen(options: SettingsScreenOptions): HTMLElement {
     h('div', { class: 'stack' }, button('Back', afterListening(options.onBack))),
   );
 }
+
+/** Shown when the game chunk could not be fetched, for example without a connection. */
+export function loadErrorScreen(options: { onRetry: () => void; onBack: () => void }): HTMLElement {
+  const message = h('p', {
+    class: 'form-error',
+    text: 'The game could not be loaded. Check your connection and try again.',
+  });
+  message.setAttribute('role', 'alert');
+  return h(
+    'section',
+    { class: 'screen' },
+    h('h2', { class: 'heading', text: 'Trust Issues' }),
+    message,
+    h(
+      'div',
+      { class: 'stack' },
+      button('Try again', options.onRetry, true),
+      button('Back', options.onBack),
+    ),
+  );
+}

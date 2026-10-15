@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, vi } from 'vitest';
-import { authScreen, levelSelect, mainMenu, titleScreen } from './screens';
+import { authScreen, levelSelect, loadErrorScreen, mainMenu, titleScreen } from './screens';
 import type { LevelCard } from './progress';
 
 const noop = () => undefined;
@@ -206,5 +206,21 @@ describe('levelSelect', () => {
     click(root.querySelector('.card-open'));
 
     expect(onPick).toHaveBeenCalledWith(1);
+  });
+});
+
+describe('loadErrorScreen', () => {
+  it('says the game could not be loaded and offers to retry or go back', () => {
+    const onRetry = vi.fn();
+    const onBack = vi.fn();
+    const root = loadErrorScreen({ onRetry, onBack });
+
+    const buttons = Array.from(root.querySelectorAll('button'));
+    buttons.find((button) => button.textContent === 'Try again')?.click();
+    buttons.find((button) => button.textContent === 'Back')?.click();
+
+    expect(root.querySelector('[role=alert]')?.textContent).toMatch(/could not be loaded/i);
+    expect(onRetry).toHaveBeenCalledOnce();
+    expect(onBack).toHaveBeenCalledOnce();
   });
 });

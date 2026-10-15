@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { SIM_VERSION, getLevel } from '@trust-issues/sim';
 import { SOLUTIONS } from '@trust-issues/sim/testing';
-import { advance, installFakeClock, playReplay } from '../support/clock';
+import { advance, installFakeClock, openLevel, playReplay } from '../support/clock';
 
 const LEVEL_ID = 'trust-nothing';
 const solution = SOLUTIONS[LEVEL_ID];
@@ -48,6 +48,7 @@ test('a run from the leaderboard can be watched to the end', async ({ page }) =>
   await openBoard(page);
 
   await page.getByRole('button', { name: 'Watch the run of alice' }).click();
+  await page.waitForSelector('body[data-screen="replay"]');
   await advance(page, 6);
   await expect(page.locator('body')).toHaveAttribute('data-screen', 'replay');
   await advance(page, (solution?.frames ?? 0) + 10);
@@ -60,6 +61,7 @@ test('the speed keys make the replay run faster', async ({ page }) => {
   await serveBoard(page);
   await openBoard(page);
   await page.getByRole('button', { name: 'Watch the run of alice' }).click();
+  await page.waitForSelector('body[data-screen="replay"]');
   await advance(page, 6);
 
   await page.keyboard.press('5');
@@ -75,6 +77,7 @@ test('escape closes the viewer and returns to the board', async ({ page }) => {
   await serveBoard(page);
   await openBoard(page);
   await page.getByRole('button', { name: 'Watch the run of alice' }).click();
+  await page.waitForSelector('body[data-screen="replay"]');
   await advance(page, 6);
 
   await page.keyboard.press('Escape');
@@ -107,8 +110,7 @@ test('a run that no longer exists is reported on the board', async ({ page }) =>
 
 test('the ghost can be switched on while playing and the choice is kept', async ({ page }) => {
   await installFakeClock(page);
-  await page.goto(`/?level=${LEVEL_ID}`);
-  await advance(page, 6);
+  await openLevel(page, LEVEL_ID);
   await playReplay(page, solution?.replay ?? []);
   await advance(page, 2);
   await page.keyboard.press('r');
