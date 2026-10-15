@@ -90,8 +90,8 @@ Touch controls show up on touch devices automatically; force them with `?touch=1
 them with `?touch=0`.
 
 The Settings screen in the menu changes the keys of left, right and jump (a few keys the game
-itself uses are not available), the size, side and opacity of the touch buttons, and turns on
-reduced motion, which skips particles, pops and pulses. Reduced motion follows the system
+itself uses are not available), the size, side and opacity of the touch buttons, the sound
+(mute and volume) and reduced motion, which skips particles, pops and pulses. Reduced motion follows the system
 preference until you choose. Settings are stored in the browser.
 
 ## Documentation

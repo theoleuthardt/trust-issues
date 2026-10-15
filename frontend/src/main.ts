@@ -6,6 +6,8 @@ import type { AuthMode } from './api/credentials';
 import { validateCredentials } from './api/credentials';
 import { SessionStore } from './api/session';
 import { syncAccount } from './app/accountSync';
+import { SoundBoard } from './audio/SoundBoard';
+import type { AudioLike } from './audio/SoundBoard';
 import { ghostInputs } from './app/ghost';
 import { SettingsStore, bindingsOf, rebind, resetKeys } from './app/settings';
 import type { Settings } from './app/settings';
@@ -29,6 +31,7 @@ import {
 import { memoryStorage } from './app/storage';
 import { RunSubmitter } from './app/submitter';
 import type { StorageLike } from './app/storage';
+import type { SoundName } from './audio/effects';
 import type { GameScene, RunFinishedEvent } from './game/GameScene';
 import { formatTime } from './format';
 import { startIndex } from './game/progress';
@@ -69,6 +72,24 @@ const settings = new SettingsStore(
   storage,
   window.matchMedia('(prefers-reduced-motion: reduce)').matches,
 );
+
+const sounds = new SoundBoard(
+  (): AudioLike | undefined => {
+    const Context = window.AudioContext as typeof AudioContext | undefined;
+    return Context ? new Context() : undefined;
+  },
+  () => settings.current().sound,
+);
+
+for (const type of ['pointerdown', 'keydown', 'touchend'] as const) {
+  const unlock = (): void => {
+    void sounds.unlock();
+    for (const other of ['pointerdown', 'keydown', 'touchend'] as const) {
+      window.removeEventListener(other, unlock, true);
+    }
+  };
+  window.addEventListener(type, unlock, true);
+}
 
 function applySettings(current: Settings): void {
   input.setBindings(bindingsOf(current.keys));
@@ -319,6 +340,13 @@ function showSettings(): void {
       onTouchOpacity: (opacity) => {
         settings.update((current) => ({ ...current, touch: { ...current.touch, opacity } }));
       },
+      onSoundMuted: (muted) => {
+        settings.update((current) => ({ ...current, sound: { ...current.sound, muted } }));
+      },
+      onSoundVolume: (volume) => {
+        settings.update((current) => ({ ...current, sound: { ...current.sound, volume } }));
+        sounds.play('jump');
+      },
       onReducedMotion: (reducedMotion) => {
         settings.update((current) => ({ ...current, reducedMotion }));
       },
@@ -516,6 +544,7 @@ function startLevel(index: number): void {
       return level ? ghostInputs(currentStore().load()[levelId], level) : undefined;
     },
     ghostEnabled: ghostPreference.enabled(),
+    sound: (name: SoundName) => sounds.play(name),
     reducedMotion: () => settings.current().reducedMotion,
     onGhostToggled: (on: boolean) => {
       ghostPreference.set(on);

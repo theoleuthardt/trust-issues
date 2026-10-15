@@ -14,6 +14,7 @@ import {
 } from '@trust-issues/sim';
 import type { GameState, Level, RunVersions, Stage } from '@trust-issues/sim';
 import { Input } from '@trust-issues/sim';
+import type { SoundName } from '../audio/effects';
 import { formatTime } from '../format';
 import { ReplayCursor, SPEEDS } from '../app/replayPlayback';
 import type { InputState } from '../input/InputState';
@@ -63,6 +64,8 @@ export interface GameSceneData {
   ghostFor?: (levelId: string) => number[] | undefined;
   ghostEnabled?: boolean;
   onGhostToggled?: (on: boolean) => void;
+  /** Called with the name of an effect when something audible happens. */
+  sound?: (name: SoundName) => void;
   /** Read live: when true, render-only motion (particles, pops, pulses, tweens) is skipped. */
   reducedMotion?: () => boolean;
 }
@@ -119,6 +122,7 @@ export class GameScene extends Phaser.Scene {
   private ghostOn = false;
   private onGhostToggled: ((on: boolean) => void) | undefined;
   private reducedMotion: (() => boolean) | undefined;
+  private onSound: ((name: SoundName) => void) | undefined;
   private ghostInputs: number[] | undefined;
   private ghost: { state: GameState; index: number; facing: 1 | -1; phase: number } | undefined;
   private world!: Phaser.GameObjects.Graphics;
@@ -161,6 +165,7 @@ export class GameScene extends Phaser.Scene {
     this.ghostOn = data.ghostEnabled ?? false;
     this.onGhostToggled = data.onGhostToggled;
     this.reducedMotion = data.reducedMotion;
+    this.onSound = data.replay ? undefined : data.sound;
     this.stepper = new FixedStepper(
       1000 / TICKS_PER_SECOND,
       data.replay ? MAX_TICKS_PER_FRAME * Math.max(...SPEEDS) : MAX_TICKS_PER_FRAME,
@@ -214,7 +219,9 @@ export class GameScene extends Phaser.Scene {
         if ((mask & Input.Right) !== 0 && (mask & Input.Left) === 0) this.facing = 1;
         if ((mask & Input.Left) !== 0 && (mask & Input.Right) === 0) this.facing = -1;
         if (!this.cursor) this.recorded.push(mask);
+        const grounded = this.state.onGround;
         step(this.level, this.state, mask);
+        if (grounded && (mask & Input.Jump) !== 0 && this.state.vy < 0) this.onSound?.('jump');
         this.phase = advancePhase(this.phase, this.state.vx, this.state.onGround);
         this.stepGhost();
       }
@@ -420,6 +427,7 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.overlay = [shade, title, summary, hint, this.statusText];
 
+    this.onSound?.('exit');
     const event: RunFinishedEvent = {
       levelId: this.level.id,
       frames,
@@ -470,6 +478,7 @@ export class GameScene extends Phaser.Scene {
 
   private trackEffects(now: number): void {
     if (this.state.stage !== this.knownStage) {
+      this.onSound?.('exit');
       this.announce(`Stage ${this.state.stage + 1}`);
       this.onStage?.(this.state.stage, this.level.stages.length);
       this.knownStage = this.state.stage;
@@ -477,6 +486,7 @@ export class GameScene extends Phaser.Scene {
       this.tileEffects.clear();
     } else if (this.state.deaths !== this.knownDeaths) {
       this.knownDeaths = this.state.deaths;
+      this.onSound?.('death');
       const origin = {
         x: this.lastPosition.x + PLAYER_WIDTH / 2,
         y: this.lastPosition.y + PLAYER_HEIGHT / 2,
@@ -488,8 +498,10 @@ export class GameScene extends Phaser.Scene {
         }
       }
       this.tileEffects.clear();
-    } else if (this.previousTiles && !this.calm) {
-      for (const change of tileChanges(this.previousTiles, this.state.tiles)) {
+    } else if (this.previousTiles) {
+      const changes = tileChanges(this.previousTiles, this.state.tiles);
+      if (changes.length > 0) this.onSound?.('trap');
+      for (const change of this.calm ? [] : changes) {
         if (change.to === Tile.Spike) {
           this.tileEffects.set(change.index, { kind: 'pop', bornAt: now });
         } else if (change.from === Tile.Solid && change.to === Tile.Air) {

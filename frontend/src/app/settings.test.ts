@@ -25,6 +25,12 @@ describe('defaults', () => {
   });
 });
 
+describe('sound defaults', () => {
+  it('start unmuted at a moderate volume', () => {
+    expect(DEFAULT_SETTINGS.sound).toEqual({ muted: false, volume: 60 });
+  });
+});
+
 describe('bindingsOf', () => {
   it('maps every key to the bit of its action', () => {
     const bindings = bindingsOf(DEFAULT_SETTINGS.keys);
@@ -113,6 +119,7 @@ describe('parseSettings', () => {
     const settings = {
       keys: { left: ['KeyJ'], right: ['KeyK'], jump: ['Space'] },
       touch: { size: 'large' as const, swapped: true, opacity: 60 },
+      sound: { muted: true, volume: 20 },
       reducedMotion: true,
     };
 
@@ -150,6 +157,14 @@ describe('parseSettings', () => {
 
     expect(keys.left).toEqual(['KeyJ']);
     expect(keys.right).toEqual(DEFAULT_SETTINGS.keys.right);
+  });
+
+  it('reads the sound settings and repairs damaged ones', () => {
+    const stored = parseSettings(JSON.stringify({ sound: { muted: true, volume: 30 } }), false);
+    const damaged = parseSettings(JSON.stringify({ sound: { muted: 'no', volume: 500 } }), false);
+
+    expect(stored.sound).toEqual({ muted: true, volume: 30 });
+    expect(damaged.sound).toEqual(DEFAULT_SETTINGS.sound);
   });
 
   it('takes reduced motion from the system when nothing was stored', () => {

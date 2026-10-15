@@ -487,6 +487,8 @@ export interface SettingsScreenOptions {
   onTouchSize: (size: TouchSize) => void;
   onTouchSwapped: (swapped: boolean) => void;
   onTouchOpacity: (opacity: number) => void;
+  onSoundMuted: (muted: boolean) => void;
+  onSoundVolume: (volume: number) => void;
   onReducedMotion: (on: boolean) => void;
   onBack: () => void;
 }
@@ -585,6 +587,18 @@ export function settingsScreen(options: SettingsScreenOptions): HTMLElement {
     afterListening(() => options.onTouchOpacity(Number(opacity.value))),
   );
 
+  const volume = h('input', { class: 'range' });
+  volume.type = 'range';
+  volume.name = 'volume';
+  volume.min = '0';
+  volume.max = '100';
+  volume.step = '10';
+  volume.value = String(settings.sound.volume);
+  volume.addEventListener(
+    'change',
+    afterListening(() => options.onSoundVolume(Number(volume.value))),
+  );
+
   return h(
     'section',
     { class: 'screen screen-settings' },
@@ -609,6 +623,13 @@ export function settingsScreen(options: SettingsScreenOptions): HTMLElement {
         afterListening(options.onTouchSwapped),
       ),
       h('label', { class: 'setting-row' }, h('span', { text: 'Opacity' }), opacity),
+    ),
+    h(
+      'fieldset',
+      { class: 'settings-group' },
+      h('legend', { text: 'Sound' }),
+      checkbox('muted', 'Mute', settings.sound.muted, afterListening(options.onSoundMuted)),
+      h('label', { class: 'setting-row' }, h('span', { text: 'Volume' }), volume),
     ),
     h(
       'fieldset',
