@@ -191,6 +191,24 @@ describe('settingsScreen touch and motion', () => {
     expect(calls.music).toHaveBeenCalledWith(true);
   });
 
+  it('has a fullscreen button only when the browser offers fullscreen', () => {
+    const without = render().root;
+    const onFullscreen = vi.fn();
+    const withIt = render({ onFullscreen }).root;
+
+    const button = Array.from(withIt.querySelectorAll('button')).find(
+      (candidate) => candidate.textContent === 'Toggle fullscreen',
+    );
+    button?.click();
+
+    expect(
+      Array.from(without.querySelectorAll('button')).some(
+        (candidate) => candidate.textContent === 'Toggle fullscreen',
+      ),
+    ).toBe(false);
+    expect(onFullscreen).toHaveBeenCalledOnce();
+  });
+
   it('goes back', () => {
     const { root, calls } = render();
 

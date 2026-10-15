@@ -96,6 +96,11 @@ itself uses are not available), the size, side and opacity of the touch buttons,
 (mute, volume and music) and reduced motion, which skips particles, pops and pulses. Reduced motion follows the system
 preference until you choose. Settings are stored in the browser.
 
+On phones the game asks to be held in landscape, keeps the touch buttons clear of notches and
+rounded corners, and offers a fullscreen toggle in the pause menu and in the settings where the
+browser supports it (iPhones do not allow it for web pages; add the page to the home screen
+there for the same effect).
+
 ## Documentation
 
 | Document                                     | Contents                                                  |

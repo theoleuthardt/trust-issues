@@ -465,6 +465,8 @@ export function accountScreen(options: AccountScreenOptions): HTMLElement {
 
 export interface PauseScreenOptions {
   title: string;
+  /** Present only where the browser offers fullscreen. */
+  onFullscreen?: () => void;
   onResume: () => void;
   onRestart: () => void;
   onLevels: () => void;
@@ -482,6 +484,7 @@ export function pauseScreen(options: PauseScreenOptions): HTMLElement {
       button('Resume', options.onResume, true),
       button('Restart level', options.onRestart),
       button('Level select', options.onLevels),
+      ...(options.onFullscreen ? [button('Toggle fullscreen', options.onFullscreen)] : []),
     ),
   );
 }
@@ -522,6 +525,8 @@ export interface SettingsScreenOptions {
   onSoundVolume: (volume: number) => void;
   onMusic: (on: boolean) => void;
   onReducedMotion: (on: boolean) => void;
+  /** Present only where the browser offers fullscreen. */
+  onFullscreen?: () => void;
   onBack: () => void;
 }
 
@@ -675,6 +680,16 @@ export function settingsScreen(options: SettingsScreenOptions): HTMLElement {
         afterListening(options.onReducedMotion),
       ),
     ),
+    ...(options.onFullscreen
+      ? [
+          h(
+            'fieldset',
+            { class: 'settings-group' },
+            h('legend', { text: 'Display' }),
+            button('Toggle fullscreen', afterListening(options.onFullscreen)),
+          ),
+        ]
+      : []),
     h('div', { class: 'stack' }, button('Back', afterListening(options.onBack))),
   );
 }

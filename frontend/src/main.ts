@@ -9,6 +9,7 @@ import { syncAccount } from './app/accountSync';
 import { MusicPlayer } from './audio/MusicPlayer';
 import { SoundBoard } from './audio/SoundBoard';
 import type { AudioLike } from './audio/SoundBoard';
+import { fullscreenAvailable, toggleFullscreen } from './app/fullscreen';
 import { ghostInputs } from './app/ghost';
 import { SettingsStore, bindingsOf, rebind, resetKeys } from './app/settings';
 import type { Settings } from './app/settings';
@@ -367,6 +368,9 @@ function showSettings(): void {
       onReducedMotion: (reducedMotion) => {
         settings.update((current) => ({ ...current, reducedMotion }));
       },
+      ...(fullscreenAvailable(document)
+        ? { onFullscreen: () => void toggleFullscreen(document) }
+        : {}),
       onBack: showMenu,
     }),
   );
@@ -634,6 +638,9 @@ function pauseGame(): void {
     'pause',
     pauseScreen({
       title: scene.title,
+      ...(fullscreenAvailable(document)
+        ? { onFullscreen: () => void toggleFullscreen(document) }
+        : {}),
       onResume: resumeGame,
       onRestart: () => {
         resumeGame();
