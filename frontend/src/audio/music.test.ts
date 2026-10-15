@@ -88,6 +88,51 @@ describe('MusicScheduler', () => {
   });
 });
 
+describe('MusicScheduler.skipUntil', () => {
+  const track = {
+    beats: 4,
+    beatSeconds: 0.5,
+    type: 'sine' as const,
+    notes: [
+      { at: 0, length: 1, midi: 60, gain: 0.5 },
+      { at: 2, length: 1, midi: 64, gain: 0.5 },
+    ],
+  };
+
+  it('jumps over notes that are in the past without handing them out', () => {
+    const scheduler = new MusicScheduler(track, 0);
+
+    scheduler.skipUntil(1000.5);
+
+    expect(scheduler.drain(1002.1).map((entry) => entry.time)).toEqual([1001, 1002]);
+  });
+
+  it('keeps the notes at or after the time', () => {
+    const scheduler = new MusicScheduler(track, 0);
+
+    scheduler.skipUntil(1);
+
+    expect(scheduler.drain(2).map((entry) => entry.time)).toEqual([1]);
+  });
+
+  it('does nothing when the time is before the next note', () => {
+    const scheduler = new MusicScheduler(track, 10);
+
+    scheduler.skipUntil(5);
+
+    expect(scheduler.drain(10.1).map((entry) => entry.time)).toEqual([10]);
+  });
+
+  it('gives the same notes after a skip as walking through them would', () => {
+    const walked = new MusicScheduler(track, 3);
+    walked.drain(40);
+    const skipped = new MusicScheduler(track, 3);
+    skipped.skipUntil(40);
+
+    expect(skipped.drain(45)).toEqual(walked.drain(45));
+  });
+});
+
 describe('musicGain', () => {
   it('is silent when muted, music is off or the volume is 0', () => {
     expect(musicGain({ muted: true, volume: 80, music: true })).toBe(0);

@@ -193,6 +193,76 @@ describe('MusicPlayer', () => {
     expect(masterLevels[masterLevels.length - 1]).toBeCloseTo(full, 5);
   });
 
+  it('does not flood the context with the notes of a long pause', () => {
+    const { context, now, started } = fakeContext();
+    const player = new MusicPlayer(
+      () => context,
+      () => on,
+    );
+    player.setTrack('menu');
+    player.tick();
+    const first = started.length;
+
+    now.value += 5000;
+    player.tick();
+
+    expect(started.length - first).toBeLessThan(20);
+    for (const entry of started.slice(first)) expect(entry.at).toBeGreaterThanOrEqual(now.value);
+  });
+
+  it('does not play the notes missed while music was switched off', () => {
+    const { context, now, started } = fakeContext();
+    let settings = { ...on, music: false };
+    const player = new MusicPlayer(
+      () => context,
+      () => settings,
+    );
+    player.setTrack('game');
+    player.tick();
+
+    now.value += 600;
+    settings = { ...on, music: true };
+    player.tick();
+
+    expect(started.length).toBeLessThan(40);
+    for (const entry of started) expect(entry.at).toBeGreaterThanOrEqual(now.value);
+  });
+
+  it('does not end a duck early when it ticks while the music is ducked', () => {
+    const { context, now, masterLevels } = fakeContext();
+    const player = new MusicPlayer(
+      () => context,
+      () => on,
+    );
+    player.setTrack('game');
+    player.tick();
+    player.duck();
+    const writes = masterLevels.length;
+
+    now.value += 0.2;
+    player.tick();
+
+    expect(masterLevels).toHaveLength(writes);
+  });
+
+  it('applies a changed volume again once the duck is over', () => {
+    const { context, now, masterLevels } = fakeContext();
+    let settings = on;
+    const player = new MusicPlayer(
+      () => context,
+      () => settings,
+    );
+    player.setTrack('game');
+    player.tick();
+    player.duck();
+
+    now.value += 5;
+    settings = { ...on, volume: 20 };
+    player.tick();
+
+    expect(masterLevels[masterLevels.length - 1]).toBeCloseTo(0.04 * 0.25, 5);
+  });
+
   it('does nothing without an audio context', () => {
     const player = new MusicPlayer(
       () => undefined,

@@ -126,7 +126,7 @@ function announce(text: string): void {
 const setScreen = (screen: Screen) => {
   navigation += 1;
   document.body.dataset.screen = screen;
-  music.setTrack(screen === 'game' || screen === 'replay' || screen === 'pause' ? 'game' : 'menu');
+  music.setTrack(screen === 'game' || screen === 'pause' ? 'game' : 'menu');
 };
 
 window.addEventListener('keydown', (event) => {

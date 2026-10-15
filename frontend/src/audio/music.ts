@@ -81,6 +81,25 @@ export class MusicScheduler {
     this.sorted = [...track.notes].sort((a, b) => a.at - b.at);
   }
 
+  /** Forgets the notes that start before `time` without handing them out. */
+  skipUntil(time: number): void {
+    const loopSeconds = this.track.beats * this.track.beatSeconds;
+    const loop = Math.floor((time - this.origin) / loopSeconds);
+    if (loop > this.loop) {
+      this.loop = loop;
+      this.index = 0;
+    }
+    while (this.index < this.sorted.length) {
+      const next = this.sorted[this.index];
+      if (!next) break;
+      const at = this.origin + (this.loop * this.track.beats + next.at) * this.track.beatSeconds;
+      if (at >= time) return;
+      this.index += 1;
+    }
+    this.index = 0;
+    this.loop += 1;
+  }
+
   /** Every note not handed out yet that starts before `until`. */
   drain(until: number): { time: number; note: Note }[] {
     const out: { time: number; note: Note }[] = [];

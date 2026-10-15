@@ -23,6 +23,8 @@ export class MusicPlayer {
   private schedulers: Partial<Record<TrackName, MusicScheduler>> = {};
   private wanted: TrackName | undefined;
   private active: TrackName | undefined;
+  private appliedLevel = -1;
+  private duckedUntil = 0;
 
   constructor(
     private readonly contextProvider: () => AudioLike | undefined,
@@ -55,6 +57,8 @@ export class MusicPlayer {
     this.master.gain.cancelScheduledValues(now);
     this.master.gain.setValueAtTime(level * DUCK_LEVEL, now + DUCK_IN_SECONDS);
     this.master.gain.linearRampToValueAtTime(level, now + DUCK_IN_SECONDS + DUCK_OUT_SECONDS);
+    this.appliedLevel = level;
+    this.duckedUntil = now + DUCK_IN_SECONDS + DUCK_OUT_SECONDS;
   }
 
   /** Applies the current settings and schedules the notes that start in the next second. */
@@ -62,7 +66,10 @@ export class MusicPlayer {
     const context = this.ready();
     if (!context || !this.master) return;
     const level = musicGain(this.settings());
-    this.master.gain.setValueAtTime(level, context.currentTime);
+    if (level !== this.appliedLevel && context.currentTime >= this.duckedUntil) {
+      this.master.gain.setValueAtTime(level, context.currentTime);
+      this.appliedLevel = level;
+    }
     if (level <= 0) return;
 
     if (this.wanted && this.active !== this.wanted) this.setTrack(this.wanted);
@@ -72,6 +79,7 @@ export class MusicPlayer {
     if (!track || !bus || !scheduler) return;
 
     const definition = TRACKS[track];
+    scheduler.skipUntil(context.currentTime);
     for (const { time, note } of scheduler.drain(context.currentTime + LOOKAHEAD_SECONDS)) {
       const gain = context.createGain();
       const end = time + note.length * definition.beatSeconds;
