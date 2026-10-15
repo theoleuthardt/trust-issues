@@ -186,3 +186,31 @@ describe('trap', () => {
     ).toThrow(/outside/);
   });
 });
+
+describe('stage width', () => {
+  it('builds a wider stage when asked to, with the exit near the right end', () => {
+    const { rows } = stage([], { width: 64 });
+
+    expect(rows).toHaveLength(STAGE_HEIGHT);
+    for (const row of rows) expect(row).toHaveLength(64);
+    expect(cell(rows, 62, 15)).toBe('E');
+    expect(cell(rows, 40, 16)).toBe('#');
+  });
+
+  it('lets features use the added columns', () => {
+    const { rows, traps } = stage([spikes(50, 2), drop(40, 44, 2)], { width: 64 });
+
+    expect(cell(rows, 51, 15)).toBe('^');
+    expect(traps[0]?.tiles[0]).toEqual([44, 16]);
+  });
+
+  it('still refuses a feature outside the stage', () => {
+    expect(() => stage([spikes(40)], { width: 32 })).toThrow(/outside/);
+    expect(() => stage([spikes(70)], { width: 64 })).toThrow(/outside/);
+  });
+
+  it('only accepts a sensible width', () => {
+    expect(() => stage([], { width: 10 })).toThrow(/width/);
+    expect(() => stage([], { width: 500 })).toThrow(/width/);
+  });
+});

@@ -195,3 +195,18 @@ describe('versions', () => {
     for (const level of LEVELS) expect(level.revision).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe('stage size', () => {
+  it('accepts stages that are larger than the screen', () => {
+    const wide = `.${'.'.repeat(98)}.`;
+    const rows = [wide, `.S${'.'.repeat(96)}E.`, '#'.repeat(100)];
+
+    expect(() => buildLevel(def({ stages: [stageDef({ rows })] }))).not.toThrow();
+  });
+
+  it('refuses a stage that is larger than the limit', () => {
+    const rows = ['.'.repeat(300), `.S${'.'.repeat(296)}E.`, '#'.repeat(300)];
+
+    expect(() => buildLevel(def({ stages: [stageDef({ rows })] }))).toThrow(/size|large/i);
+  });
+});

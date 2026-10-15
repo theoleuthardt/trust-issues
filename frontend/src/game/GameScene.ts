@@ -32,6 +32,7 @@ import {
 } from './effects';
 import type { Particle } from './effects';
 import { appearanceOf } from './appearance';
+import { cameraTarget, followCamera } from './camera';
 import { advancePhase, facingAfter, figurePose, legFoot } from './figure';
 import { nextLevel, stageDots } from './progress';
 import { PALETTE, colorNumber } from '../theme';
@@ -80,6 +81,7 @@ const LEG_SPACING = 4;
 const HUD_FONT = { fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: '20px' };
 const MAX_TICKS_PER_FRAME = 5;
 const GHOST_ALPHA = 0.3;
+const CAMERA_EASING = 0.12;
 const SPEED_KEYS = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'] as const;
 const NORMAL_SPEED = 1;
 const DOT_SIZE = 10;
@@ -127,6 +129,10 @@ export class GameScene extends Phaser.Scene {
   private ghostInputs: number[] | undefined;
   private ghost: { state: GameState; index: number; facing: 1 | -1; phase: number } | undefined;
   private world!: Phaser.GameObjects.Graphics;
+  private hud!: Phaser.GameObjects.Graphics;
+  private background: Phaser.GameObjects.Graphics | undefined;
+  private cameraPosition = { x: 0, y: 0 };
+  private cameraSnap = true;
   private timeText!: Phaser.GameObjects.Text;
   private deathText!: Phaser.GameObjects.Text;
   private overlay: Phaser.GameObjects.GameObject[] = [];
@@ -180,15 +186,20 @@ export class GameScene extends Phaser.Scene {
     });
     this.drawBackground();
     this.world = this.add.graphics();
+    this.hud = this.add.graphics().setScrollFactor(0);
     this.levelText = this.add
       .text(this.scale.width / 2, 14, this.levelTitle(), {
         ...HUD_FONT,
         color: PALETTE.inkSoft,
       })
+      .setScrollFactor(0)
       .setOrigin(0.5, 0);
-    this.timeText = this.add.text(16, 14, '', { ...HUD_FONT, color: PALETTE.ink });
+    this.timeText = this.add
+      .text(16, 14, '', { ...HUD_FONT, color: PALETTE.ink })
+      .setScrollFactor(0);
     this.deathText = this.add
       .text(this.scale.width - 16, 14, '', { ...HUD_FONT, color: PALETTE.ink })
+      .setScrollFactor(0)
       .setOrigin(1, 0);
 
     this.input.keyboard?.on('keydown-R', () => this.restart());
@@ -244,6 +255,7 @@ export class GameScene extends Phaser.Scene {
         fontSize: '16px',
         color: PALETTE.inkSoft,
       })
+      .setScrollFactor(0)
       .setOrigin(0, 0);
     SPEEDS.forEach((_, index) => {
       this.input.keyboard?.on(`keydown-${SPEED_KEYS[index]}`, () => {
@@ -298,6 +310,7 @@ export class GameScene extends Phaser.Scene {
   private announce(text: string): void {
     const label = this.add
       .text(this.scale.width / 2, 92, text, { ...HUD_FONT, fontSize: '32px', color: PALETTE.ink })
+      .setScrollFactor(0)
       .setOrigin(0.5, 0);
     this.tweens.add({
       targets: label,
@@ -333,6 +346,7 @@ export class GameScene extends Phaser.Scene {
   private advance(): void {
     const next = nextLevel(this.levels, this.level.id) ?? this.levels[0];
     if (next) this.level = next;
+    this.drawBackground();
     this.levelText.setText(this.levelTitle());
     this.restart();
   }
@@ -354,6 +368,7 @@ export class GameScene extends Phaser.Scene {
     this.stepper.reset();
     this.cursor?.reset();
     this.viewerPaused = false;
+    this.cameraSnap = true;
     this.startGhost(0);
   }
 
@@ -361,6 +376,7 @@ export class GameScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const shade = this.add
       .rectangle(0, 0, width, height, colorNumber('paper'), 0.88)
+      .setScrollFactor(0)
       .setOrigin(0, 0);
     const title = this.add
       .text(width / 2, height / 2 - 40, this.state.finished ? 'Replay finished' : 'Replay ended', {
@@ -368,12 +384,14 @@ export class GameScene extends Phaser.Scene {
         fontSize: '44px',
         color: PALETTE.ink,
       })
+      .setScrollFactor(0)
       .setOrigin(0.5);
     const hint = this.add
       .text(width / 2, height / 2 + 30, 'R or tap: watch again  ·  Esc: close', {
         ...HUD_FONT,
         color: PALETTE.inkSoft,
       })
+      .setScrollFactor(0)
       .setOrigin(0.5);
     this.overlay = [shade, title, hint];
     this.state.finished = true;
@@ -387,6 +405,7 @@ export class GameScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const shade = this.add
       .rectangle(0, 0, width, height, colorNumber('paper'), 0.88)
+      .setScrollFactor(0)
       .setOrigin(0, 0);
     const next = nextLevel(this.levels, this.level.id);
     const title = this.add
@@ -395,6 +414,7 @@ export class GameScene extends Phaser.Scene {
         fontSize: '44px',
         color: PALETTE.ink,
       })
+      .setScrollFactor(0)
       .setOrigin(0.5);
     const summary = this.add
       .text(
@@ -407,6 +427,7 @@ export class GameScene extends Phaser.Scene {
           color: PALETTE.ink,
         },
       )
+      .setScrollFactor(0)
       .setOrigin(0.5);
     const hint = this.add
       .text(
@@ -420,9 +441,11 @@ export class GameScene extends Phaser.Scene {
           color: PALETTE.inkSoft,
         },
       )
+      .setScrollFactor(0)
       .setOrigin(0.5);
     this.statusText = this.add
       .text(width / 2, height / 2 + 36, '', { ...HUD_FONT, color: PALETTE.ink })
+      .setScrollFactor(0)
       .setOrigin(0.5);
     this.overlay = [shade, title, summary, hint, this.statusText];
 
@@ -439,9 +462,12 @@ export class GameScene extends Phaser.Scene {
     this.onFinished?.(event);
   }
 
+  /** Draws the paper and the skyline for the size of the current level, replacing the old one. */
   private drawBackground(): void {
-    const g = this.add.graphics();
-    const { width, height } = this.scale;
+    this.background?.destroy();
+    const g = this.add.graphics().setDepth(-1);
+    this.background = g;
+    const { width, height } = this.worldSize();
     g.fillStyle(colorNumber('paper'));
     g.fillRect(0, 0, width, height);
     g.fillStyle(colorNumber('paperShade'));
@@ -451,11 +477,33 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /** Size of the level in pixels; every stage of a level has the same size. */
+  private worldSize(): { width: number; height: number } {
+    const first = stageOf(this.level, 0);
+    return { width: first.width * TILE_SIZE, height: first.height * TILE_SIZE };
+  }
+
+  /** Puts the camera on the player, at once or eased; the HUD does not scroll. */
+  private updateCamera(snap: boolean): void {
+    const target = cameraTarget(
+      { x: this.state.x + PLAYER_WIDTH / 2, y: this.state.y + PLAYER_HEIGHT / 2 },
+      this.scale,
+      this.worldSize(),
+    );
+    this.cameraPosition = snap
+      ? target
+      : followCamera(this.cameraPosition, target, this.calm ? 1 : CAMERA_EASING);
+    this.cameras.main.setScroll(this.cameraPosition.x, this.cameraPosition.y);
+  }
+
   private render(): void {
     const now = this.time.now;
     this.trackEffects(now);
+    this.updateCamera(this.cameraSnap);
+    this.cameraSnap = false;
     const g = this.world;
     g.clear();
+    this.hud.clear();
     this.renderZones(g);
     this.renderHalo(g, now);
     this.renderTiles(g, now);
@@ -466,7 +514,7 @@ export class GameScene extends Phaser.Scene {
       this.renderFigure(g, this.ghost.state, this.ghost.facing, this.ghost.phase, GHOST_ALPHA);
     }
     this.renderFigure(g, this.state, this.facing, this.phase, 1);
-    this.renderStageDots(g);
+    this.renderStageDots(this.hud);
     this.timeText.setText(formatTime(this.state.tick));
     this.deathText.setText(`Deaths ${this.state.deaths}`);
     this.speedText?.setText(this.viewerLine());
@@ -480,6 +528,7 @@ export class GameScene extends Phaser.Scene {
   private trackEffects(now: number): void {
     if (this.state.stage !== this.knownStage) {
       this.onSound?.('exit');
+      this.cameraSnap = true;
       this.announce(`Stage ${this.state.stage + 1}`);
       this.onStage?.(this.state.stage, this.level.stages.length);
       this.knownStage = this.state.stage;
@@ -487,6 +536,7 @@ export class GameScene extends Phaser.Scene {
       this.tileEffects.clear();
     } else if (this.state.deaths !== this.knownDeaths) {
       this.knownDeaths = this.state.deaths;
+      this.cameraSnap = true;
       this.onSound?.('death');
       const origin = {
         x: this.lastPosition.x + PLAYER_WIDTH / 2,
