@@ -44,6 +44,9 @@ start with short or placeholder values.
   `Content-Security-Policy` that allows nothing; only the public leaderboard may be cached
   (15 seconds), everything else is `no-store`. There is no CORS: the game and the API share an
   origin.
-- The game page carries a Content-Security-Policy meta tag that only allows its own origin.
+- The game page carries a Content-Security-Policy meta tag: scripts and connections only to
+  its own origin, inline styles and `data:`/`blob:` images allowed because the game canvas
+  needs them. The API documentation pages (only served with `ENABLE_DOCS=true`) are exempt
+  from the API's CSP because they load their own assets.
   Headers that a meta tag cannot set (framing, HSTS, caching) are listed in
   [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the proxy.

@@ -13,6 +13,7 @@ SECURITY_HEADERS = {
     "cross-origin-resource-policy": "same-origin",
 }
 
+DOCS_PREFIX = "/schema"
 LEADERBOARD_PREFIX = "/api/leaderboard/"
 LEADERBOARD_CACHE = "public, max-age=15"
 PRIVATE_CACHE = "no-store"
@@ -20,8 +21,9 @@ PRIVATE_CACHE = "no-store"
 
 class SecurityHeadersMiddleware:
     """
-    Adds the security headers to every HTTP response, error responses included. Everything is
-    `no-store` except the public leaderboard, which may be cached for a few seconds.
+    Adds the security headers to every HTTP response. Everything is `no-store` except the public
+    leaderboard, which may be cached for a few seconds. The API documentation pages (served only
+    with ENABLE_DOCS) keep the other headers but get no CSP, since they load their own assets.
     """
 
     def __init__(self, app: ASGIApp) -> None:
@@ -37,6 +39,8 @@ class SecurityHeadersMiddleware:
             if message["type"] == "http.response.start":
                 headers = MutableScopeHeaders(message)
                 for name, value in SECURITY_HEADERS.items():
+                    if name == "content-security-policy" and path.startswith(DOCS_PREFIX):
+                        continue
                     headers[name] = value
                 if "cache-control" not in headers:
                     is_board = path.startswith(LEADERBOARD_PREFIX)
