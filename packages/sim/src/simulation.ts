@@ -34,12 +34,16 @@ export interface RunResult {
   deaths: number;
 }
 
+function isSolid(tile: number): boolean {
+  return tile === Tile.Solid || tile === Tile.Hidden;
+}
+
 function spawnsOnGround(stage: Stage): boolean {
   const below = lastTile(stage.spawn.y, PLAYER_HEIGHT) + 1;
   const left = firstTile(stage.spawn.x);
   const right = lastTile(stage.spawn.x, PLAYER_WIDTH);
   for (let tx = left; tx <= right; tx++) {
-    if (tileAt(stage, stage.tiles, tx, below) === Tile.Solid) return true;
+    if (isSolid(tileAt(stage, stage.tiles, tx, below))) return true;
   }
   return false;
 }
@@ -79,7 +83,7 @@ function columnBlocked(stage: Stage, state: GameState, tx: number): boolean {
   const top = firstTile(state.y);
   const bottom = lastTile(state.y, PLAYER_HEIGHT);
   for (let ty = top; ty <= bottom; ty++) {
-    if (tileAt(stage, state.tiles, tx, ty) === Tile.Solid) return true;
+    if (isSolid(tileAt(stage, state.tiles, tx, ty))) return true;
   }
   return false;
 }
@@ -88,7 +92,7 @@ function rowBlocked(stage: Stage, state: GameState, ty: number): boolean {
   const left = firstTile(state.x);
   const right = lastTile(state.x, PLAYER_WIDTH);
   for (let tx = left; tx <= right; tx++) {
-    if (tileAt(stage, state.tiles, tx, ty) === Tile.Solid) return true;
+    if (isSolid(tileAt(stage, state.tiles, tx, ty))) return true;
   }
   return false;
 }
@@ -164,7 +168,9 @@ function touchesHazard(stage: Stage, state: GameState): boolean {
   const right = lastTile(state.x, PLAYER_WIDTH);
   for (let ty = top; ty <= bottom; ty++) {
     for (let tx = left; tx <= right; tx++) {
-      if (tileAt(stage, state.tiles, tx, ty) !== Tile.Spike) continue;
+      const tile = tileAt(stage, state.tiles, tx, ty);
+      if (tile === Tile.FakeExit) return true;
+      if (tile !== Tile.Spike) continue;
       const inside = overlapsRect(
         state,
         tx * TILE_SIZE + SPIKE_INSET,

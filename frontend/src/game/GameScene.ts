@@ -29,6 +29,7 @@ import {
   vanishScale,
 } from './effects';
 import type { Particle } from './effects';
+import { appearanceOf } from './appearance';
 import { advancePhase, figurePose, legFoot } from './figure';
 import { nextLevel, stageDots } from './progress';
 import { PALETTE, colorNumber } from '../theme';
@@ -505,21 +506,23 @@ export class GameScene extends Phaser.Scene {
     for (let ty = 0; ty < height; ty++) {
       for (let tx = 0; tx < width; tx++) {
         const index = ty * width + tx;
-        const tile = this.state.tiles[index];
+        const look = appearanceOf(this.state.tiles[index]);
         const x = tx * TILE_SIZE;
         const y = ty * TILE_SIZE;
-        if (tile === Tile.Solid) {
+        if (look === 'solid') {
           g.fillStyle(colorNumber('ink'));
           g.fillRect(x, y, TILE_SIZE, TILE_SIZE);
           g.fillStyle(colorNumber('inkLift'));
           g.fillRect(x + TILE_SIZE - 1, y, 1, TILE_SIZE);
           g.fillRect(x, y + TILE_SIZE - 1, TILE_SIZE, 1);
-          const above = ty > 0 ? this.state.tiles[index - width] : Tile.Solid;
-          if (above !== Tile.Solid) {
+          const above = ty > 0 ? appearanceOf(this.state.tiles[index - width]) : 'solid';
+          if (above !== 'solid') {
             g.fillStyle(colorNumber('inkSoft'));
             g.fillRect(x, y, TILE_SIZE, 3);
           }
-        } else if (tile === Tile.Spike) {
+        } else if (look === 'exit') {
+          this.drawDoor(g, x, y);
+        } else if (look === 'spike') {
           const effect = this.tileEffects.get(index);
           const scale = effect?.kind === 'pop' ? popScale(now - effect.bornAt) : 1;
           if (effect?.kind === 'pop' && now - effect.bornAt >= POP_MS)
@@ -563,8 +566,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderExit(g: Phaser.GameObjects.Graphics): void {
-    const x = this.stage.exit.x * TILE_SIZE;
-    const y = this.stage.exit.y * TILE_SIZE;
+    this.drawDoor(g, this.stage.exit.x * TILE_SIZE, this.stage.exit.y * TILE_SIZE);
+  }
+
+  private drawDoor(g: Phaser.GameObjects.Graphics, x: number, y: number): void {
     g.fillStyle(colorNumber('ink'));
     g.fillRoundedRect(x + 4, y + 2, TILE_SIZE - 8, TILE_SIZE - 2, { tl: 12, tr: 12, bl: 0, br: 0 });
     g.fillStyle(colorNumber('paper'));

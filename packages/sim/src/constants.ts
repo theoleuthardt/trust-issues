@@ -26,4 +26,8 @@ export const SPIKE_INSET = 6;
 export const Input = { Left: 1, Right: 2, Jump: 4 } as const;
 export const INPUT_MASK_MAX = Input.Left | Input.Right | Input.Jump;
 
-export const Tile = { Air: 0, Solid: 1, Spike: 2 } as const;
+/**
+ * Tile kinds. `Hidden` collides like `Solid` but is drawn as air, `Fake` is drawn as `Solid`
+ * but is passable, and `FakeExit` is drawn as the exit but kills like a spike.
+ */
+export const Tile = { Air: 0, Solid: 1, Spike: 2, Hidden: 3, Fake: 4, FakeExit: 5 } as const;
