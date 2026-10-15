@@ -36,6 +36,17 @@ export async function installFakeClock(page: Page): Promise<void> {
   });
 }
 
+/**
+ * Opens a level directly and waits until the game chunk is loaded and the scene has started,
+ * so inputs that follow are not lost to a game that is still being fetched.
+ */
+export async function openLevel(page: Page, levelId: string): Promise<void> {
+  await page.goto(`/?level=${levelId}`);
+  await page.waitForSelector('body[data-screen="game"]');
+  await page.waitForSelector('canvas');
+  await advance(page, 6);
+}
+
 export async function advance(page: Page, frames: number): Promise<void> {
   await page.evaluate(
     ([count, ms]) => {

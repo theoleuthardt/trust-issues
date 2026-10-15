@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { Input } from '@trust-issues/sim';
 import { SOLUTIONS } from '@trust-issues/sim/testing';
-import { advance, installFakeClock, playReplay } from '../support/clock';
+import { advance, installFakeClock, openLevel, playReplay } from '../support/clock';
 
 async function openSettings(page: Page): Promise<void> {
   await page.goto('/');
@@ -49,8 +49,7 @@ test('the rebound key plays the game', async ({ page }) => {
   await page.keyboard.press('KeyK');
   await page.getByRole('button', { name: 'Back' }).click();
 
-  await page.goto('/?level=trust-nothing');
-  await advance(page, 6);
+  await openLevel(page, 'trust-nothing');
   await playReplay(page, solution?.replay ?? [], [
     [Input.Left, 'ArrowLeft'],
     [Input.Right, 'ArrowRight'],

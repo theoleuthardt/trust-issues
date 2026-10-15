@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { LEVELS } from '@trust-issues/sim';
 import { SOLUTIONS } from '@trust-issues/sim/testing';
-import { advance, installFakeClock, playReplay } from '../support/clock';
+import { advance, installFakeClock, openLevel, playReplay } from '../support/clock';
 
 const SAMPLE = new Set([
   'trust-nothing',
@@ -21,8 +21,7 @@ for (const level of levels) {
     if (!solution) return;
 
     await installFakeClock(page);
-    await page.goto(`/?level=${level.id}`);
-    await advance(page, 6);
+    await openLevel(page, level.id);
 
     await playReplay(page, solution.replay);
     await advance(page, 2);

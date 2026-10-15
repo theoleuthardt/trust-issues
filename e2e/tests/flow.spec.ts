@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { advance, installFakeClock } from '../support/clock';
+import { advance, installFakeClock, openLevel } from '../support/clock';
 
 test('a guest can open the first level from the title screen', async ({ page }) => {
   await page.goto('/');
@@ -55,15 +55,31 @@ test('the leaderboard of a level reports a server that cannot be reached', async
   await expect(page.locator('[role=alert]')).toBeVisible();
 });
 
+test('a game chunk that cannot be fetched is reported and can be fetched again', async ({
+  page,
+}) => {
+  await page.route('**/assets/runtime-*.js', (route) => route.abort());
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Play as guest' }).click();
+  await page.getByRole('button', { name: 'Start' }).click();
+
+  await expect(page.locator('[role=alert]')).toContainText(/could not be loaded/i);
+
+  await page.unroute('**/assets/runtime-*.js');
+  await page.getByRole('button', { name: 'Try again' }).click();
+
+  await expect(page.locator('body')).toHaveAttribute('data-screen', 'game');
+  await expect(page.locator('canvas')).toBeVisible();
+});
+
 test('running into a trap again and again keeps the game running', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await installFakeClock(page);
-  await page.goto('/?level=trust-nothing');
-  await advance(page, 6);
+  await openLevel(page, 'trust-nothing');
 
   await page.keyboard.down('ArrowRight');
-  await advance(page, 900);
+  await advance(page, 400);
   await page.keyboard.up('ArrowRight');
   await advance(page, 10);
 
