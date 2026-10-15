@@ -1,10 +1,12 @@
 import json
 import logging
+import sys
 
 import pytest
 from litestar.testing import AsyncTestClient
 
 from tests.conftest import PASSWORD, FakeVerifier, auth_headers, register
+from trust_issues_backend.observability import JsonFormatter, configure_logging, request_id_for
 
 ACCESS = "trust_issues.access"
 
@@ -98,3 +100,55 @@ async def test_passes_the_request_id_to_the_verifier(
 
     assert response.headers["x-request-id"] == "trace-abcdef12"
     assert verifier.request_ids == ["trace-abcdef12"]
+
+
+def test_json_formatter_writes_one_object_with_the_extra_fields() -> None:
+    record = logging.LogRecord(
+        "trust_issues.access", logging.INFO, "f.py", 1, "GET /x 200", (), None
+    )
+    record.request_id = "abc"
+    record.status = 200
+
+    payload = json.loads(JsonFormatter().format(record))
+
+    assert payload["message"] == "GET /x 200"
+    assert payload["level"] == "info"
+    assert payload["logger"] == "trust_issues.access"
+    assert payload["request_id"] == "abc"
+    assert payload["status"] == 200
+    assert payload["time"].endswith("+00:00")
+
+
+def test_configure_logging_writes_json_lines_to_stdout(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    root = logging.getLogger()
+    before = (root.handlers[:], root.level)
+    try:
+        configure_logging("INFO")
+        logging.getLogger("trust_issues.test").info("hello")
+        captured = capsys.readouterr()
+    finally:
+        root.handlers[:], root.level = before[0], before[1]
+
+    assert json.loads(captured.out.strip().splitlines()[-1])["message"] == "hello"
+    assert captured.err == ""
+    assert sys.stdout is not None
+
+
+def test_configure_logging_survives_an_unknown_level_and_keeps_sql_out_of_the_logs() -> None:
+    root = logging.getLogger()
+    before = (root.handlers[:], root.level)
+    try:
+        configure_logging(" verbose ")
+        assert root.level == logging.INFO
+        assert logging.getLogger("sqlalchemy.engine").getEffectiveLevel() >= logging.WARNING
+    finally:
+        root.handlers[:], root.level = before[0], before[1]
+
+
+def test_a_request_id_with_a_trailing_newline_is_replaced() -> None:
+    scope = {"type": "http", "headers": [(b"x-request-id", b"trace-1234abcd\n")]}
+
+    assert request_id_for(scope) != "trace-1234abcd\n"
+    assert "\n" not in request_id_for(scope)

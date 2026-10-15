@@ -3,6 +3,7 @@
 import json
 import logging
 import re
+import sys
 import time
 import uuid
 from datetime import UTC, datetime
@@ -11,7 +12,7 @@ from litestar import Request, Response
 from litestar.types import ASGIApp, Message, Receive, Scope, Send
 
 REQUEST_ID_HEADER = "x-request-id"
-_VALID_ID = re.compile(r"^[A-Za-z0-9._-]{8,64}$")
+_VALID_ID = re.compile(r"[A-Za-z0-9._-]{8,64}")
 
 access_logger = logging.getLogger("trust_issues.access")
 
@@ -36,13 +37,24 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(payload, default=str)
 
 
+_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+_QUIET = ("sqlalchemy.engine", "httpx", "httpcore", "asyncio")
+
+
 def configure_logging(level: str = "INFO") -> None:
-    """Sends all logs to stdout as JSON lines."""
-    handler = logging.StreamHandler()
+    """
+    Sends all logs to stdout as JSON lines. An unknown level falls back to INFO, and the
+    libraries that would log SQL statements with their parameters or every outgoing request
+    are kept at WARNING whatever the level is.
+    """
+    name = level.strip().upper()
+    handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(JsonFormatter())
     root = logging.getLogger()
     root.handlers[:] = [handler]
-    root.setLevel(level.upper())
+    root.setLevel(name if name in _LEVELS else "INFO")
+    for library in _QUIET:
+        logging.getLogger(library).setLevel(logging.WARNING)
 
 
 def request_id_for(scope: Scope) -> str:
@@ -59,7 +71,7 @@ def request_id_for(scope: Scope) -> str:
         if name.decode("latin-1").lower() == REQUEST_ID_HEADER:
             incoming = value.decode("latin-1")
             break
-    request_id = incoming if _VALID_ID.match(incoming) else uuid.uuid4().hex
+    request_id = incoming if _VALID_ID.fullmatch(incoming) else uuid.uuid4().hex
     state["request_id"] = request_id
     state.setdefault("started", time.perf_counter())
     return request_id
@@ -110,7 +122,8 @@ class AccessLogMiddleware:
         async def send_with_id(message: Message) -> None:
             if message["type"] == "http.response.start":
                 headers = list(message.get("headers", []))
-                headers.append((REQUEST_ID_HEADER.encode(), request_id.encode()))
+                if all(name.decode("latin-1").lower() != REQUEST_ID_HEADER for name, _ in headers):
+                    headers.append((REQUEST_ID_HEADER.encode(), request_id.encode()))
                 message["headers"] = headers
                 _log_access(scope, message["status"])
             await send(message)

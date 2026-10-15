@@ -79,7 +79,8 @@ Every request has an id: a sane `X-Request-ID` of the caller is kept, otherwise 
 returned as a response header and passed on to the verifier, so one run can be followed across
 both services. A line holds time, request id, method, path, status, duration and, for signed-in
 requests, the user id. Bodies, headers, tokens and replays are never logged. The level comes from
-`LOG_LEVEL` (default `INFO`).
+`LOG_LEVEL` (default `INFO`; an unknown value falls back to `INFO`). SQL statements and
+outgoing request logs of the libraries stay at `WARNING` so parameters never reach the log.
 
 ## Updating
 
