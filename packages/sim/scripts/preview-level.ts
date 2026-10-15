@@ -20,6 +20,7 @@ if (!content) {
 
 const level = buildLevel({ ...content, parFrames: content.maxFrames });
 let failed = false;
+let total = 0;
 
 for (const [index, stage] of level.stages.entries()) {
   console.log(`\n${content.name}, stage ${index + 1} of ${level.stages.length}\n`);
@@ -27,9 +28,19 @@ for (const [index, stage] of level.stages.entries()) {
   if (!solve) continue;
   const result = solveStage(stage, { maxFrames: content.maxFrames });
   if (result.solved) {
+    total += result.inputs.length;
     console.log(`\nsolved in ${result.inputs.length} frames (${result.expansions} nodes)`);
   } else {
     console.log(`\nnot solved: ${result.reason}`);
+    failed = true;
+  }
+}
+
+if (solve && !failed) {
+  const within = total <= content.maxFrames;
+  console.log(`\nall stages: ${total} frames of a budget of ${content.maxFrames}`);
+  if (!within) {
+    console.log('over the frame budget of the level');
     failed = true;
   }
 }
