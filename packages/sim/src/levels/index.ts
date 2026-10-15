@@ -1,7 +1,7 @@
 import { buildLevel } from '../level';
 import type { Level } from '../level';
 import { LEVEL_CONTENT } from './content';
-import pars from './pars.json';
+import pars from './pars.json' with { type: 'json' };
 
 /** All playable levels in play order. Par times come from `task levels:solve`. */
 export const LEVELS: readonly Level[] = LEVEL_CONTENT.map((content) => {

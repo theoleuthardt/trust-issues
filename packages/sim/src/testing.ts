@@ -1,4 +1,4 @@
-import solutions from './solutions.json';
+import solutions from './solutions.json' with { type: 'json' };
 
 export * from './solver';
 

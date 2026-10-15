@@ -60,6 +60,11 @@ tasks:
       - npm test
       - cd backend && uv run pytest
 
+  e2e:
+    desc: Browser tests; plays reference solutions through the built game (npx playwright install chromium first)
+    cmds:
+      - npm run e2e --workspace @trust-issues/e2e
+
   lint:
     desc: ESLint and ruff
     cmds:

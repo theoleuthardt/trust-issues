@@ -6,6 +6,7 @@ import { validateCredentials } from './api/credentials';
 import { SessionStore } from './api/session';
 import { syncAccount } from './app/accountSync';
 import { ProgressStore, accountKey, firstOpenIndex, levelCards } from './app/progress';
+import { finishAnnouncement, stageAnnouncement } from './app/announcement';
 import { escapeAction } from './app/escape';
 import { leaderboardRows } from './app/leaderboard';
 import {
@@ -54,6 +55,11 @@ const api = new ApiClient(
 let game: Phaser.Game | undefined;
 
 let navigation = 0;
+
+function announce(text: string): void {
+  const region = document.getElementById('status');
+  if (region) region.textContent = text;
+}
 
 const setScreen = (screen: Screen) => {
   navigation += 1;
@@ -316,7 +322,12 @@ function startLevel(index: number): void {
     levels: LEVELS,
     startIndex: index,
     input,
+    onStage: (stage: number, total: number) => announce(stageAnnouncement(stage, total)),
     onFinished: (event: RunFinishedEvent) => {
+      const position = LEVELS.findIndex((level) => level.id === event.levelId);
+      announce(
+        finishAnnouncement(`${position + 1}. ${LEVELS[position]?.name ?? event.levelId}`, event),
+      );
       currentStore().record(event.levelId, {
         score: event.score,
         frames: event.frames,
