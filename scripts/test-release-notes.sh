@@ -19,12 +19,16 @@ commit "feat: first thing"
 git tag v0.1.0
 commit "feat(sim): fake exits (#26)"
 commit "fix(backend): a rare crash (#40)"
+git tag snapshot-1
 commit "docs: explain the thing"
 commit "chore(infra): backups (#58)"
+commit "perf(frontend): lazy game chunk (#62)"
+commit "feat(api)!: rename a field"
 commit "test: more tests"
 commit "tidy up the readme"
+git tag v0.2.0
 
-notes="$("$root/scripts/release-notes.sh" v0.1.0 HEAD)"
+notes="$("$root/scripts/release-notes.sh" v0.1.0 v0.2.0)"
 check "$(echo "$notes" | grep -c '^## Features')" 1 "has a features section"
 check "$(echo "$notes" | grep -c -- '- fake exits (#26)')" 1 "strips the type and scope of a feature"
 check "$(echo "$notes" | grep -c -- '- a rare crash (#40)')" 1 "lists a fix"
@@ -33,8 +37,12 @@ check "$(echo "$notes" | grep -c -- '- backups (#58)')" 1 "lists a chore"
 check "$(echo "$notes" | grep -c -- '- tidy up the readme')" 1 "keeps a non-conventional subject under other"
 check "$(echo "$notes" | grep -c 'first thing')" 0 "leaves out what is before the previous tag"
 
-auto="$("$root/scripts/release-notes.sh" "" HEAD)"
-check "$auto" "$notes" "the previous tag is found by itself"
+check "$(echo "$notes" | grep -c '^## Performance')" 1 "has a performance section"
+check "$(echo "$notes" | grep -c -- '- lazy game chunk (#62)')" 1 "lists a performance change"
+check "$(echo "$notes" | grep -c -- '- rename a field')" 1 "lists a breaking change under features"
+
+auto="$("$root/scripts/release-notes.sh" "" v0.2.0)"
+check "$auto" "$notes" "the previous release tag is found by itself, a snapshot tag is not a base"
 
 git tag -d v0.1.0 > /dev/null
 first="$("$root/scripts/release-notes.sh" "" HEAD)"

@@ -31,6 +31,10 @@ Fill the secrets with random values, each at least 32 characters:
 openssl rand -hex 32   # run three times: POSTGRES_PASSWORD, JWT_SECRET, VERIFIER_TOKEN
 ```
 
+Hex output is what the database password needs: it is placed into a connection URL, so a
+password with characters such as `@`, `/` or `:` would break the URL and show up as a failed
+login of the backend against a healthy database.
+
 Then:
 
 ```bash
@@ -41,7 +45,8 @@ curl -fsSI http://127.0.0.1:8080/           # static frontend
 
 ## Releases and published images
 
-A tag `vX.Y.Z` pushed to `main` starts the `Release` workflow: it builds the three images and
+A tag `vX.Y.Z` (three numbers; pre-release tags do not publish anything) starts the `Release`
+workflow: it builds the three images and
 pushes them to `ghcr.io/theoleuthardt/trust-issues-{frontend,verifier,backend}` with the tag
 and `latest`, then creates a GitHub release whose notes are generated from the Conventional
 Commit subjects since the previous tag (`scripts/release-notes.sh`, grouped into features,

@@ -4,7 +4,7 @@ set -euo pipefail
 to="${2:-HEAD}"
 from="${1:-}"
 if [ -z "$from" ]; then
-  from="$(git describe --tags --abbrev=0 "$to^" 2>/dev/null || true)"
+  from="$(git describe --tags --abbrev=0 --match 'v[0-9]*' "$to^" 2>/dev/null || true)"
 fi
 range="$to"
 if [ -n "$from" ]; then range="$from..$to"; fi
