@@ -4,3 +4,5 @@ backend
 package-lock.json
 packages/sim/src/solutions.json
 packages/sim/src/levels/pars.json
+frontend/src/api/openapi.json
+frontend/src/api/schema.d.ts
