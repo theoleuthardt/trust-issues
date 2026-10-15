@@ -80,6 +80,34 @@ describe('leaderboardScreen', () => {
     expect(onWatch).toHaveBeenCalledWith(12);
   });
 
+  it('opens the profile of a player from the name', () => {
+    const onProfile = vi.fn();
+    const root = leaderboardScreen({
+      title: 'x',
+      state: { kind: 'ready', rows: ROWS },
+      onBack: () => undefined,
+      onProfile,
+    });
+    const links = root.querySelectorAll<HTMLButtonElement>('tbody .link');
+
+    links[0]?.click();
+
+    expect(links).toHaveLength(2);
+    expect(links[0]?.getAttribute('aria-label')).toBe('Profile of alice');
+    expect(onProfile).toHaveBeenCalledWith('alice');
+  });
+
+  it('shows plain names when profiles are not available', () => {
+    const root = leaderboardScreen({
+      title: 'x',
+      state: { kind: 'ready', rows: ROWS },
+      onBack: () => undefined,
+    });
+
+    expect(root.querySelectorAll('tbody .link')).toHaveLength(0);
+    expect(root.textContent).toContain('alice');
+  });
+
   it('shows why a replay could not be opened', () => {
     const root = leaderboardScreen({
       title: 'x',

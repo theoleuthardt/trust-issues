@@ -3,6 +3,7 @@ import type { AuthMode } from '../api/credentials';
 import { validateNewPassword } from '../api/credentials';
 import { h } from './dom';
 import type { LeaderboardRow } from './leaderboard';
+import type { ProfileRow } from './profile';
 import type { LevelCard } from './progress';
 import { ACTIONS, MAX_OPACITY, MIN_OPACITY, TOUCH_SIZES } from './settings';
 import type { Action, Settings, TouchSize } from './settings';
@@ -147,6 +148,7 @@ export interface MainMenuOptions {
   onContinue: () => void;
   onLevels: () => void;
   onLeaderboards: () => void;
+  onProfile?: () => void;
   onSettings: () => void;
   onAccount?: () => void;
   onBack: () => void;
@@ -164,6 +166,7 @@ export function mainMenu(options: MainMenuOptions): HTMLElement {
       button(options.continueLabel, options.onContinue, true),
       button('Levels', options.onLevels),
       button('Leaderboards', options.onLeaderboards),
+      ...(options.onProfile ? [button('My profile', options.onProfile)] : []),
       ...(options.onAccount ? [button('Account', options.onAccount)] : []),
       button('Settings', options.onSettings),
       button('Back', options.onBack),
@@ -228,6 +231,8 @@ export interface LeaderboardScreenOptions {
   onBack: () => void;
   /** Opens the replay of the run with this id. */
   onWatch?: (runId: number) => void;
+  /** Opens the profile of the player with this name. */
+  onProfile?: (username: string) => void;
   /** A problem with the last replay the player tried to open. */
   notice?: string;
 }
@@ -236,6 +241,18 @@ function alertLine(text: string): HTMLElement {
   const line = h('p', { class: 'form-error', text });
   line.setAttribute('role', 'alert');
   return line;
+}
+
+function playerLink(username: string, onProfile: ((username: string) => void) | undefined): Node {
+  if (!onProfile) return document.createTextNode(username);
+  const link = h('button', {
+    class: 'link',
+    type: 'button',
+    text: username,
+    onClick: () => onProfile(username),
+  });
+  link.setAttribute('aria-label', `Profile of ${username}`);
+  return link;
 }
 
 function watchButton(row: LeaderboardRow, onWatch: ((runId: number) => void) | undefined): Node {
@@ -270,7 +287,7 @@ export function leaderboardScreen(options: LeaderboardScreenOptions): HTMLElemen
         'tr',
         { class: row.isYou ? 'row-you' : '' },
         h('td', { text: row.rank }),
-        h('td', { text: row.username }),
+        h('td', {}, playerLink(row.username, options.onProfile)),
         h('td', { text: row.score }),
         h('td', { text: row.time }),
         h('td', { text: row.deaths }),
@@ -680,5 +697,76 @@ export function loadErrorScreen(options: { onRetry: () => void; onBack: () => vo
       button('Try again', options.onRetry, true),
       button('Back', options.onBack),
     ),
+  );
+}
+
+export type ProfileState =
+  | { kind: 'loading' }
+  | { kind: 'error'; message: string }
+  | { kind: 'ready'; rows: readonly ProfileRow[]; summary: string };
+
+export interface ProfileScreenOptions {
+  username: string;
+  state: ProfileState;
+  onBack: () => void;
+  /** Opens the replay of the run with this id. */
+  onWatch: (runId: number) => void;
+  /** A problem with the last replay the player tried to open. */
+  notice?: string;
+}
+
+/** The record of one player: every level with score, time and deaths. */
+export function profileScreen(options: ProfileScreenOptions): HTMLElement {
+  const { state } = options;
+  let content: HTMLElement;
+  if (state.kind === 'loading') {
+    content = h('p', { class: 'account-line', text: 'Loading…' });
+  } else if (state.kind === 'error') {
+    content = h('p', { class: 'form-error', text: state.message });
+    content.setAttribute('role', 'alert');
+  } else {
+    const head = h(
+      'tr',
+      {},
+      ...['#', 'Level', 'Score', 'Time', 'Deaths', ''].map((label) => h('th', { text: label })),
+    );
+    const body = state.rows.map((row) => {
+      const watch = row.runId;
+      let action: Node = document.createTextNode('');
+      if (watch !== undefined) {
+        const button = h('button', {
+          class: 'button button-small',
+          type: 'button',
+          text: 'Watch',
+          onClick: () => options.onWatch(watch),
+        });
+        button.setAttribute('aria-label', `Watch the run of ${options.username} on ${row.name}`);
+        action = button;
+      }
+      return h(
+        'tr',
+        { class: row.completed ? '' : 'row-missing' },
+        h('td', { text: String(row.number) }),
+        h('td', { text: row.name }),
+        h('td', { text: row.score }),
+        h('td', { text: row.time }),
+        h('td', { text: row.deaths }),
+        h('td', {}, action),
+      );
+    });
+    content = h(
+      'div',
+      { class: 'table-wrap' },
+      h('p', { class: 'account-line', text: state.summary }),
+      h('table', { class: 'board' }, h('thead', {}, head), h('tbody', {}, ...body)),
+    );
+  }
+  return h(
+    'section',
+    { class: 'screen screen-board' },
+    h('h2', { class: 'heading', text: options.username }),
+    ...(options.notice ? [alertLine(options.notice)] : []),
+    content,
+    h('div', { class: 'stack' }, button('Back', options.onBack)),
   );
 }

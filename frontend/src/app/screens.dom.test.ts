@@ -178,6 +178,26 @@ describe('authScreen', () => {
   });
 });
 
+describe('mainMenu profile', () => {
+  const base = {
+    accountLine: 'x',
+    continueLabel: 'Start',
+    onContinue: noop,
+    onLevels: noop,
+    onLeaderboards: noop,
+    onSettings: noop,
+    onBack: noop,
+  };
+
+  it('offers the own profile only when there is one', () => {
+    const labels = (root: HTMLElement) =>
+      Array.from(root.querySelectorAll('button')).map((button) => button.textContent);
+
+    expect(labels(mainMenu(base))).not.toContain('My profile');
+    expect(labels(mainMenu({ ...base, onProfile: noop }))).toContain('My profile');
+  });
+});
+
 describe('mainMenu', () => {
   it('shows who is playing and calls the handlers', () => {
     const onLevels = vi.fn();

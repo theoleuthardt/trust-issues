@@ -9,6 +9,7 @@ import {
   loadErrorScreen,
   mainMenu,
   pauseScreen,
+  profileScreen,
   settingsScreen,
   titleScreen,
 } from './screens';
@@ -102,6 +103,30 @@ const SCREENS: [string, () => HTMLElement][] = [
         onLogoutAll: never,
         onDelete: never,
         onBack: noop,
+      }),
+  ],
+  [
+    'profile',
+    () =>
+      profileScreen({
+        username: 'alice',
+        state: {
+          kind: 'ready',
+          rows: [
+            {
+              number: 1,
+              name: 'One',
+              completed: true,
+              score: '900',
+              time: '0:10.00',
+              deaths: '0',
+              runId: 1,
+            },
+          ],
+          summary: '1 of 1 levels',
+        },
+        onBack: noop,
+        onWatch: noop,
       }),
   ],
   [

@@ -45,6 +45,20 @@ export interface StoredReplay {
   versions: RunVersions;
 }
 
+export interface ProfileRun {
+  runId: number;
+  levelId: string;
+  score: number;
+  frames: number;
+  deaths: number;
+  completedAt: string;
+}
+
+export interface PlayerProfile {
+  username: string;
+  runs: ProfileRun[];
+}
+
 export interface RunResult {
   frames: number;
   deaths: number;
@@ -118,6 +132,32 @@ export class ApiClient {
       frames: row.frames,
       deaths: row.deaths,
     }));
+  }
+
+  /** What a player shows on the leaderboards: their best run per level; public. */
+  async profile(username: string): Promise<PlayerProfile> {
+    const body = await this.request<{
+      username: string;
+      runs: {
+        run_id: number;
+        level_id: string;
+        score: number;
+        frames: number;
+        deaths: number;
+        completed_at: string;
+      }[];
+    }>('GET', `/players/${encodeURIComponent(username)}`, undefined, 'profile');
+    return {
+      username: body.username,
+      runs: body.runs.map((run) => ({
+        runId: run.run_id,
+        levelId: run.level_id,
+        score: run.score,
+        frames: run.frames,
+        deaths: run.deaths,
+        completedAt: run.completed_at,
+      })),
+    };
   }
 
   /** The stored replay of a run on the leaderboard; public. */

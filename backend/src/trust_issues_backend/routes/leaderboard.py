@@ -24,6 +24,8 @@ from trust_issues_backend.schemas import (
     AroundMe,
     LeaderboardEntry,
     LeaderboardPage,
+    Profile,
+    ProfileRun,
     ProgressEntry,
     ReplayResponse,
 )
@@ -93,6 +95,45 @@ async def replay(
         replay=list(run.replay),
         sim_version=run.sim_version,
         level_revision=run.level_revision,
+    )
+
+
+@get("/api/players/{username:str}")
+async def profile(
+    username: Annotated[str, Parameter(min_length=3, max_length=24, pattern=r"^[A-Za-z0-9_]+$")],
+    request: Request[Any, Any, State],
+    session: NamedDependency[AsyncSession],
+    state: State,
+) -> Profile:
+    """A player's best visible run on every level they completed; only what the boards show."""
+    peer = request.client.host if request.client else None
+    wait = state.replay_limiter.hit(client_ip(peer, request.headers, state.trusted_proxies))
+    if wait is not None:
+        raise TooManyRequestsException(
+            detail="too many requests, please try again later",
+            headers={"Retry-After": str(max(1, wait))},
+        )
+    user = await session.scalar(select(User).where(User.username_key == username.lower()))
+    if user is None:
+        raise NotFoundException(detail="unknown player")
+    runs = await session.scalars(
+        select(BestRun)
+        .where(BestRun.user_id == user.id, BestRun.hidden.is_(False))
+        .order_by(BestRun.level_id)
+    )
+    return Profile(
+        username=user.username,
+        runs=[
+            ProfileRun(
+                run_id=run.id,
+                level_id=run.level_id,
+                score=run.score,
+                frames=run.frames,
+                deaths=run.deaths,
+                completed_at=run.submitted_at,
+            )
+            for run in runs
+        ],
     )
 
 

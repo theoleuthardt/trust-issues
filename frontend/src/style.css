@@ -420,6 +420,33 @@ body[data-screen='replay'] .replay-close {
   font-weight: 400;
 }
 
+.link {
+  font: inherit;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid currentColor;
+  color: inherit;
+  cursor: pointer;
+}
+
+.link:hover,
+.link:focus-visible {
+  outline: none;
+  background: var(--ti-ink);
+  color: var(--ti-paper);
+}
+
+.row-you .link:hover,
+.row-you .link:focus-visible {
+  background: var(--ti-paper);
+  color: var(--ti-ink);
+}
+
+.row-missing td {
+  color: var(--ti-inkSoft);
+}
+
 .row-you {
   background: var(--ti-ink);
   color: var(--ti-paper);

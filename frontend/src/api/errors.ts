@@ -14,7 +14,7 @@ function firstValidationMessage(body: ErrorBody | undefined): string | undefined
   return undefined;
 }
 
-export type ErrorContext = 'credentials' | 'run' | 'account';
+export type ErrorContext = 'credentials' | 'run' | 'account' | 'profile';
 
 function detailOf(body: ErrorBody | undefined): string | undefined {
   return typeof body?.detail === 'string' ? body.detail : undefined;
@@ -37,6 +37,12 @@ export function messageFor(
     if (status === 429) return 'Too many runs in a short time, please wait a moment.';
     if (status >= 500) return 'The server is busy, please try again later.';
     return 'The run could not be sent.';
+  }
+  if (context === 'profile') {
+    if (status === 404) return 'There is no player with that name.';
+    if (status === 429) return 'Too many requests, please wait a moment.';
+    if (status >= 500) return 'The server is busy, please try again later.';
+    return 'The profile could not be loaded.';
   }
   if (context === 'account') {
     if (status === 403) return 'Wrong password.';
