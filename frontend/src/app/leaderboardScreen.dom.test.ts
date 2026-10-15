@@ -3,8 +3,24 @@ import { describe, expect, it, vi } from 'vitest';
 import { leaderboardScreen } from './screens';
 
 const ROWS = [
-  { rank: '1', username: 'alice', score: '1010', time: '0:14.83', deaths: '0', isYou: false },
-  { rank: '2', username: 'bob', score: '940', time: '0:16.00', deaths: '2', isYou: true },
+  {
+    rank: '1',
+    runId: 11,
+    username: 'alice',
+    score: '1010',
+    time: '0:14.83',
+    deaths: '0',
+    isYou: false,
+  },
+  {
+    rank: '2',
+    runId: 12,
+    username: 'bob',
+    score: '940',
+    time: '0:16.00',
+    deaths: '2',
+    isYou: true,
+  },
 ];
 
 describe('leaderboardScreen', () => {
@@ -13,6 +29,7 @@ describe('leaderboardScreen', () => {
       title: '1. Trust Nothing',
       state: { kind: 'ready', rows: ROWS },
       onBack: () => undefined,
+      onWatch: () => undefined,
     });
 
     expect(root.querySelector('h2')?.textContent).toBe('Leaderboard · 1. Trust Nothing');
@@ -44,6 +61,35 @@ describe('leaderboardScreen', () => {
 
     expect(loading.textContent).toMatch(/loading/i);
     expect(failed.querySelector('[role=alert]')?.textContent).toContain('busy');
+  });
+
+  it('offers to watch the run of every row', () => {
+    const onWatch = vi.fn();
+    const root = leaderboardScreen({
+      title: 'x',
+      state: { kind: 'ready', rows: ROWS },
+      onBack: () => undefined,
+      onWatch,
+    });
+    const buttons = root.querySelectorAll<HTMLButtonElement>('tbody button');
+
+    buttons[1]?.click();
+
+    expect(buttons).toHaveLength(2);
+    expect(buttons[1]?.getAttribute('aria-label')).toBe('Watch the run of bob');
+    expect(onWatch).toHaveBeenCalledWith(12);
+  });
+
+  it('shows why a replay could not be opened', () => {
+    const root = leaderboardScreen({
+      title: 'x',
+      state: { kind: 'ready', rows: ROWS },
+      onBack: () => undefined,
+      onWatch: () => undefined,
+      notice: 'This replay is damaged.',
+    });
+
+    expect(root.querySelector('[role=alert]')?.textContent).toBe('This replay is damaged.');
   });
 
   it('goes back', () => {

@@ -123,6 +123,28 @@ body:not([data-screen='game']) .touch-controls {
   outline: none;
 }
 
+.replay-close {
+  display: none;
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+}
+
+body[data-screen='replay'] .replay-close {
+  display: block;
+}
+
+.button-small {
+  font-size: 14px;
+  padding: 4px 10px;
+  border-width: 2px;
+}
+
+.row-you .button-small {
+  border-color: var(--ti-paper);
+}
+
 .button-primary {
   background: var(--ti-ink);
   color: var(--ti-paper);

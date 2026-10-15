@@ -12,6 +12,9 @@ export interface RunRecord {
   versions?: RunVersions;
 }
 
+/** Runs stored before versions were recorded were all made with the first version of both. */
+export const FIRST_VERSIONS: RunVersions = { simVersion: 1, levelRevision: 1 };
+
 export type Progress = Readonly<Record<string, RunRecord>>;
 
 export type CardStatus = 'locked' | 'open' | 'cleared';

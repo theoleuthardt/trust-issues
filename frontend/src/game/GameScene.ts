@@ -15,6 +15,7 @@ import {
 import type { GameState, Level, RunVersions, Stage } from '@trust-issues/sim';
 import { Input } from '@trust-issues/sim';
 import { formatTime } from '../format';
+import { ReplayCursor, SPEEDS } from '../app/replayPlayback';
 import type { InputState } from '../input/InputState';
 import { FixedStepper } from '../loop';
 import {
@@ -53,6 +54,13 @@ export interface GameSceneData {
   onRetrySubmit?: () => void;
   onShowLeaderboard?: (levelId: string) => void;
   onStage?: (index: number, total: number) => void;
+  /** Watch a stored run instead of playing: its inputs replace the controls. */
+  replay?: { inputs: readonly number[]; caption: string };
+  onReplayFinished?: () => void;
+  /** The inputs of the ghost to race on a level, if there is one. */
+  ghostFor?: (levelId: string) => number[] | undefined;
+  ghostEnabled?: boolean;
+  onGhostToggled?: (on: boolean) => void;
 }
 
 const HEAD_WIDTH = 8;
@@ -63,6 +71,9 @@ const LEG_WIDTH = 5;
 const LEG_SPACING = 4;
 const HUD_FONT = { fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: '20px' };
 const MAX_TICKS_PER_FRAME = 5;
+const GHOST_ALPHA = 0.3;
+const SPEED_KEYS = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'] as const;
+const NORMAL_SPEED = 1;
 const DOT_SIZE = 10;
 const DOT_GAP = 8;
 const DOT_TOP = 46;
@@ -93,7 +104,18 @@ export class GameScene extends Phaser.Scene {
   private recorded: number[] = [];
   private facing: 1 | -1 = 1;
   private phase = 0;
-  private readonly stepper = new FixedStepper(1000 / TICKS_PER_SECOND, MAX_TICKS_PER_FRAME);
+  private stepper = new FixedStepper(1000 / TICKS_PER_SECOND, MAX_TICKS_PER_FRAME);
+  private cursor: ReplayCursor | undefined;
+  private caption = '';
+  private speed = NORMAL_SPEED;
+  private viewerPaused = false;
+  private speedText: Phaser.GameObjects.Text | undefined;
+  private onReplayFinished: (() => void) | undefined;
+  private ghostFor: ((levelId: string) => number[] | undefined) | undefined;
+  private ghostOn = false;
+  private onGhostToggled: ((on: boolean) => void) | undefined;
+  private ghostInputs: number[] | undefined;
+  private ghost: { state: GameState; index: number; facing: 1 | -1; phase: number } | undefined;
   private world!: Phaser.GameObjects.Graphics;
   private timeText!: Phaser.GameObjects.Text;
   private deathText!: Phaser.GameObjects.Text;
@@ -121,11 +143,24 @@ export class GameScene extends Phaser.Scene {
     this.onRetrySubmit = data.onRetrySubmit;
     this.onShowLeaderboard = data.onShowLeaderboard;
     this.onStage = data.onStage;
+    this.cursor = data.replay ? new ReplayCursor(data.replay.inputs) : undefined;
+    this.caption = data.replay?.caption ?? '';
+    this.speed = NORMAL_SPEED;
+    this.viewerPaused = false;
+    this.onReplayFinished = data.onReplayFinished;
+    this.ghostFor = data.replay ? undefined : data.ghostFor;
+    this.ghostOn = data.ghostEnabled ?? false;
+    this.onGhostToggled = data.onGhostToggled;
+    this.stepper = new FixedStepper(
+      1000 / TICKS_PER_SECOND,
+      data.replay ? MAX_TICKS_PER_FRAME * Math.max(...SPEEDS) : MAX_TICKS_PER_FRAME,
+    );
   }
 
   create(): void {
     this.events.once('shutdown', () => {
       this.statusText = undefined;
+      this.speedText = undefined;
     });
     this.drawBackground();
     this.world = this.add.graphics();
@@ -141,36 +176,106 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(1, 0);
 
     this.input.keyboard?.on('keydown-R', () => this.restart());
-    this.input.keyboard?.on('keydown-L', () => {
-      if (this.state.finished) this.onShowLeaderboard?.(this.level.id);
-    });
-    this.input.keyboard?.on('keydown-S', () => {
-      if (this.state.finished) this.onRetrySubmit?.();
-    });
-    this.input.keyboard?.on('keydown-ENTER', () => {
-      if (this.state.finished) this.advance();
-    });
-    this.input.on('pointerdown', () => {
-      if (this.state.finished) this.advance();
-    });
+    if (this.cursor) {
+      this.createViewerControls();
+    } else {
+      this.input.keyboard?.on('keydown-L', () => {
+        if (this.state.finished) this.onShowLeaderboard?.(this.level.id);
+      });
+      this.input.keyboard?.on('keydown-S', () => {
+        if (this.state.finished) this.onRetrySubmit?.();
+      });
+      this.input.keyboard?.on('keydown-ENTER', () => {
+        if (this.state.finished) this.advance();
+      });
+      this.input.keyboard?.on('keydown-G', () => this.toggleGhost());
+      this.input.on('pointerdown', () => {
+        if (this.state.finished) this.advance();
+      });
+    }
     this.restart();
   }
 
   override update(_time: number, delta: number): void {
-    if (!this.state.finished) {
-      const ticks = this.stepper.advance(delta);
+    if (!this.state.finished && !this.viewerPaused) {
+      const ticks = this.stepper.advance(delta * this.speed);
       for (let i = 0; i < ticks && !this.state.finished; i++) {
-        const mask = this.controls.mask();
+        const mask = this.cursor ? this.cursor.next() : this.controls.mask();
         if ((mask & Input.Right) !== 0 && (mask & Input.Left) === 0) this.facing = 1;
         if ((mask & Input.Left) !== 0 && (mask & Input.Right) === 0) this.facing = -1;
-        this.recorded.push(mask);
+        if (!this.cursor) this.recorded.push(mask);
         step(this.level, this.state, mask);
         this.phase = advancePhase(this.phase, this.state.vx, this.state.onGround);
+        this.stepGhost();
       }
-      if (this.state.finished) this.finishRun();
-      else if (this.state.tick >= this.level.maxFrames) this.restart();
+      if (this.state.finished) {
+        if (this.cursor) this.finishReplay();
+        else this.finishRun();
+      } else if (this.cursor?.done) {
+        this.finishReplay();
+      } else if (this.state.tick >= this.level.maxFrames) {
+        this.restart();
+      }
     }
     this.render();
+  }
+
+  private createViewerControls(): void {
+    this.speedText = this.add
+      .text(16, this.scale.height - 34, '', {
+        ...HUD_FONT,
+        fontSize: '16px',
+        color: PALETTE.inkSoft,
+      })
+      .setOrigin(0, 0);
+    SPEEDS.forEach((_, index) => {
+      this.input.keyboard?.on(`keydown-${SPEED_KEYS[index]}`, () => {
+        this.speed = SPEEDS[index] ?? NORMAL_SPEED;
+      });
+    });
+    this.input.keyboard?.on('keydown-SPACE', () => {
+      if (!this.state.finished) this.viewerPaused = !this.viewerPaused;
+    });
+    this.input.on('pointerdown', () => {
+      if (this.state.finished) this.restart();
+    });
+  }
+
+  private toggleGhost(): void {
+    this.ghostOn = !this.ghostOn;
+    this.onGhostToggled?.(this.ghostOn);
+    if (this.ghostOn) {
+      this.startGhost(this.state.tick);
+      this.announce(this.ghostInputs ? 'Ghost on' : 'No ghost yet');
+    } else {
+      this.ghost = undefined;
+      this.announce('Ghost off');
+    }
+  }
+
+  /** Sets the ghost of this level up and brings it to tick `tick`, where the player is. */
+  private startGhost(tick: number): void {
+    this.ghost = undefined;
+    this.ghostInputs = this.ghostOn ? this.ghostFor?.(this.level.id) : undefined;
+    if (!this.ghostInputs) return;
+    this.ghost = { state: createState(this.level), index: 0, facing: 1, phase: 0 };
+    for (let i = 0; i < tick; i++) this.stepGhost();
+  }
+
+  private stepGhost(): void {
+    const ghost = this.ghost;
+    const inputs = this.ghostInputs;
+    if (!ghost || !inputs) return;
+    if (ghost.state.finished || ghost.index >= inputs.length) {
+      this.ghost = undefined;
+      return;
+    }
+    const mask = inputs[ghost.index] ?? 0;
+    ghost.index += 1;
+    if ((mask & Input.Right) !== 0 && (mask & Input.Left) === 0) ghost.facing = 1;
+    if ((mask & Input.Left) !== 0 && (mask & Input.Right) === 0) ghost.facing = -1;
+    step(this.level, ghost.state, mask);
+    ghost.phase = advancePhase(ghost.phase, ghost.state.vx, ghost.state.onGround);
   }
 
   /** Fades a short text in the upper middle of the screen; render only. */
@@ -204,7 +309,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private levelTitle(): string {
-    return `${this.levels.indexOf(this.level) + 1}. ${this.level.name}`;
+    const title = `${this.levels.indexOf(this.level) + 1}. ${this.level.name}`;
+    return this.cursor ? `${this.caption} · ${title}` : title;
   }
 
   /** After a finished level: the next level, or the first one again after the last. */
@@ -230,6 +336,32 @@ export class GameScene extends Phaser.Scene {
     this.tileEffects.clear();
     this.particles = [];
     this.stepper.reset();
+    this.cursor?.reset();
+    this.viewerPaused = false;
+    this.startGhost(0);
+  }
+
+  private finishReplay(): void {
+    const { width, height } = this.scale;
+    const shade = this.add
+      .rectangle(0, 0, width, height, colorNumber('paper'), 0.88)
+      .setOrigin(0, 0);
+    const title = this.add
+      .text(width / 2, height / 2 - 40, this.state.finished ? 'Replay finished' : 'Replay ended', {
+        ...HUD_FONT,
+        fontSize: '44px',
+        color: PALETTE.ink,
+      })
+      .setOrigin(0.5);
+    const hint = this.add
+      .text(width / 2, height / 2 + 30, 'R or tap: watch again  ·  Esc: close', {
+        ...HUD_FONT,
+        color: PALETTE.inkSoft,
+      })
+      .setOrigin(0.5);
+    this.overlay = [shade, title, hint];
+    this.state.finished = true;
+    this.onReplayFinished?.();
   }
 
   private finishRun(): void {
@@ -311,10 +443,19 @@ export class GameScene extends Phaser.Scene {
     this.renderTiles(g, now);
     this.renderExit(g);
     this.renderParticles(g, now);
-    this.renderPlayer(g);
+    if (this.ghost && this.ghost.state.stage === this.state.stage) {
+      this.renderFigure(g, this.ghost.state, this.ghost.facing, this.ghost.phase, GHOST_ALPHA);
+    }
+    this.renderFigure(g, this.state, this.facing, this.phase, 1);
     this.renderStageDots(g);
     this.timeText.setText(formatTime(this.state.tick));
     this.deathText.setText(`Deaths ${this.state.deaths}`);
+    this.speedText?.setText(this.viewerLine());
+  }
+
+  private viewerLine(): string {
+    const paused = this.viewerPaused ? '  ·  paused' : '';
+    return `${this.speed}x${paused}  ·  1-5 speed  ·  Space pause  ·  R again  ·  Esc close`;
   }
 
   private trackEffects(now: number): void {
@@ -444,26 +585,29 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private renderPlayer(g: Phaser.GameObjects.Graphics): void {
-    const pose = figurePose(
-      { vx: this.state.vx, vy: this.state.vy, onGround: this.state.onGround },
-      this.phase,
-    );
-    const centre = this.state.x + PLAYER_WIDTH / 2;
-    const top = this.state.y + pose.bob;
+  private renderFigure(
+    g: Phaser.GameObjects.Graphics,
+    figure: GameState,
+    facing: 1 | -1,
+    phase: number,
+    alpha: number,
+  ): void {
+    const pose = figurePose({ vx: figure.vx, vy: figure.vy, onGround: figure.onGround }, phase);
+    const centre = figure.x + PLAYER_WIDTH / 2;
+    const top = figure.y + pose.bob;
     const hipY = top + HEAD_HEIGHT + TORSO_HEIGHT - 1;
 
-    g.fillStyle(colorNumber('ink'));
+    g.fillStyle(colorNumber('ink'), alpha);
     g.fillRect(centre - HEAD_WIDTH / 2, top, HEAD_WIDTH, HEAD_HEIGHT);
     g.fillRect(centre - TORSO_WIDTH / 2, top + HEAD_HEIGHT, TORSO_WIDTH, TORSO_HEIGHT);
 
-    g.lineStyle(LEG_WIDTH, colorNumber('ink'));
+    g.lineStyle(LEG_WIDTH, colorNumber('ink'), alpha);
     for (const [leg, side] of [
-      [pose.back, -this.facing],
-      [pose.front, this.facing],
+      [pose.back, -facing],
+      [pose.front, facing],
     ] as const) {
       const hip = { x: centre + side * LEG_SPACING, y: hipY };
-      const foot = legFoot(hip, leg, this.facing);
+      const foot = legFoot(hip, leg, facing);
       g.lineBetween(hip.x, hip.y, foot.x, foot.y);
     }
   }

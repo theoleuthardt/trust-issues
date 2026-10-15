@@ -80,7 +80,8 @@ test fails when the models and the migrations drift apart.
 | POST   | `/api/auth/delete`            | yes   | Delete the account and its runs                |
 | POST   | `/api/runs`                   | yes   | Submit a replay                                |
 | GET    | `/api/progress`               | yes   | Own completed levels with best runs            |
-| GET    | `/api/leaderboard/{level_id}` | no    | Best scores, `?limit=1..100`                   |
+| GET    | `/api/leaderboard/{level_id}` | no    | Best scores with run ids, `?limit=1..100`      |
+| GET    | `/api/replays/{run_id}`       | no    | Stored replay of a visible leaderboard run     |
 | \*     | `/api/admin/...`              | admin | Moderation, see [MODERATION.md](MODERATION.md) |
 
 The OpenAPI schema is served at `/schema` only when `ENABLE_DOCS=true`.

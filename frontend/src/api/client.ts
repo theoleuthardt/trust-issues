@@ -27,10 +27,22 @@ export interface ServerRun {
 
 export interface LeaderboardEntry {
   rank: number;
+  runId: number;
   username: string;
   score: number;
   frames: number;
   deaths: number;
+}
+
+export interface StoredReplay {
+  runId: number;
+  levelId: string;
+  username: string;
+  score: number;
+  frames: number;
+  deaths: number;
+  replay: number[];
+  versions: RunVersions;
 }
 
 export interface RunResult {
@@ -87,13 +99,50 @@ export class ApiClient {
   }
 
   /** The best verified runs on a level, best score first; public. */
-  leaderboard(levelId: string, limit = 50): Promise<LeaderboardEntry[]> {
-    return this.request<LeaderboardEntry[]>(
-      'GET',
-      `/leaderboard/${encodeURIComponent(levelId)}?limit=${limit}`,
-      undefined,
-      'run',
-    );
+  async leaderboard(levelId: string, limit = 50): Promise<LeaderboardEntry[]> {
+    const rows = await this.request<
+      {
+        rank: number;
+        run_id: number;
+        username: string;
+        score: number;
+        frames: number;
+        deaths: number;
+      }[]
+    >('GET', `/leaderboard/${encodeURIComponent(levelId)}?limit=${limit}`, undefined, 'run');
+    return rows.map((row) => ({
+      rank: row.rank,
+      runId: row.run_id,
+      username: row.username,
+      score: row.score,
+      frames: row.frames,
+      deaths: row.deaths,
+    }));
+  }
+
+  /** The stored replay of a run on the leaderboard; public. */
+  async replay(runId: number): Promise<StoredReplay> {
+    const body = await this.request<{
+      run_id: number;
+      level_id: string;
+      username: string;
+      score: number;
+      frames: number;
+      deaths: number;
+      replay: number[];
+      sim_version: number;
+      level_revision: number;
+    }>('GET', `/replays/${runId}`, undefined, 'run');
+    return {
+      runId: body.run_id,
+      levelId: body.level_id,
+      username: body.username,
+      score: body.score,
+      frames: body.frames,
+      deaths: body.deaths,
+      replay: body.replay,
+      versions: { simVersion: body.sim_version, levelRevision: body.level_revision },
+    };
   }
 
   /** The best verified run of the signed-in player on every level they cleared. */

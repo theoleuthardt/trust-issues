@@ -1,4 +1,5 @@
 import type { RunResult, RunVersions, ServerRun } from '../api/client';
+import { FIRST_VERSIONS } from './progress';
 import type { ProgressStore } from './progress';
 import type { RunRecord } from './progress';
 
@@ -14,9 +15,6 @@ export interface SyncOutcome {
   submitted: number;
   failed: number;
 }
-
-/** Runs stored before versions were recorded were all made with the first version of both. */
-const FIRST_VERSIONS: RunVersions = { simVersion: 1, levelRevision: 1 };
 
 function beats(candidate: RunRecord, other: RunRecord | undefined): boolean {
   if (!other) return true;

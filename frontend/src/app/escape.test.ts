@@ -10,6 +10,11 @@ describe('escapeAction', () => {
     expect(escapeAction('pause', false)).toBe('resume');
   });
 
+  it('closes the replay viewer', () => {
+    expect(escapeAction('replay', false)).toBe('close');
+    expect(escapeAction('replay', true)).toBe('none');
+  });
+
   it('ignores key repeat so holding the key does not flicker the menu', () => {
     expect(escapeAction('game', true)).toBe('none');
     expect(escapeAction('pause', true)).toBe('none');
