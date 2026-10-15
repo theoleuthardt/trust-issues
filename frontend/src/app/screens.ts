@@ -404,3 +404,26 @@ export function accountScreen(options: AccountScreenOptions): HTMLElement {
     h('div', { class: 'stack' }, back),
   );
 }
+
+export interface PauseScreenOptions {
+  title: string;
+  onResume: () => void;
+  onRestart: () => void;
+  onLevels: () => void;
+}
+
+export function pauseScreen(options: PauseScreenOptions): HTMLElement {
+  return h(
+    'section',
+    { class: 'screen screen-pause' },
+    h('h2', { class: 'heading', text: 'Paused' }),
+    h('p', { class: 'account-line', text: options.title }),
+    h(
+      'div',
+      { class: 'stack' },
+      button('Resume', options.onResume, true),
+      button('Restart level', options.onRestart),
+      button('Level select', options.onLevels),
+    ),
+  );
+}

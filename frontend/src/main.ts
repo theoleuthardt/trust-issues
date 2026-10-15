@@ -13,6 +13,7 @@ import {
   leaderboardScreen,
   levelSelect,
   mainMenu,
+  pauseScreen,
   titleScreen,
 } from './app/screens';
 import { memoryStorage } from './app/storage';
@@ -31,7 +32,7 @@ const LEVEL_WIDTH_TILES = 32;
 const LEVEL_HEIGHT_TILES = 18;
 const TILE_PX = 32;
 
-type Screen = 'title' | 'auth' | 'menu' | 'levels' | 'board' | 'account' | 'game';
+type Screen = 'title' | 'auth' | 'menu' | 'levels' | 'board' | 'account' | 'pause' | 'game';
 
 applyPaletteToCss(document.documentElement);
 
@@ -59,6 +60,11 @@ const setScreen = (screen: Screen) => {
 };
 
 window.addEventListener('keydown', (event) => {
+  if (event.code === 'Escape') {
+    if (document.body.dataset.screen === 'pause') resumeGame();
+    else pauseGame();
+    return;
+  }
   if (document.body.dataset.screen !== 'game' || !InputState.isBound(event.code)) return;
   event.preventDefault();
   input.setKey(event.code, true);
@@ -66,11 +72,17 @@ window.addEventListener('keydown', (event) => {
 window.addEventListener('keyup', (event) => {
   input.setKey(event.code, false);
 });
-window.addEventListener('blur', () => input.reset());
+window.addEventListener('blur', () => {
+  input.reset();
+  pauseGame();
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) pauseGame();
+});
 
 const coarse = window.matchMedia('(pointer: coarse)').matches;
 if (shouldShowTouchControls(window.location.search, coarse)) {
-  mountTouchControls(document.body, input, leaveLevel);
+  mountTouchControls(document.body, input, pauseGame);
 }
 
 function browserStorage(): StorageLike {
@@ -318,8 +330,36 @@ function startLevel(index: number): void {
       game?.scene.stop(SCENE_KEY);
       showLeaderboard(index, showLevels);
     },
-    onExit: leaveLevel,
   });
+}
+
+function pauseGame(): void {
+  if (document.body.dataset.screen !== 'game' || !game) return;
+  const scene = game.scene.getScene(SCENE_KEY);
+  if (!(scene instanceof GameScene)) return;
+  input.reset();
+  game.scene.pause(SCENE_KEY);
+  show(
+    'pause',
+    pauseScreen({
+      title: scene.title,
+      onResume: resumeGame,
+      onRestart: () => {
+        resumeGame();
+        scene.restartRun();
+      },
+      onLevels: leaveLevel,
+    }),
+  );
+}
+
+function resumeGame(): void {
+  setScreen('game');
+  if (ui) {
+    ui.hidden = true;
+    ui.replaceChildren();
+  }
+  game?.scene.resume(SCENE_KEY);
 }
 
 function leaveLevel(): void {
