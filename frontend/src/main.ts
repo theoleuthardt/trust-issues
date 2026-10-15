@@ -103,6 +103,7 @@ function applySettings(current: Settings): void {
   input.setBindings(bindingsOf(current.keys));
   document.body.dataset.touchSize = current.touch.size;
   document.body.dataset.touchSwapped = String(current.touch.swapped);
+  document.body.dataset.reducedMotion = String(current.reducedMotion);
   document.documentElement.style.setProperty(
     '--touch-opacity',
     String(current.touch.opacity / 100),
