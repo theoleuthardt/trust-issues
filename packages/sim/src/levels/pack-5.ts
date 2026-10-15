@@ -4,8 +4,10 @@ import {
   drop,
   fake,
   fakeExit,
+  floatZone,
   gap,
   hidden,
+  invertZone,
   pop,
   rise,
   timed,
@@ -24,7 +26,8 @@ const level = (id: string, name: string, stages: StageDef[], maxFrames = 7200): 
 
 /**
  * Levels 21 to 25: walls you can walk through, floors that are not there, doors that kill.
- * Level 26 adds traps with a delay and traps that put themselves back.
+ * Level 26 adds traps with a delay and traps that put themselves back, level 27 zones that
+ * swap the controls or take the weight off.
  */
 export const PACK_5: LevelContent[] = [
   level('paper-walls', 'Paper Walls', [
@@ -84,5 +87,10 @@ export const PACK_5: LevelContent[] = [
       timed(drop(18, 21, 2), { delay: 15, rearm: 100 }),
       pop(24, 27),
     ]),
+  ]),
+  level('looking-glass', 'Looking Glass', [
+    stage([invertZone(8, 8, 6, 8), spikes(10), gap(17, 2)]),
+    stage([floatZone(6, 0, 8, 16), block(14, 12, 4, 1), gap(15, 4)], { end: 29 }),
+    stage([invertZone(5, 8, 5, 8), pop(7, 12), floatZone(16, 0, 7, 16), gap(18, 5), wall(26, 2)]),
   ]),
 ];

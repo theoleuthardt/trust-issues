@@ -74,3 +74,10 @@ export function legFoot(
     y: hip.y + Math.cos(leg.swing) * length,
   };
 }
+
+/** The way a figure faces: where it is moving, or the way it already faced when it stands still. */
+export function facingAfter(vx: number, current: 1 | -1): 1 | -1 {
+  if (vx > 0) return 1;
+  if (vx < 0) return -1;
+  return current;
+}

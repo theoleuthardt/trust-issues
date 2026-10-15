@@ -30,6 +30,16 @@ export interface TrapDef {
   rearm?: number;
 }
 
+export type ZoneEffect = 'invert' | 'low_gravity';
+
+/**
+ * A rectangle in tile units that changes how the player moves while the centre of their box
+ * is inside: `invert` swaps left and right, `low_gravity` makes them float.
+ */
+export interface ZoneDef extends TileRect {
+  effect: ZoneEffect;
+}
+
 /**
  * Authoring format of one stage. `rows` use `.` air, `#` solid, `^` spike, `h` hidden solid
  * (collides, drawn as air), `f` fake solid (drawn solid, passable), `X` fake exit (drawn as
@@ -38,6 +48,7 @@ export interface TrapDef {
 export interface StageDef {
   rows: readonly string[];
   traps: readonly TrapDef[];
+  zones?: readonly ZoneDef[];
 }
 
 /** What an author writes: a level without its par time, which comes from the solver. */
@@ -63,6 +74,7 @@ export interface Stage {
   spawn: { x: number; y: number };
   exit: { x: number; y: number };
   traps: readonly TrapDef[];
+  zones: readonly ZoneDef[];
 }
 
 /** Parsed, validated level ready for simulation. The run budget `maxFrames` spans all stages. */
@@ -162,6 +174,24 @@ function buildStage(levelId: string, index: number, def: StageDef): Stage {
     }
   }
 
+  for (const zone of def.zones ?? []) {
+    const whole = [zone.x, zone.y, zone.width, zone.height].every(Number.isInteger);
+    if (
+      !whole ||
+      zone.width < 1 ||
+      zone.height < 1 ||
+      zone.x < 0 ||
+      zone.y < 0 ||
+      zone.x + zone.width > width ||
+      zone.y + zone.height > height
+    ) {
+      throw new Error(`${where}: a zone must be a whole-tile rectangle inside the stage`);
+    }
+    if (zone.effect !== 'invert' && zone.effect !== 'low_gravity') {
+      throw new Error(`${where}: unknown zone effect '${String(zone.effect)}'`);
+    }
+  }
+
   for (const trap of def.traps) {
     if (trap.rearm === undefined) continue;
     const mine = new Set(trap.tiles.map(([x, y]) => `${x},${y}`));
@@ -175,7 +205,7 @@ function buildStage(levelId: string, index: number, def: StageDef): Stage {
     }
   }
 
-  return { width, height, tiles, spawn, exit, traps: def.traps };
+  return { width, height, tiles, spawn, exit, traps: def.traps, zones: def.zones ?? [] };
 }
 
 /** Parses and validates a level definition; throws on any structural error. */

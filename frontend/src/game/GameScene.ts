@@ -31,7 +31,7 @@ import {
 } from './effects';
 import type { Particle } from './effects';
 import { appearanceOf } from './appearance';
-import { advancePhase, figurePose, legFoot } from './figure';
+import { advancePhase, facingAfter, figurePose, legFoot } from './figure';
 import { nextLevel, stageDots } from './progress';
 import { PALETTE, colorNumber } from '../theme';
 
@@ -216,11 +216,10 @@ export class GameScene extends Phaser.Scene {
       const ticks = this.stepper.advance(delta * this.speed);
       for (let i = 0; i < ticks && !this.state.finished; i++) {
         const mask = this.cursor ? this.cursor.next() : this.controls.mask();
-        if ((mask & Input.Right) !== 0 && (mask & Input.Left) === 0) this.facing = 1;
-        if ((mask & Input.Left) !== 0 && (mask & Input.Right) === 0) this.facing = -1;
         if (!this.cursor) this.recorded.push(mask);
         const grounded = this.state.onGround;
         step(this.level, this.state, mask);
+        this.facing = facingAfter(this.state.vx, this.facing);
         if (grounded && (mask & Input.Jump) !== 0 && this.state.vy < 0) this.onSound?.('jump');
         this.phase = advancePhase(this.phase, this.state.vx, this.state.onGround);
         this.stepGhost();
@@ -289,9 +288,8 @@ export class GameScene extends Phaser.Scene {
     }
     const mask = inputs[ghost.index] ?? 0;
     ghost.index += 1;
-    if ((mask & Input.Right) !== 0 && (mask & Input.Left) === 0) ghost.facing = 1;
-    if ((mask & Input.Left) !== 0 && (mask & Input.Right) === 0) ghost.facing = -1;
     step(this.level, ghost.state, mask);
+    ghost.facing = facingAfter(ghost.state.vx, ghost.facing);
     ghost.phase = advancePhase(ghost.phase, ghost.state.vx, ghost.state.onGround);
   }
 
@@ -457,6 +455,7 @@ export class GameScene extends Phaser.Scene {
     this.trackEffects(now);
     const g = this.world;
     g.clear();
+    this.renderZones(g);
     this.renderHalo(g, now);
     this.renderTiles(g, now);
     this.renderExit(g);
@@ -511,6 +510,31 @@ export class GameScene extends Phaser.Scene {
     }
     this.previousTiles = this.state.tiles.slice();
     this.lastPosition = { x: this.state.x, y: this.state.y };
+  }
+
+  /** A faint tint with a mark for each zone: arrows for inverted controls, chevrons for floating. */
+  private renderZones(g: Phaser.GameObjects.Graphics): void {
+    for (const zone of this.stage.zones) {
+      const left = zone.x * TILE_SIZE;
+      const top = zone.y * TILE_SIZE;
+      const width = zone.width * TILE_SIZE;
+      const height = zone.height * TILE_SIZE;
+      const inverted = zone.effect === 'invert';
+      g.fillStyle(colorNumber(inverted ? 'accent' : 'ink'), inverted ? 0.07 : 0.05);
+      g.fillRect(left, top, width, height);
+      g.lineStyle(2, colorNumber(inverted ? 'accent' : 'inkSoft'), 0.5);
+      const midY = top + height / 2;
+      for (let x = left + TILE_SIZE; x < left + width; x += TILE_SIZE * 2) {
+        if (inverted) {
+          g.lineBetween(x - 8, midY, x + 8, midY);
+          g.lineBetween(x - 8, midY, x - 3, midY - 5);
+          g.lineBetween(x + 8, midY, x + 3, midY + 5);
+        } else {
+          g.lineBetween(x - 6, midY + 4, x, midY - 4);
+          g.lineBetween(x, midY - 4, x + 6, midY + 4);
+        }
+      }
+    }
   }
 
   private renderTiles(g: Phaser.GameObjects.Graphics, now: number): void {

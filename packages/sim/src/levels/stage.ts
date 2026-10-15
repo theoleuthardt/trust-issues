@@ -1,4 +1,4 @@
-import type { StageDef, TileRect, TrapAction, TrapDef } from '../level';
+import type { StageDef, TileRect, TrapAction, TrapDef, ZoneDef } from '../level';
 
 /** Stages are authored on the canvas of the game: 32 x 18 tiles. */
 export const STAGE_WIDTH = 32;
@@ -12,6 +12,7 @@ const TRIGGER_WIDTH = 2;
 interface Canvas {
   cells: string[][];
   traps: TrapDef[];
+  zones: ZoneDef[];
 }
 
 /** One building block of a stage, applied in order by `stage`. */
@@ -126,6 +127,20 @@ export const timed =
     }
   };
 
+/** An area, in tiles, where left and right are swapped. */
+export const invertZone =
+  (x: number, y: number, width: number, height: number): Feature =>
+  (canvas) => {
+    canvas.zones.push({ x, y, width, height, effect: 'invert' });
+  };
+
+/** An area, in tiles, where gravity is low and jumps carry far. */
+export const floatZone =
+  (x: number, y: number, width: number, height: number): Feature =>
+  (canvas) => {
+    canvas.zones.push({ x, y, width, height, effect: 'low_gravity' });
+  };
+
 /** A spike appears at column `x` once the player reaches column `at`. */
 export const pop =
   (at: number, x: number, width = 1, y = FLOOR_ROW): Feature =>
@@ -224,9 +239,13 @@ export function stage(features: readonly Feature[], options: StageOptions = {}):
       ),
     ),
     traps: [],
+    zones: [],
   };
   for (const feature of features) feature(canvas);
   put(canvas, start, FLOOR_ROW, 'S');
   put(canvas, end, endY, 'E');
-  return { rows: canvas.cells.map((row) => row.join('')), traps: canvas.traps };
+  const rows = canvas.cells.map((row) => row.join(''));
+  return canvas.zones.length > 0
+    ? { rows, traps: canvas.traps, zones: canvas.zones }
+    : { rows, traps: canvas.traps };
 }

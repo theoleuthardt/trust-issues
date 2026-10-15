@@ -52,5 +52,9 @@ export function previewStage(stage: Stage): string {
     return `${(index + 1) % 10} ${trap.id}: ${trap.action} at ${targets} (trigger ${x},${y} ${width}x${height}${timing ? `, ${timing}` : ''})`;
   });
 
-  return [ruler, ...grid.map((row) => row.join('')), ...traps].join('\n');
+  const zones = stage.zones.map(
+    (zone) => `zone ${zone.effect} at ${zone.x},${zone.y} ${zone.width}x${zone.height}`,
+  );
+
+  return [ruler, ...grid.map((row) => row.join('')), ...traps, ...zones].join('\n');
 }

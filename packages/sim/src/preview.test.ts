@@ -78,4 +78,21 @@ describe('previewStage', () => {
 
     expect(text.split('\n')[0]).toBe('0123456789'.slice(0, 9));
   });
+
+  it('lists the zones of a stage', () => {
+    const level = buildLevel({
+      ...def(['.......', '.S....E', '#######']),
+      stages: [
+        {
+          rows: ['.......', '.S....E', '#######'],
+          traps: [],
+          zones: [{ x: 2, y: 0, width: 3, height: 2, effect: 'invert' }],
+        },
+      ],
+    });
+    const stage = level.stages[0];
+    if (!stage) throw new Error('no stage');
+
+    expect(previewStage(stage)).toContain('zone invert at 2,0 3x2');
+  });
 });

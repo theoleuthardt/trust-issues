@@ -15,6 +15,10 @@ export const PLAYER_HEIGHT = 28;
 
 /** Downward acceleration per tick. */
 export const GRAVITY = 0.5;
+/** Downward acceleration per tick inside a low-gravity zone. */
+export const LOW_GRAVITY = 0.2;
+/** Fastest fall inside a low-gravity zone. */
+export const LOW_GRAVITY_MAX_FALL = 4;
 export const MAX_FALL_SPEED = 12;
 export const MOVE_SPEED = 3;
 export const JUMP_VELOCITY = -9.5;

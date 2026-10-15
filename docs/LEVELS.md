@@ -52,6 +52,24 @@ behaves would.
 The game canvas is currently 32 x 18 tiles (1024 x 576 px); levels should use that size
 until scrolling cameras are implemented.
 
+### Zones
+
+A stage may list rectangles in tile units that change how the player moves while the centre of
+their box is inside:
+
+```ts
+zones: [{ x: 8, y: 8, width: 6, height: 8, effect: 'invert' }]; // or 'low_gravity'
+```
+
+- `invert` swaps left and right.
+- `low_gravity` pulls with 0.2 instead of 0.5 per tick and caps the fall at 4, so a jump
+  carries more than twice as high and the fall is slow.
+- The zone a player is in is read at the start of a tick, so entering mid-jump changes the
+  next tick and leaving gives the normal physics back on the very next one. Zones may overlap.
+- Zones are drawn as a faint tint with arrows (inverted) or chevrons (low gravity); they are
+  not traps and do not reset on death.
+- The DSL has `invertZone(x, y, w, h)` and `floatZone(x, y, w, h)`.
+
 ### Traps
 
 ```ts
@@ -95,6 +113,8 @@ exit in column 30 unless told otherwise.
 | `vanish(at, x, y, w)`            | tiles of a platform vanish                                         |
 | `trap(action, rect, tiles)`      | raw trap with its own trigger rectangle (for platforms and stairs) |
 | `timed(feature, {delay, rearm})` | gives the traps of `feature` a delay and/or a re-arm time          |
+| `invertZone(x, y, w, h)`         | area where left and right are swapped                              |
+| `floatZone(x, y, w, h)`          | area with low gravity                                              |
 | `seal(at, x, y, h)`              | tiles appear at (`x`, `y`) downwards                               |
 | `hidden(x, y, w, h)`             | invisible solid tiles, `y` is the top row                          |
 | `fake(x, y, w, h)`               | tiles that look solid and are not, `y` is the top row              |
@@ -162,6 +182,7 @@ target that skilled players can beat; beating it scores more than 1000 points (s
 | 24  | `floor-is-fake`       | The Floor Is Fake   | 4      | Ground that looks solid and gives way                        |
 | 25  | `everything-lies`     | Everything Lies     | 4      | All three lies in one level                                  |
 | 26  | `second-thoughts`     | Second Thoughts     | 3      | Traps that wait a moment, and traps that put themselves back |
+| 27  | `looking-glass`       | Looking Glass       | 3      | Zones that swap the controls or take the weight off          |
 
 ## Design guidance
 
