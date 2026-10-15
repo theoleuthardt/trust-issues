@@ -69,20 +69,22 @@ test fails when the models and the migrations drift apart.
 
 ## HTTP API
 
-| Method | Path                          | Auth  | Purpose                                        |
-| ------ | ----------------------------- | ----- | ---------------------------------------------- |
-| GET    | `/health`                     | no    | Liveness plus database round trip              |
-| POST   | `/api/auth/register`          | no    | Create an account                              |
-| POST   | `/api/auth/login`             | no    | Exchange credentials for a bearer token        |
-| GET    | `/api/auth/me`                | yes   | Current user                                   |
-| POST   | `/api/auth/logout-all`        | yes   | Revoke every token of the caller               |
-| POST   | `/api/auth/password`          | yes   | Change the password, returns a new token       |
-| POST   | `/api/auth/delete`            | yes   | Delete the account and its runs                |
-| POST   | `/api/runs`                   | yes   | Submit a replay                                |
-| GET    | `/api/progress`               | yes   | Own completed levels with best runs            |
-| GET    | `/api/leaderboard/{level_id}` | no    | Best scores with run ids, `?limit=1..100`      |
-| GET    | `/api/replays/{run_id}`       | no    | Stored replay of a visible leaderboard run     |
-| \*     | `/api/admin/...`              | admin | Moderation, see [MODERATION.md](MODERATION.md) |
+| Method | Path                                    | Auth  | Purpose                                              |
+| ------ | --------------------------------------- | ----- | ---------------------------------------------------- |
+| GET    | `/health`                               | no    | Liveness plus database round trip                    |
+| POST   | `/api/auth/register`                    | no    | Create an account                                    |
+| POST   | `/api/auth/login`                       | no    | Exchange credentials for a bearer token              |
+| GET    | `/api/auth/me`                          | yes   | Current user                                         |
+| POST   | `/api/auth/logout-all`                  | yes   | Revoke every token of the caller                     |
+| POST   | `/api/auth/password`                    | yes   | Change the password, returns a new token             |
+| POST   | `/api/auth/delete`                      | yes   | Delete the account and its runs                      |
+| POST   | `/api/runs`                             | yes   | Submit a replay                                      |
+| GET    | `/api/progress`                         | yes   | Own completed levels with best runs                  |
+| GET    | `/api/leaderboard/{level_id}`           | no    | Best scores with run ids, `?limit=1..100`            |
+| GET    | `/api/leaderboard/{level_id}/page`      | no    | One page with `next_cursor`, `?limit=1..100&cursor=` |
+| GET    | `/api/leaderboard/{level_id}/around-me` | yes   | The caller's rank with `?radius=1..25` neighbours    |
+| GET    | `/api/replays/{run_id}`                 | no    | Stored replay of a visible leaderboard run           |
+| \*     | `/api/admin/...`                        | admin | Moderation, see [MODERATION.md](MODERATION.md)       |
 
 The OpenAPI schema is served at `/schema` only when `ENABLE_DOCS=true`.
 
@@ -95,6 +97,14 @@ before that. If it cannot be fetched the player gets a retry screen. `npm run bu
 a chunk is over its gzip budget (40 KB for the entry, 400 KB for the game, see
 `frontend/build/budget.ts`), so CI catches Phaser sneaking back into the entry chunk. The
 hashed file names allow the long cache lifetime listed in [DEPLOYMENT.md](DEPLOYMENT.md).
+
+## Paging
+
+`/page` returns `next_cursor`, the position of the last entry. The next page continues
+strictly after it, so nobody is repeated and everybody who stays below the cursor appears
+exactly once, whatever is submitted meanwhile. A player whose new best run jumps above the
+cursor while the pages are being read is not returned again; fetching the first page shows
+them. Ranks are computed for every page, so they always match the current order.
 
 ## Progress
 

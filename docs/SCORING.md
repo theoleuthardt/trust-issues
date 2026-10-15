@@ -41,6 +41,11 @@ Per level, ordered by:
 1. score, highest first
 2. frames, fewest first
 3. submission time, earliest first
+4. run id, lowest first, so the order is total even for two runs stored in the same instant
+
+The order and the comparisons built on it (`ranking.py`) are used by the top list, by the
+paged list and by the around-me view, so a rank is the same everywhere. Hidden runs
+(see [MODERATION.md](MODERATION.md)) take no place in it.
 
 A player keeps the best of their runs by the same ordering. The overall ranking across
 levels (a sum of level scores) is a planned feature of the leaderboards epic.

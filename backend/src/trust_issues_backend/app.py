@@ -36,7 +36,13 @@ from trust_issues_backend.routes.admin import (
 )
 from trust_issues_backend.routes.auth import login, me, register
 from trust_issues_backend.routes.health import health
-from trust_issues_backend.routes.leaderboard import leaderboard, progress, replay
+from trust_issues_backend.routes.leaderboard import (
+    around_me,
+    leaderboard,
+    leaderboard_page,
+    progress,
+    replay,
+)
 from trust_issues_backend.routes.runs import submit_run
 from trust_issues_backend.security_headers import SecurityHeadersMiddleware, exception_handler
 from trust_issues_backend.settings import Settings
@@ -50,7 +56,7 @@ PUBLIC_PATHS = [
     r"^/health$",
     r"^/api/auth/register$",
     r"^/api/auth/login$",
-    r"^/api/leaderboard/",
+    r"^/api/leaderboard/(?![^/]+/around-me$)",
     r"^/api/replays/",
     r"^/schema",
 ]
@@ -133,6 +139,8 @@ def create_app(
             delete_account,
             submit_run,
             leaderboard,
+            leaderboard_page,
+            around_me,
             progress,
             replay,
             list_runs,
