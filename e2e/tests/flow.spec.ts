@@ -72,6 +72,43 @@ test('a game chunk that cannot be fetched is reported and can be fetched again',
   await expect(page.locator('canvas')).toBeVisible();
 });
 
+test('the menus work with the keyboard alone', async ({ page }) => {
+  await page.goto('/');
+
+  await page.keyboard.press('Enter');
+  await expect(page.locator('body')).toHaveAttribute('data-screen', 'menu');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('body')).toHaveAttribute('data-screen', 'levels');
+  await page.keyboard.press('Enter');
+
+  await expect(page.locator('body')).toHaveAttribute('data-screen', 'game');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.screen-pause')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeFocused();
+});
+
+test('every screen of the menu flow has a visible focus outline on its buttons', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Play as guest' }).click();
+  await page.keyboard.press('Tab');
+
+  const focused = await page.evaluate(() => {
+    const element = document.activeElement;
+    if (!element) return '';
+    const style = window.getComputedStyle(element);
+    return `${style.backgroundColor}|${style.color}`;
+  });
+  const idle = await page.getByRole('button', { name: 'Leaderboards' }).evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    return `${style.backgroundColor}|${style.color}`;
+  });
+
+  expect(focused).not.toBe(idle);
+});
+
 test('running into a trap again and again keeps the game running', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));

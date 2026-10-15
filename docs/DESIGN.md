@@ -119,3 +119,18 @@ ink ring. Pressed buttons invert to ink. Touch controls appear on touch devices 
 Change colours in `theme.ts` only. Drawing code uses `colorNumber('<role>')`, CSS uses
 `var(--ti-<role>)`. Hard-coded colours in components are a review finding, and so is a
 ninth colour.
+
+## Accessibility
+
+- Every menu is plain HTML: buttons, forms and labels that work with the keyboard alone.
+  Buttons, level cards and inputs show a focus state (inverted ink, or a heavy outline), and
+  a screen moves the focus to its first control when it opens.
+- Text pairs of the palette meet WCAG AA (4.5:1) and shapes meet 3:1; a test computes them
+  from `theme.ts`, so a palette change that breaks it fails CI. Hazards are also triangles,
+  not only a colour.
+- Progress is announced in a live region (stage reached, level cleared with time and points,
+  replay finished, ghost on or off), and the canvas carries a text label.
+- Reduced motion follows the system preference until the player chooses in the settings,
+  and keys can be rebound there.
+- A DOM test checks every screen for a heading, a name on every control, unique ids,
+  alerts for errors and no control removed from the tab order.
