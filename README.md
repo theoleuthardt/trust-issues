@@ -13,7 +13,7 @@ levels, more of them.
 > accounts, verified runs and a leaderboard API exist; a title screen, sign-in and registration,
 > a main menu and the level select are in the game. Finished runs are sent to the server and
 > verified, and each level has a leaderboard screen. An account screen covers password change, signing out everywhere and
-> deletion; settings and the pause menu are still to be built. The work is tracked on the
+> deletion, and a pause menu is available; settings are still to be built. The work is tracked on the
 > [Kanban board](https://github.com/users/theoleuthardt/projects/2) (private) and in the
 > issues of this repository.
 
@@ -73,7 +73,7 @@ the Vite proxy.
 | Move        | `←` `→` or `A` `D`        | on-screen arrows    |
 | Jump        | `Space`, `↑` or `W`       | on-screen jump      |
 | Restart run | `R`                       | tap after finishing |
-| Menu        | `Esc`                     | -                   |
+| Pause menu  | `Esc`                     | Menu button         |
 | Leaderboard | `L` on the finish screen  | -                   |
 | Send again  | `S` (after a failed send) | -                   |
 | Next level  | `Enter`                   | tap after finishing |

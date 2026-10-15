@@ -50,7 +50,6 @@ export interface GameSceneData {
   onFinished?: (event: RunFinishedEvent) => void;
   onRetrySubmit?: () => void;
   onShowLeaderboard?: (levelId: string) => void;
-  onExit?: () => void;
 }
 
 const HEAD_WIDTH = 8;
@@ -83,7 +82,6 @@ export class GameScene extends Phaser.Scene {
   private levelText!: Phaser.GameObjects.Text;
   private controls!: InputState;
   private onFinished: ((event: RunFinishedEvent) => void) | undefined;
-  private onExit: (() => void) | undefined;
   private onRetrySubmit: (() => void) | undefined;
   private onShowLeaderboard: ((levelId: string) => void) | undefined;
   private statusText: Phaser.GameObjects.Text | undefined;
@@ -116,7 +114,6 @@ export class GameScene extends Phaser.Scene {
     this.level = data.levels[data.startIndex] ?? (data.levels[0] as Level);
     this.controls = data.input;
     this.onFinished = data.onFinished;
-    this.onExit = data.onExit;
     this.onRetrySubmit = data.onRetrySubmit;
     this.onShowLeaderboard = data.onShowLeaderboard;
   }
@@ -139,7 +136,6 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(1, 0);
 
     this.input.keyboard?.on('keydown-R', () => this.restart());
-    this.input.keyboard?.on('keydown-ESC', () => this.onExit?.());
     this.input.keyboard?.on('keydown-L', () => {
       if (this.state.finished) this.onShowLeaderboard?.(this.level.id);
     });
@@ -190,6 +186,16 @@ export class GameScene extends Phaser.Scene {
   /** Shows a line below the result on the finish screen, for example the rank. */
   setStatus(text: string): void {
     this.statusText?.setText(text);
+  }
+
+  /** Number and name of the level being played, for menus. */
+  get title(): string {
+    return this.levelTitle();
+  }
+
+  /** Starts the current level again from its first stage. */
+  restartRun(): void {
+    this.restart();
   }
 
   private levelTitle(): string {

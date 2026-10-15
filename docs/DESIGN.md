@@ -97,6 +97,11 @@ after a second confirmation with the password.
 
 ![Account screen](images/account.png)
 
+Escape, the Menu button on touch devices or leaving the window pauses the run; the pause
+menu offers resume, restart and the level select.
+
+![Pause menu](images/pause.png)
+
 ## Touch
 
 Two circular buttons left (move) and one right (jump), 64 px, semi-transparent paper with an
