@@ -87,6 +87,29 @@ async def test_a_new_best_run_between_pages_does_not_repeat_or_skip_anyone(
     assert [e["rank"] for e in second["entries"]] == [4, 5]
 
 
+async def test_a_run_that_improves_past_the_cursor_is_not_repeated_in_later_pages(
+    client: AsyncTestClient, verifier: FakeVerifier
+) -> None:
+    people = await fill(client, verifier)
+    first = (await client.get(f"{PAGE}?limit=2")).json()
+
+    verifier.next = VerifiedRun(finished=True, frames=250, deaths=0, score=1050)
+    await client.post(
+        "/api/runs",
+        json={"level_id": "trust-nothing", "replay": [2, 1], **RUN_VERSIONS},
+        headers=people["dave"],
+    )
+    rest = []
+    cursor = first["next_cursor"]
+    while cursor:
+        page = (await client.get(f"{PAGE}?limit=2&cursor={cursor}")).json()
+        rest += names(page)
+        cursor = page["next_cursor"]
+
+    assert rest == ["carol", "erin"]
+    assert (await client.get(f"{PAGE}?limit=1")).json()["entries"][0]["username"] == "dave"
+
+
 async def test_ties_are_split_by_submission_order_across_a_page_boundary(
     client: AsyncTestClient, verifier: FakeVerifier
 ) -> None:

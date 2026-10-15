@@ -98,6 +98,14 @@ a chunk is over its gzip budget (40 KB for the entry, 400 KB for the game, see
 `frontend/build/budget.ts`), so CI catches Phaser sneaking back into the entry chunk. The
 hashed file names allow the long cache lifetime listed in [DEPLOYMENT.md](DEPLOYMENT.md).
 
+## Paging
+
+`/page` returns `next_cursor`, the position of the last entry. The next page continues
+strictly after it, so nobody is repeated and everybody who stays below the cursor appears
+exactly once, whatever is submitted meanwhile. A player whose new best run jumps above the
+cursor while the pages are being read is not returned again; fetching the first page shows
+them. Ranks are computed for every page, so they always match the current order.
+
 ## Progress
 
 Progress is the best verified run per level. A guest's progress and replays live in the

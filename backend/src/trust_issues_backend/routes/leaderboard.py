@@ -171,8 +171,10 @@ async def leaderboard_page(
     cursor: str | None = None,
 ) -> LeaderboardPage:
     """
-    One page of the leaderboard. `next_cursor` continues right after the last entry, so a run
-    submitted while paging neither repeats nor skips anyone; ranks are computed fresh.
+    One page of the leaderboard. `next_cursor` continues right after the last entry, so
+    nobody is repeated, and everyone who stays below the cursor is returned exactly once.
+    A run that improves past the cursor while paging belongs to the part already shown and
+    is not returned again; ranks are computed fresh for every page.
     """
     query = _visible(level_id)
     first_rank = 1
