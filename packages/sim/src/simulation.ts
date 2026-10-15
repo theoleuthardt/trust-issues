@@ -2,6 +2,8 @@ import {
   GRAVITY,
   Input,
   JUMP_VELOCITY,
+  LOW_GRAVITY,
+  LOW_GRAVITY_MAX_FALL,
   MAX_FALL_SPEED,
   MOVE_SPEED,
   PLAYER_HEIGHT,
@@ -153,6 +155,25 @@ function overlapsTiles(state: GameState, rect: TileRect): boolean {
   );
 }
 
+/** Which zone effects hold for the centre of the player's box at the start of a tick. */
+function zonesAt(stage: Stage, state: GameState): { invert: boolean; floating: boolean } {
+  const effects = { invert: false, floating: false };
+  if (stage.zones.length === 0) return effects;
+  const centreX = state.x + PLAYER_WIDTH / 2;
+  const centreY = state.y + PLAYER_HEIGHT / 2;
+  for (const zone of stage.zones) {
+    const inside =
+      centreX >= zone.x * TILE_SIZE &&
+      centreX < (zone.x + zone.width) * TILE_SIZE &&
+      centreY >= zone.y * TILE_SIZE &&
+      centreY < (zone.y + zone.height) * TILE_SIZE;
+    if (!inside) continue;
+    if (zone.effect === 'invert') effects.invert = true;
+    else effects.floating = true;
+  }
+  return effects;
+}
+
 function applyTrap(stage: Stage, state: GameState, trap: TrapDef): void {
   if (trap.rearm !== undefined) {
     const before = trap.tiles.map(([tx, ty]) => state.tiles[ty * stage.width + tx] ?? Tile.Air);
@@ -238,10 +259,15 @@ export function step(level: Level, state: GameState, input: number): void {
   state.tick += 1;
   const stage = stageOf(level, state.stage);
 
-  const direction = ((input & Input.Right) !== 0 ? 1 : 0) - ((input & Input.Left) !== 0 ? 1 : 0);
+  const zones = zonesAt(stage, state);
+  const direction =
+    (((input & Input.Right) !== 0 ? 1 : 0) - ((input & Input.Left) !== 0 ? 1 : 0)) *
+    (zones.invert ? -1 : 1);
   state.vx = direction * MOVE_SPEED;
   if (state.onGround && (input & Input.Jump) !== 0) state.vy = JUMP_VELOCITY;
-  state.vy = Math.min(state.vy + GRAVITY, MAX_FALL_SPEED);
+  state.vy = zones.floating
+    ? Math.min(state.vy + LOW_GRAVITY, LOW_GRAVITY_MAX_FALL)
+    : Math.min(state.vy + GRAVITY, MAX_FALL_SPEED);
 
   moveX(stage, state);
   moveY(stage, state);

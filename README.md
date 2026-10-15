@@ -13,7 +13,7 @@ levels, more of them.
 - **Watch the best runs.** Every leaderboard entry has a Watch button that plays the stored
   run back in the game, with speed control. A ghost of your own best run can race you.
 
-> Status: playable. Twenty-six levels with three or four stages each, a deterministic simulation,
+> Status: playable. Twenty-seven levels with three or four stages each, a deterministic simulation,
 > accounts, verified runs and a leaderboard API exist; a title screen, sign-in and registration,
 > a main menu and the level select are in the game. Finished runs are sent to the server and
 > verified, and each level has a leaderboard screen. An account screen covers password change, signing out everywhere and

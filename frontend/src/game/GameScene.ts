@@ -457,6 +457,7 @@ export class GameScene extends Phaser.Scene {
     this.trackEffects(now);
     const g = this.world;
     g.clear();
+    this.renderZones(g);
     this.renderHalo(g, now);
     this.renderTiles(g, now);
     this.renderExit(g);
@@ -511,6 +512,31 @@ export class GameScene extends Phaser.Scene {
     }
     this.previousTiles = this.state.tiles.slice();
     this.lastPosition = { x: this.state.x, y: this.state.y };
+  }
+
+  /** A faint tint with a mark for each zone: arrows for inverted controls, chevrons for floating. */
+  private renderZones(g: Phaser.GameObjects.Graphics): void {
+    for (const zone of this.stage.zones) {
+      const left = zone.x * TILE_SIZE;
+      const top = zone.y * TILE_SIZE;
+      const width = zone.width * TILE_SIZE;
+      const height = zone.height * TILE_SIZE;
+      const inverted = zone.effect === 'invert';
+      g.fillStyle(colorNumber(inverted ? 'accent' : 'ink'), inverted ? 0.07 : 0.05);
+      g.fillRect(left, top, width, height);
+      g.lineStyle(2, colorNumber(inverted ? 'accent' : 'inkSoft'), 0.5);
+      const midY = top + height / 2;
+      for (let x = left + TILE_SIZE; x < left + width; x += TILE_SIZE * 2) {
+        if (inverted) {
+          g.lineBetween(x - 8, midY, x + 8, midY);
+          g.lineBetween(x - 8, midY, x - 3, midY - 5);
+          g.lineBetween(x + 8, midY, x + 3, midY + 5);
+        } else {
+          g.lineBetween(x - 6, midY + 4, x, midY - 4);
+          g.lineBetween(x, midY - 4, x + 6, midY + 4);
+        }
+      }
+    }
   }
 
   private renderTiles(g: Phaser.GameObjects.Graphics, now: number): void {
