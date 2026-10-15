@@ -43,4 +43,15 @@ describe('pauseScreen', () => {
 
     expect(root.querySelector('button')?.className).toContain('button-primary');
   });
+
+  it('offers fullscreen only when asked to', () => {
+    const onFullscreen = vi.fn();
+    const without = pauseScreen({ title: 'x', ...handlers() });
+    const withIt = pauseScreen({ title: 'x', ...handlers(), onFullscreen });
+
+    click(withIt, 'Toggle fullscreen');
+
+    expect(without.textContent).not.toContain('Toggle fullscreen');
+    expect(onFullscreen).toHaveBeenCalledOnce();
+  });
 });

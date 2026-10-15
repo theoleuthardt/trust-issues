@@ -46,6 +46,44 @@ test.describe('touch devices', () => {
   });
 });
 
+test.describe('a phone held upright', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+
+  test('is asked to turn the device', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.locator('.rotate-hint')).toBeVisible();
+    await expect(page.locator('.rotate-hint')).toContainText(/landscape/i);
+  });
+});
+
+test.describe('a tablet held upright', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 768, height: 1024 } });
+
+  test('is not asked to turn the device', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.locator('.rotate-hint')).toBeHidden();
+  });
+});
+
+test.describe('a phone held sideways', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 844, height: 390 } });
+
+  test('is not asked to turn the device', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.locator('.rotate-hint')).toBeHidden();
+  });
+});
+
+test('a desktop browser is never asked to turn the device', async ({ page }) => {
+  await page.setViewportSize({ width: 600, height: 900 });
+  await page.goto('/');
+
+  await expect(page.locator('.rotate-hint')).toBeHidden();
+});
+
 test('the leaderboard of a level reports a server that cannot be reached', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Play as guest' }).click();
