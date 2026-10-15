@@ -7,7 +7,7 @@ import pytest
 from litestar.testing import AsyncTestClient
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.pool import NullPool, StaticPool
 
 from trust_issues_backend.app import create_app
 from trust_issues_backend.models import Base
@@ -94,6 +94,10 @@ def verifier() -> FakeVerifier:
 
 @pytest.fixture
 async def engine(settings: Settings) -> AsyncIterator[AsyncEngine]:
+    """
+    The database of a test. The test client runs the app on its own event loop, so PostgreSQL
+    connections must not be pooled across it and the test body.
+    """
     if settings.database_url.startswith("sqlite"):
         test_engine = create_async_engine(
             settings.database_url,
@@ -108,7 +112,7 @@ async def engine(settings: Settings) -> AsyncIterator[AsyncEngine]:
                 await connection.run_sync(Base.metadata.drop_all)
         finally:
             await cleanup.dispose()
-        test_engine = create_async_engine(settings.database_url)
+        test_engine = create_async_engine(settings.database_url, poolclass=NullPool)
     yield test_engine
     await test_engine.dispose()
 
