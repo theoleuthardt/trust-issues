@@ -95,8 +95,8 @@ The game keeps the access token in `localStorage` (or in memory when the browser
 storage) so a reload does not sign the player out. It reads only the expiry of the token and
 signs out by itself when it has passed; the server decides what a token is worth. Any script
 running on the page could read the token, which is the usual trade-off of this approach; the
-site serves no third-party scripts, and a strict content security policy is planned (see the
-backend foundation epic). Signing out removes the local copy; `logout-all`, which revokes every token
+site serves no third-party scripts and its content security policy limits scripts and
+connections to its own origin. Signing out removes the local copy; `logout-all`, which revokes every token
 through `token_version`, is tracked in the accounts epic.
 
 ## Network layout

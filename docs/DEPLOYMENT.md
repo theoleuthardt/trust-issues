@@ -39,6 +39,24 @@ curl -fsS http://127.0.0.1:8000/health      # backend and database
 curl -fsSI http://127.0.0.1:8080/           # static frontend
 ```
 
+## What the proxy has to set
+
+The frontend container serves the static build with the stock nginx configuration, so the
+headers for the site belong to whatever sits in front of it (reverse proxy or tunnel). The
+API sets its own headers.
+
+| Where                | Header                                                  | Why                                         |
+| -------------------- | ------------------------------------------------------- | ------------------------------------------- |
+| All site responses   | `X-Content-Type-Options: nosniff`                       | No MIME sniffing                            |
+| All site responses   | `X-Frame-Options: DENY` or CSP `frame-ancestors 'none'` | Not framable (the meta CSP cannot set this) |
+| All site responses   | `Referrer-Policy: no-referrer`                          | No referrer leaks                           |
+| HTTPS edge           | `Strict-Transport-Security: max-age=31536000`           | Pins HTTPS once TLS works                   |
+| `/assets/*`          | `Cache-Control: public, max-age=31536000, immutable`    | Build files have hashed names               |
+| `/` and `index.html` | `Cache-Control: no-cache`                               | New releases are picked up                  |
+
+`index.html` carries a Content-Security-Policy meta tag (`default-src 'self'`, connections only to
+the same origin) as a second layer that does not depend on the proxy.
+
 ## Configuration
 
 | Variable            | Used by           | Meaning                                                                                                                                                  |
