@@ -40,6 +40,7 @@ from trust_issues_backend.routes.leaderboard import (
     around_me,
     leaderboard,
     leaderboard_page,
+    profile,
     progress,
     replay,
 )
@@ -60,6 +61,7 @@ PUBLIC_PATHS = [
     r"^/api/leaderboard/(?![^/]+/around-me$)",
     r"^/api/replays/",
     r"^/api/ranking$",
+    r"^/api/players/",
     r"^/schema",
 ]
 MAX_REQUEST_BODY_BYTES = 256 * 1024
@@ -144,6 +146,7 @@ def create_app(
             leaderboard_page,
             around_me,
             ranking,
+            profile,
             progress,
             replay,
             list_runs,

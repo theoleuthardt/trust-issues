@@ -106,6 +106,20 @@ class RankingEntry(Struct):
     completed_at: datetime
 
 
+class ProfileRun(Struct):
+    run_id: int
+    level_id: str
+    score: int
+    frames: int
+    deaths: int
+    completed_at: datetime
+
+
+class Profile(Struct):
+    username: str
+    runs: list[ProfileRun]
+
+
 class AroundMe(Struct):
     rank: int
     entries: list[LeaderboardEntry]

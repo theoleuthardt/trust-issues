@@ -66,3 +66,18 @@ describe('messageFor with a context', () => {
     expect(messageFor(404, { detail: 'unknown level' }, 'run')).toMatch(/level/i);
   });
 });
+
+describe('messageFor for a profile', () => {
+  it('says there is no such player', () => {
+    expect(messageFor(404, { detail: 'unknown player' }, 'profile')).toMatch(/no player/i);
+  });
+
+  it('asks to wait when requests come too fast and says the server is busy on errors', () => {
+    expect(messageFor(429, undefined, 'profile')).toMatch(/wait/i);
+    expect(messageFor(503, undefined, 'profile')).toMatch(/busy/i);
+  });
+
+  it('has a message for anything else', () => {
+    expect(messageFor(400, undefined, 'profile')).toMatch(/could not be loaded/i);
+  });
+});

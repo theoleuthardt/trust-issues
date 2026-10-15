@@ -176,6 +176,47 @@ describe('ApiClient', () => {
     expect(new Headers(calls[0]?.init.headers).get('authorization')).toBeNull();
   });
 
+  it('loads the profile of a player without a token', async () => {
+    const { fetchFn, calls } = fakeFetch(200, {
+      username: 'Alice',
+      runs: [
+        {
+          run_id: 7,
+          level_id: 'trust-nothing',
+          score: 1010,
+          frames: 890,
+          deaths: 0,
+          completed_at: '2026-10-14T20:00:00Z',
+        },
+      ],
+    });
+    const client = new ApiClient(fetchFn, () => undefined);
+
+    const profile = await client.profile('Alice');
+
+    expect(profile).toEqual({
+      username: 'Alice',
+      runs: [
+        {
+          runId: 7,
+          levelId: 'trust-nothing',
+          score: 1010,
+          frames: 890,
+          deaths: 0,
+          completedAt: '2026-10-14T20:00:00Z',
+        },
+      ],
+    });
+    expect(calls[0]?.url).toBe('/api/players/Alice');
+  });
+
+  it('reports a profile that does not exist', async () => {
+    const { fetchFn } = fakeFetch(404, { detail: 'unknown player' });
+    const client = new ApiClient(fetchFn, () => undefined);
+
+    await expect(client.profile('nobody')).rejects.toMatchObject({ status: 404 });
+  });
+
   it('reports a run that cannot be watched', async () => {
     const { fetchFn } = fakeFetch(404, { detail: 'unknown run' });
     const client = new ApiClient(fetchFn, () => undefined);

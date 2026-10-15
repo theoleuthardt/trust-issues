@@ -87,3 +87,11 @@ without authentication; a hidden run answers 404. The game's replay viewer plays
 the same simulation, so anyone can check that a time looks like a person made it. A replay is
 only played with the simulation version and level revision it was recorded with, otherwise the
 viewer says so instead of showing something else. Downloads are limited per client address.
+
+## What a profile shows
+
+`GET /api/players/{username}` returns exactly what the leaderboards already show about a
+player: the name and the best visible run per level with its score, frames, deaths and
+completion time. Hidden runs are left out and nothing else of the account (id, creation
+date, flags, versions) is part of the answer; the lookups are rate limited per address like
+replay downloads.

@@ -17,6 +17,7 @@ import { ProgressStore, accountKey, firstOpenIndex, levelCards } from './app/pro
 import { finishAnnouncement, stageAnnouncement } from './app/announcement';
 import { escapeAction } from './app/escape';
 import { leaderboardRows } from './app/leaderboard';
+import { profileRows, profileSummary } from './app/profile';
 import { playableInputs } from './app/replayPlayback';
 import {
   accountScreen,
@@ -26,6 +27,7 @@ import {
   loadErrorScreen,
   mainMenu,
   pauseScreen,
+  profileScreen,
   settingsScreen,
   titleScreen,
 } from './app/screens';
@@ -51,6 +53,7 @@ type Screen =
   | 'levels'
   | 'board'
   | 'account'
+  | 'profile'
   | 'settings'
   | 'pause'
   | 'game'
@@ -316,6 +319,7 @@ function showMenu(): void {
       onContinue: () => startLevel(next),
       onLevels: showLevels,
       onLeaderboards: showLeaderboardPicker,
+      onProfile: account ? () => showProfile(account.username, showMenu) : undefined,
       onSettings: showSettings,
       onAccount: account ? showAccount : undefined,
       onBack: showTitle,
@@ -453,6 +457,7 @@ function showLeaderboard(index: number, back: () => void = showLeaderboardPicker
             state: { kind: 'ready', rows },
             onBack: back,
             onWatch: (runId) => watchRun(runId, render, () => showLeaderboard(index, back)),
+            onProfile: (username) => showProfile(username, () => showLeaderboard(index, back)),
             ...(notice ? { notice } : {}),
           }),
         );
@@ -463,6 +468,50 @@ function showLeaderboard(index: number, back: () => void = showLeaderboardPicker
       if (navigation !== requested) return;
       const message = error instanceof ApiError ? error.message : 'Something went wrong.';
       show('board', leaderboardScreen({ title, state: { kind: 'error', message }, onBack: back }));
+    });
+}
+
+const noop = (): void => undefined;
+
+function showProfile(username: string, back: () => void): void {
+  show(
+    'profile',
+    profileScreen({ username, state: { kind: 'loading' }, onBack: back, onWatch: noop }),
+  );
+  const requested = navigation;
+  api
+    .profile(username)
+    .then((profile) => {
+      if (navigation !== requested) return;
+      const render = (notice?: string): void => {
+        show(
+          'profile',
+          profileScreen({
+            username: profile.username,
+            state: {
+              kind: 'ready',
+              rows: profileRows(profile, LEVELS),
+              summary: profileSummary(profile, LEVELS),
+            },
+            onBack: back,
+            onWatch: (runId) => watchRun(runId, render, () => showProfile(profile.username, back)),
+            ...(notice ? { notice } : {}),
+          }),
+        );
+      };
+      render();
+    })
+    .catch((error: unknown) => {
+      if (navigation !== requested) return;
+      show(
+        'profile',
+        profileScreen({
+          username,
+          state: { kind: 'error', message: messageOf(error) },
+          onBack: back,
+          onWatch: noop,
+        }),
+      );
     });
 }
 

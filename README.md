@@ -8,6 +8,8 @@ levels, more of them.
 - **Accounts and progress.** Sign up, keep your completed levels across devices.
 - **Leaderboards you can trust.** Times are not reported by the client. The server replays
   your recorded inputs through the same deterministic simulation and derives the time itself.
+- **Profiles.** Click a name on a leaderboard to see every level that player completed, with
+  score, time and deaths and a Watch button for each run.
 - **Watch the best runs.** Every leaderboard entry has a Watch button that plays the stored
   run back in the game, with speed control. A ghost of your own best run can race you.
 
