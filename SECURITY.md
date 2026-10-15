@@ -36,3 +36,14 @@ start with short or placeholder values.
   (`CF-Connecting-IP`, then `X-Forwarded-For`); headers from any other peer are ignored.
 - The limits are kept in the memory of one backend process, which is how this deployment
   runs. Several processes would each count separately.
+
+## Browser protection
+
+- The API answers every request, errors included, with `X-Content-Type-Options`,
+  `X-Frame-Options`, `Referrer-Policy`, `Cross-Origin-Resource-Policy` and a
+  `Content-Security-Policy` that allows nothing; only the public leaderboard may be cached
+  (15 seconds), everything else is `no-store`. There is no CORS: the game and the API share an
+  origin.
+- The game page carries a Content-Security-Policy meta tag that only allows its own origin.
+  Headers that a meta tag cannot set (framing, HSTS, caching) are listed in
+  [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the proxy.

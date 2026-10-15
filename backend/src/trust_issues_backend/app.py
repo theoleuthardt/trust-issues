@@ -8,6 +8,7 @@ from litestar import Litestar
 from litestar.connection import ASGIConnection
 from litestar.datastructures import State
 from litestar.di import Provide
+from litestar.exceptions import HTTPException
 from litestar.openapi import OpenAPIConfig
 from litestar.security.jwt import JWTAuth, Token
 from sqlalchemy import select
@@ -25,6 +26,7 @@ from trust_issues_backend.routes.auth import login, me, register
 from trust_issues_backend.routes.health import health
 from trust_issues_backend.routes.leaderboard import leaderboard, progress
 from trust_issues_backend.routes.runs import submit_run
+from trust_issues_backend.security_headers import SecurityHeadersMiddleware, exception_handler
 from trust_issues_backend.settings import Settings
 from trust_issues_backend.verifier import HttpVerifier, Verifier
 
@@ -119,6 +121,8 @@ def create_app(
             }
         ),
         request_max_body_size=MAX_REQUEST_BODY_BYTES,
+        middleware=[SecurityHeadersMiddleware],
+        exception_handlers={HTTPException: exception_handler, Exception: exception_handler},
         on_app_init=[jwt_auth.on_app_init],
         on_startup=[on_startup],
         on_shutdown=[on_shutdown],
