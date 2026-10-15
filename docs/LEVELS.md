@@ -103,12 +103,22 @@ exit in column 30 unless told otherwise.
 A trap fires when the player overlaps columns `at` and `at + 1` within three tiles above
 the floor. Reference: a jump clears a wall of 2 tiles and a gap of 3 tiles.
 
+## Looking at a level
+
+`task levels:preview -- <level-id>` prints every stage as text: a column ruler, the tiles
+(`#` solid, `^` spike, `h` hidden, `f` fake, `X` fake exit, `S` spawn, `E` exit), a digit on the
+air tile each trap changes, and a list of the traps with their triggers, delays and re-arm
+times. With `--solve` it also runs the solver on every stage and reports the frames of a way
+through, or why there is none; the command fails when a stage cannot be solved. The same
+search is part of `task levels:solve`, which also writes the result to the reference
+solutions.
+
 ## Adding a level
 
 1. Write a `LevelContent` (a level without its par time) with its stages, for example in a
    pack file under `packages/sim/src/levels/`.
 2. Register it in `packages/sim/src/levels/content.ts`; the order is the play order.
-3. Run `task levels:solve` (or `task levels:solve -- <level-id>` for one level). The solver
+3. Look at it with `task levels:preview -- <id> --solve`, then run `task levels:solve` (or `task levels:solve -- <level-id>` for one level). The solver
    finds a zero-death solution for every stage, checks the combined replay in the
    simulation and writes the level's par time (`levels/pars.json`) and its reference
    solution (`solutions.json`). A stage it cannot solve is reported with its number: that

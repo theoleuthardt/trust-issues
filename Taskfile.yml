@@ -107,6 +107,11 @@ tasks:
       - cd backend && uv run python scripts/dump_openapi.py ../frontend/src/api/openapi.json
       - npm run api:types --workspace @trust-issues/frontend
 
+  levels:preview:
+    desc: Print the stages of a level as text; add --solve to search for a way through
+    cmds:
+      - npx tsx packages/sim/scripts/preview-level.ts {{.CLI_ARGS}}
+
   levels:solve:
     desc: Solve every level, write par times and reference solutions
     cmds:
