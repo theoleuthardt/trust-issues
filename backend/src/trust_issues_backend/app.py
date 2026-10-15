@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from trust_issues_backend.models import Base, User, utcnow
+from trust_issues_backend.observability import AccessLogMiddleware
 from trust_issues_backend.ratelimit import SlidingWindowLimiter
 from trust_issues_backend.routes.account import change_password, delete_account, logout_all
 from trust_issues_backend.routes.auth import login, me, register
@@ -121,7 +122,7 @@ def create_app(
             }
         ),
         request_max_body_size=MAX_REQUEST_BODY_BYTES,
-        middleware=[SecurityHeadersMiddleware],
+        middleware=[AccessLogMiddleware, SecurityHeadersMiddleware],
         exception_handlers={HTTPException: exception_handler, Exception: exception_handler},
         on_app_init=[jwt_auth.on_app_init],
         on_startup=[on_startup],

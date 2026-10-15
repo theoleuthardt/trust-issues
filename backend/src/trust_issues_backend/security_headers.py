@@ -5,6 +5,8 @@ from litestar.datastructures import MutableScopeHeaders
 from litestar.exceptions.responses import create_exception_response
 from litestar.types import ASGIApp, Message, Receive, Scope, Send
 
+from trust_issues_backend.observability import finish_error_response
+
 SECURITY_HEADERS = {
     "x-content-type-options": "nosniff",
     "referrer-policy": "no-referrer",
@@ -59,4 +61,5 @@ def exception_handler(request: Request, exc: Exception) -> Response:
     for name, value in SECURITY_HEADERS.items():
         response.headers[name] = value
     response.headers.setdefault("cache-control", PRIVATE_CACHE)
+    finish_error_response(request, response)
     return response

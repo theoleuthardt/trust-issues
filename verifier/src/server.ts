@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { verifyRun } from './verify';
@@ -6,9 +6,12 @@ import { verifyRun } from './verify';
 export interface VerifierServerOptions {
   token: string;
   maxBodyBytes?: number;
+  /** Receives one structured entry per request; defaults to a JSON line on stdout. */
+  log?: (entry: Record<string, unknown>) => void;
 }
 
 const DEFAULT_MAX_BODY_BYTES = 256 * 1024;
+const VALID_REQUEST_ID = /^[A-Za-z0-9._-]{8,64}$/;
 
 class BodyTooLargeError extends Error {}
 
@@ -59,9 +62,25 @@ function readBody(request: IncomingMessage, limit: number): Promise<string> {
  */
 export function createVerifierServer(options: VerifierServerOptions): Server {
   const limit = options.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES;
+  const log = options.log ?? ((entry) => console.log(JSON.stringify(entry)));
 
   return createServer((request, response) => {
     const url = request.url ?? '/';
+    const incoming = request.headers['x-request-id'];
+    const requestId =
+      typeof incoming === 'string' && VALID_REQUEST_ID.test(incoming) ? incoming : randomUUID();
+    const started = performance.now();
+    response.setHeader('x-request-id', requestId);
+    response.once('finish', () => {
+      log({
+        time: new Date().toISOString(),
+        requestId,
+        method: request.method,
+        path: url.split('?')[0],
+        status: response.statusCode,
+        durationMs: Math.round((performance.now() - started) * 100) / 100,
+      });
+    });
     if (url === '/health') {
       sendJson(response, 200, { status: 'ok' });
       return;

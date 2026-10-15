@@ -72,6 +72,15 @@ the same origin) as a second layer that does not depend on the proxy.
 The backend and the verifier exit at startup when a secret is missing, shorter than 32
 characters or contains `change-me`/`example`/`placeholder`.
 
+## Logs
+
+Backend and verifier write one JSON object per line to stdout (`podman compose logs -f backend`).
+Every request has an id: a sane `X-Request-ID` of the caller is kept, otherwise one is created,
+returned as a response header and passed on to the verifier, so one run can be followed across
+both services. A line holds time, request id, method, path, status, duration and, for signed-in
+requests, the user id. Bodies, headers, tokens and replays are never logged. The level comes from
+`LOG_LEVEL` (default `INFO`).
+
 ## Updating
 
 The backend needs a verifier that returns the `score` field (added with the score
