@@ -1,15 +1,16 @@
 import {
   ReplayError,
   SIM_VERSION,
+  assessRun,
   decodeReplay,
   getLevel,
   scoreRun,
   simulate,
 } from '@trust-issues/sim';
-import type { RunResult } from '@trust-issues/sim';
+import type { RunFlag, RunResult } from '@trust-issues/sim';
 
 export type VerifyOutcome =
-  | { status: 200; body: RunResult & { score: number } }
+  | { status: 200; body: RunResult & { score: number; flags: RunFlag[] } }
   | { status: 400 | 404 | 409; body: { error: string } };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -48,7 +49,8 @@ export function verifyRun(body: unknown): VerifyOutcome {
     const inputs = decodeReplay(replay as number[], level.maxFrames);
     const result = simulate(level, inputs);
     const score = result.finished ? scoreRun(level.parFrames, result) : 0;
-    return { status: 200, body: { ...result, score } };
+    const flags = result.finished ? assessRun(level, replay as number[], result.frames) : [];
+    return { status: 200, body: { ...result, score, flags } };
   } catch (error) {
     if (error instanceof ReplayError) return { status: 400, body: { error: error.message } };
     throw error;

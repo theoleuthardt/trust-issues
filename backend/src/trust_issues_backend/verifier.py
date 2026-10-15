@@ -12,6 +12,7 @@ class VerifiedRun:
     frames: int
     deaths: int
     score: int
+    flags: tuple[str, ...] = ()
 
 
 class VerifierError(Exception):
@@ -85,11 +86,15 @@ class HttpVerifier:
 
         try:
             body = response.json()
+            flags = body["flags"]
+            if not isinstance(flags, list) or not all(isinstance(flag, str) for flag in flags):
+                raise TypeError("flags must be a list of strings")
             return VerifiedRun(
                 finished=bool(body["finished"]),
                 frames=int(body["frames"]),
                 deaths=int(body["deaths"]),
                 score=int(body["score"]),
+                flags=tuple(flags),
             )
         except (ValueError, KeyError, TypeError) as error:
             raise VerifierUnavailableError("verifier sent an unusable response") from error

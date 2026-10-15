@@ -1,3 +1,5 @@
+import logging
+
 from litestar import Request, post
 from litestar.datastructures import State
 from litestar.di import NamedDependency
@@ -23,6 +25,8 @@ from trust_issues_backend.verifier import (
     VerifierUnavailableError,
 )
 
+logger = logging.getLogger("trust_issues.runs")
+
 
 async def _store_if_best(
     session: AsyncSession,
@@ -46,6 +50,7 @@ async def _store_if_best(
     best.replay = submission.replay
     best.sim_version = submission.sim_version
     best.level_revision = submission.level_revision
+    best.flags = list(run.flags)
     best.submitted_at = utcnow()
     await session.commit()
     return best, True
@@ -93,6 +98,15 @@ async def submit_run(
     except IntegrityError:
         await session.rollback()
         best, personal_best = await _store_if_best(session, request.user.id, data, run)
+
+    if personal_best and run.flags:
+        logger.warning(
+            "flagged run: user=%s level=%s flags=%s frames=%s",
+            request.user.id,
+            data.level_id,
+            ",".join(run.flags),
+            run.frames,
+        )
 
     faster = await session.scalar(
         select(func.count())
