@@ -154,4 +154,37 @@ describe('SoundBoard', () => {
 
     expect(started).toHaveLength(0);
   });
+
+  it('reports whether the context is running after an unlock', async () => {
+    const { context } = fakeAudio();
+    const working = new SoundBoard(
+      () => context,
+      () => settings,
+    );
+    const unsupported = new SoundBoard(
+      () => undefined,
+      () => settings,
+    );
+
+    expect(await working.unlock()).toBe(true);
+    expect(await unsupported.unlock()).toBe(false);
+  });
+
+  it('reports a failed resume and can be tried again', async () => {
+    const { context, state } = fakeAudio();
+    let allow = false;
+    context.resume = () => {
+      if (!allow) return Promise.reject(new Error('blocked'));
+      state.current = 'running';
+      return Promise.resolve();
+    };
+    const board = new SoundBoard(
+      () => context,
+      () => settings,
+    );
+
+    expect(await board.unlock()).toBe(false);
+    allow = true;
+    expect(await board.unlock()).toBe(true);
+  });
 });

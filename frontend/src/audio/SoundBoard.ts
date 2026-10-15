@@ -42,15 +42,18 @@ export class SoundBoard {
     private readonly settings: () => SoundSettings,
   ) {}
 
-  async unlock(): Promise<void> {
+  /** Creates and resumes the audio context; resolves to whether sound can play now. */
+  async unlock(): Promise<boolean> {
     this.context ??= this.createContext();
-    if (this.context && this.context.state !== 'running') {
+    if (!this.context) return false;
+    if (this.context.state !== 'running') {
       try {
         await this.context.resume();
       } catch {
-        return;
+        return false;
       }
     }
+    return this.context.state === 'running';
   }
 
   play(name: SoundName): void {

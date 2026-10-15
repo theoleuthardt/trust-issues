@@ -81,15 +81,16 @@ const sounds = new SoundBoard(
   () => settings.current().sound,
 );
 
-for (const type of ['pointerdown', 'keydown', 'touchend'] as const) {
-  const unlock = (): void => {
-    void sounds.unlock();
-    for (const other of ['pointerdown', 'keydown', 'touchend'] as const) {
-      window.removeEventListener(other, unlock, true);
-    }
-  };
-  window.addEventListener(type, unlock, true);
+const GESTURES = ['pointerdown', 'keydown', 'touchend'] as const;
+
+function unlockSoundOnGesture(): void {
+  void sounds.unlock().then((unlocked) => {
+    if (!unlocked) return;
+    for (const type of GESTURES) window.removeEventListener(type, unlockSoundOnGesture, true);
+  });
 }
+
+for (const type of GESTURES) window.addEventListener(type, unlockSoundOnGesture, true);
 
 function applySettings(current: Settings): void {
   input.setBindings(bindingsOf(current.keys));
