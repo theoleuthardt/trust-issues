@@ -11,6 +11,7 @@ const SAMPLE = new Set([
   'final-exam',
   'mind-games',
   'wrong-door',
+  'second-thoughts',
 ]);
 const levels = process.env.E2E_ALL_LEVELS ? LEVELS : LEVELS.filter((level) => SAMPLE.has(level.id));
 

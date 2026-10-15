@@ -111,6 +111,21 @@ export const fakeExit =
     put(canvas, x, y, 'X');
   };
 
+/**
+ * Gives the traps that `feature` adds a delay (ticks between trigger and effect) and/or a
+ * rearm time (ticks until the effect is undone and the trap can fire again).
+ */
+export const timed =
+  (feature: Feature, timing: { delay?: number; rearm?: number }): Feature =>
+  (canvas) => {
+    const first = canvas.traps.length;
+    feature(canvas);
+    for (let index = first; index < canvas.traps.length; index++) {
+      const original = canvas.traps[index];
+      if (original) canvas.traps[index] = { ...original, ...timing };
+    }
+  };
+
 /** A spike appears at column `x` once the player reaches column `at`. */
 export const pop =
   (at: number, x: number, width = 1, y = FLOOR_ROW): Feature =>

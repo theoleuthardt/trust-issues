@@ -10,15 +10,24 @@ export interface TileRect {
   height: number;
 }
 
+/** Most ticks a trap may wait between its trigger and its effect: ten seconds. */
+export const MAX_TRAP_DELAY = 600;
+/** Most ticks an effect may last before the trap re-arms: one minute. */
+export const MAX_TRAP_REARM = 3600;
+
 /**
- * A one-shot trap: when the player overlaps `trigger`, `action` is applied to `tiles`.
- * Traps re-arm when the player dies.
+ * A trap: when the player overlaps `trigger`, `action` is applied to `tiles`, after `delay`
+ * ticks if one is given. With `rearm`, the effect is undone that many ticks after it was
+ * applied and the trap can be triggered again; without it the trap is one-shot. A death
+ * cancels everything and re-arms every trap of the stage.
  */
 export interface TrapDef {
   id: string;
   trigger: TileRect;
   action: TrapAction;
   tiles: readonly (readonly [number, number])[];
+  delay?: number;
+  rearm?: number;
 }
 
 /**
@@ -136,6 +145,16 @@ function buildStage(levelId: string, index: number, def: StageDef): Stage {
   for (const trap of def.traps) {
     if (seen.has(trap.id)) throw new Error(`${where}: duplicate trap id ${trap.id}`);
     seen.add(trap.id);
+    if (trap.delay !== undefined) {
+      if (!Number.isInteger(trap.delay) || trap.delay < 0 || trap.delay > MAX_TRAP_DELAY) {
+        throw new Error(`${where}: trap ${trap.id} delay must be 0 to ${MAX_TRAP_DELAY} ticks`);
+      }
+    }
+    if (trap.rearm !== undefined) {
+      if (!Number.isInteger(trap.rearm) || trap.rearm < 1 || trap.rearm > MAX_TRAP_REARM) {
+        throw new Error(`${where}: trap ${trap.id} rearm must be 1 to ${MAX_TRAP_REARM} ticks`);
+      }
+    }
     for (const [x, y] of trap.tiles) {
       if (x < 0 || y < 0 || x >= width || y >= height) {
         throw new Error(`${where}: trap ${trap.id} targets a tile outside the stage`);

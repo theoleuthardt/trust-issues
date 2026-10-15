@@ -64,6 +64,12 @@ until scrolling cameras are implemented.
 ```
 
 - A trap fires once per life, the moment the player's box overlaps the trigger.
+- `delay` (0 to 600 ticks) puts the effect that many ticks after the trigger; a death in
+  between cancels it and re-arms the trap.
+- `rearm` (1 to 3600 ticks) undoes the effect that many ticks after it was applied (the tiles
+  go back to what they were) and lets the trap fire again; if the player still stands in the
+  trigger it fires again right away. Without it a trap is one-shot.
+- The effect of `delay` and `rearm` is exact in ticks, so a trap can be timed against a jump.
 - `remove_tiles` makes tiles air, `add_tiles` makes them solid, `add_spikes` turns **air**
   tiles into spikes (it never replaces solid tiles).
 - Dying re-arms every trap of the stage and restores its tiles.
@@ -74,22 +80,23 @@ Stages are written with the small DSL in `packages/sim/src/levels/stage.ts` inst
 hand-drawn ASCII. A stage is a two-row floor plus features; the spawn is in column 1 and the
 exit in column 30 unless told otherwise.
 
-| Feature                     | Effect                                                             |
-| --------------------------- | ------------------------------------------------------------------ |
-| `gap(x, w)`                 | permanent hole in the floor                                        |
-| `spikes(x, w)`              | permanent spikes on the floor                                      |
-| `wall(x, h)`                | permanent wall on the floor                                        |
-| `block(x, y, w, h)`         | free-floating solid block                                          |
-| `pop(at, x, w)`             | spikes appear at `x` when the player reaches column `at`           |
-| `drop(at, x, w)`            | the floor vanishes at `x`                                          |
-| `rise(at, x, h)`            | a wall rises at `x`                                                |
-| `sky(at, x, y)`             | a spike appears in mid-air at (`x`, `y`)                           |
-| `vanish(at, x, y, w)`       | tiles of a platform vanish                                         |
-| `trap(action, rect, tiles)` | raw trap with its own trigger rectangle (for platforms and stairs) |
-| `seal(at, x, y, h)`         | tiles appear at (`x`, `y`) downwards                               |
-| `hidden(x, y, w, h)`        | invisible solid tiles, `y` is the top row                          |
-| `fake(x, y, w, h)`          | tiles that look solid and are not, `y` is the top row              |
-| `fakeExit(x, y)`            | a deadly door that looks like the exit (row defaults to the floor) |
+| Feature                          | Effect                                                             |
+| -------------------------------- | ------------------------------------------------------------------ |
+| `gap(x, w)`                      | permanent hole in the floor                                        |
+| `spikes(x, w)`                   | permanent spikes on the floor                                      |
+| `wall(x, h)`                     | permanent wall on the floor                                        |
+| `block(x, y, w, h)`              | free-floating solid block                                          |
+| `pop(at, x, w)`                  | spikes appear at `x` when the player reaches column `at`           |
+| `drop(at, x, w)`                 | the floor vanishes at `x`                                          |
+| `rise(at, x, h)`                 | a wall rises at `x`                                                |
+| `sky(at, x, y)`                  | a spike appears in mid-air at (`x`, `y`)                           |
+| `vanish(at, x, y, w)`            | tiles of a platform vanish                                         |
+| `trap(action, rect, tiles)`      | raw trap with its own trigger rectangle (for platforms and stairs) |
+| `timed(feature, {delay, rearm})` | gives the traps of `feature` a delay and/or a re-arm time          |
+| `seal(at, x, y, h)`              | tiles appear at (`x`, `y`) downwards                               |
+| `hidden(x, y, w, h)`             | invisible solid tiles, `y` is the top row                          |
+| `fake(x, y, w, h)`               | tiles that look solid and are not, `y` is the top row              |
+| `fakeExit(x, y)`                 | a deadly door that looks like the exit (row defaults to the floor) |
 
 A trap fires when the player overlaps columns `at` and `at + 1` within three tiles above
 the floor. Reference: a jump clears a wall of 2 tiles and a gap of 3 tiles.
@@ -115,33 +122,34 @@ target that skilled players can beat; beating it scores more than 1000 points (s
 
 ## The levels
 
-| #   | Id                    | Name                | Stages | Idea                                                 |
-| --- | --------------------- | ------------------- | ------ | ---------------------------------------------------- |
-| 1   | `trust-nothing`       | Trust Nothing       | 3      | A spike appears, then the floor goes: the tutorial   |
-| 2   | `ground-rules`        | Ground Rules        | 3      | Plain walls and gaps first, then traps in between    |
-| 3   | `hole-punch`          | Hole Punch          | 4      | The floor drops away right in front of you           |
-| 4   | `spike-season`        | Spike Season        | 3      | Spikes pop up in rows and pairs                      |
-| 5   | `wall-street`         | Wall Street         | 4      | Walls rise out of the floor, sometimes behind a hole |
-| 6   | `sky-is-falling`      | Sky Is Falling      | 4      | Spikes appear in mid-air, so jump late               |
-| 7   | `stairway-to-nowhere` | Stairway to Nowhere | 3      | Climb stairs while the steps turn on you             |
-| 8   | `low-ceiling`         | Low Ceiling         | 3      | Ceilings cut your jumps short                        |
-| 9   | `domino-effect`       | Domino Effect       | 4      | One trap leads straight into the next                |
-| 10  | `fake-friends`        | Fake Friends        | 3      | Stepping stones that bite back                       |
-| 11  | `needle-garden`       | Needle Garden       | 4      | Fields of spikes and the shortest safe ground        |
-| 12  | `climb-every-wall`    | Climb Every Wall    | 4      | Walls too high to jump, with steps to build          |
-| 13  | `bait-and-switch`     | Bait and Switch     | 4      | The floor goes where you were about to land          |
-| 14  | `the-gauntlet`        | The Gauntlet        | 4      | Everything so far, back to back                      |
-| 15  | `final-exam`          | Final Exam          | 4      | Stairs, pits, walls and mid-air spikes in one run    |
-| 16  | `vertigo`             | Vertigo             | 4      | Towers: climb, and watch where the spikes come from  |
-| 17  | `narrow-ledges`       | Narrow Ledges       | 3      | One-tile stones over wide gaps                       |
-| 18  | `mind-games`          | Mind Games          | 4      | Traps that go off while you are in the air           |
-| 19  | `tunnel-vision`       | Tunnel Vision       | 3      | Long ceilings that cut every jump short              |
-| 20  | `trust-issues`        | Trust Issues        | 4      | The title level: nothing is what it seems            |
-| 21  | `paper-walls`         | Paper Walls         | 3      | Walls that look solid and let you walk through       |
-| 22  | `invisible-man`       | Invisible Man       | 3      | Pits that have an invisible floor                    |
-| 23  | `wrong-door`          | Wrong Door          | 3      | Exits that kill, and the real one a jump away        |
-| 24  | `floor-is-fake`       | The Floor Is Fake   | 4      | Ground that looks solid and gives way                |
-| 25  | `everything-lies`     | Everything Lies     | 4      | All three lies in one level                          |
+| #   | Id                    | Name                | Stages | Idea                                                         |
+| --- | --------------------- | ------------------- | ------ | ------------------------------------------------------------ |
+| 1   | `trust-nothing`       | Trust Nothing       | 3      | A spike appears, then the floor goes: the tutorial           |
+| 2   | `ground-rules`        | Ground Rules        | 3      | Plain walls and gaps first, then traps in between            |
+| 3   | `hole-punch`          | Hole Punch          | 4      | The floor drops away right in front of you                   |
+| 4   | `spike-season`        | Spike Season        | 3      | Spikes pop up in rows and pairs                              |
+| 5   | `wall-street`         | Wall Street         | 4      | Walls rise out of the floor, sometimes behind a hole         |
+| 6   | `sky-is-falling`      | Sky Is Falling      | 4      | Spikes appear in mid-air, so jump late                       |
+| 7   | `stairway-to-nowhere` | Stairway to Nowhere | 3      | Climb stairs while the steps turn on you                     |
+| 8   | `low-ceiling`         | Low Ceiling         | 3      | Ceilings cut your jumps short                                |
+| 9   | `domino-effect`       | Domino Effect       | 4      | One trap leads straight into the next                        |
+| 10  | `fake-friends`        | Fake Friends        | 3      | Stepping stones that bite back                               |
+| 11  | `needle-garden`       | Needle Garden       | 4      | Fields of spikes and the shortest safe ground                |
+| 12  | `climb-every-wall`    | Climb Every Wall    | 4      | Walls too high to jump, with steps to build                  |
+| 13  | `bait-and-switch`     | Bait and Switch     | 4      | The floor goes where you were about to land                  |
+| 14  | `the-gauntlet`        | The Gauntlet        | 4      | Everything so far, back to back                              |
+| 15  | `final-exam`          | Final Exam          | 4      | Stairs, pits, walls and mid-air spikes in one run            |
+| 16  | `vertigo`             | Vertigo             | 4      | Towers: climb, and watch where the spikes come from          |
+| 17  | `narrow-ledges`       | Narrow Ledges       | 3      | One-tile stones over wide gaps                               |
+| 18  | `mind-games`          | Mind Games          | 4      | Traps that go off while you are in the air                   |
+| 19  | `tunnel-vision`       | Tunnel Vision       | 3      | Long ceilings that cut every jump short                      |
+| 20  | `trust-issues`        | Trust Issues        | 4      | The title level: nothing is what it seems                    |
+| 21  | `paper-walls`         | Paper Walls         | 3      | Walls that look solid and let you walk through               |
+| 22  | `invisible-man`       | Invisible Man       | 3      | Pits that have an invisible floor                            |
+| 23  | `wrong-door`          | Wrong Door          | 3      | Exits that kill, and the real one a jump away                |
+| 24  | `floor-is-fake`       | The Floor Is Fake   | 4      | Ground that looks solid and gives way                        |
+| 25  | `everything-lies`     | Everything Lies     | 4      | All three lies in one level                                  |
+| 26  | `second-thoughts`     | Second Thoughts     | 3      | Traps that wait a moment, and traps that put themselves back |
 
 ## Design guidance
 

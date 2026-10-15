@@ -11,7 +11,7 @@ import {
   Tile,
 } from './constants';
 import { stageOf } from './level';
-import type { Level, Stage, TileRect } from './level';
+import type { Level, Stage, TileRect, TrapDef } from './level';
 
 /** Mutable state of one run. A run spans all lives until the exit is reached. */
 export interface GameState {
@@ -24,6 +24,10 @@ export interface GameState {
   onGround: boolean;
   tiles: Uint8Array;
   fired: Set<string>;
+  /** Traps that were triggered and wait for their delay, with the tick they take effect. */
+  pending: Map<string, number>;
+  /** Applied traps that undo themselves, with the tick they do and the tiles as they were. */
+  active: Map<string, { until: number; before: number[] }>;
   deaths: number;
   finished: boolean;
 }
@@ -60,6 +64,8 @@ export function createState(level: Level): GameState {
     onGround: spawnsOnGround(stage),
     tiles: stage.tiles.slice(),
     fired: new Set(),
+    pending: new Map(),
+    active: new Map(),
     deaths: 0,
     finished: false,
   };
@@ -147,15 +153,42 @@ function overlapsTiles(state: GameState, rect: TileRect): boolean {
   );
 }
 
+function applyTrap(stage: Stage, state: GameState, trap: TrapDef): void {
+  if (trap.rearm !== undefined) {
+    const before = trap.tiles.map(([tx, ty]) => state.tiles[ty * stage.width + tx] ?? Tile.Air);
+    state.active.set(trap.id, { until: state.tick + trap.rearm, before });
+  }
+  for (const [tx, ty] of trap.tiles) {
+    const index = ty * stage.width + tx;
+    if (trap.action === 'remove_tiles') state.tiles[index] = Tile.Air;
+    else if (trap.action === 'add_tiles') state.tiles[index] = Tile.Solid;
+    else if (state.tiles[index] === Tile.Air) state.tiles[index] = Tile.Spike;
+  }
+}
+
 function fireTraps(stage: Stage, state: GameState): void {
   for (const trap of stage.traps) {
+    const active = state.active.get(trap.id);
+    if (active && state.tick >= active.until) {
+      trap.tiles.forEach(([tx, ty], i) => {
+        state.tiles[ty * stage.width + tx] = active.before[i] ?? Tile.Air;
+      });
+      state.active.delete(trap.id);
+      state.fired.delete(trap.id);
+    }
+
+    const due = state.pending.get(trap.id);
+    if (due !== undefined && state.tick >= due) {
+      state.pending.delete(trap.id);
+      applyTrap(stage, state, trap);
+    }
+
     if (state.fired.has(trap.id) || !overlapsTiles(state, trap.trigger)) continue;
     state.fired.add(trap.id);
-    for (const [tx, ty] of trap.tiles) {
-      const index = ty * stage.width + tx;
-      if (trap.action === 'remove_tiles') state.tiles[index] = Tile.Air;
-      else if (trap.action === 'add_tiles') state.tiles[index] = Tile.Solid;
-      else if (state.tiles[index] === Tile.Air) state.tiles[index] = Tile.Spike;
+    if (trap.delay !== undefined && trap.delay > 0) {
+      state.pending.set(trap.id, state.tick + trap.delay);
+    } else {
+      applyTrap(stage, state, trap);
     }
   }
 }
@@ -192,6 +225,8 @@ function enterStage(stage: Stage, state: GameState): void {
   state.onGround = spawnsOnGround(stage);
   state.tiles = stage.tiles.slice();
   state.fired.clear();
+  state.pending.clear();
+  state.active.clear();
 }
 
 /**

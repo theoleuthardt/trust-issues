@@ -8,6 +8,7 @@ import {
   hidden,
   pop,
   rise,
+  timed,
   spikes,
   stage,
   trap,
@@ -21,7 +22,10 @@ const level = (id: string, name: string, stages: StageDef[], maxFrames = 7200): 
   maxFrames,
 });
 
-/** Levels 21 to 25: walls you can walk through, floors that are not there, doors that kill. */
+/**
+ * Levels 21 to 25: walls you can walk through, floors that are not there, doors that kill.
+ * Level 26 adds traps with a delay and traps that put themselves back.
+ */
 export const PACK_5: LevelContent[] = [
   level('paper-walls', 'Paper Walls', [
     stage([fake(9, 14, 1, 2), spikes(14, 2)]),
@@ -66,6 +70,19 @@ export const PACK_5: LevelContent[] = [
       fakeExit(20),
       fake(23, 16, 3, 2),
       fakeExit(28),
+    ]),
+  ]),
+  level('second-thoughts', 'Second Thoughts', [
+    stage([timed(pop(8, 11), { delay: 25 }), timed(drop(16, 19, 2), { delay: 20 })]),
+    stage([
+      timed(pop(6, 9, 2), { delay: 20, rearm: 90 }),
+      timed(drop(14, 17, 3), { delay: 15, rearm: 120 }),
+    ]),
+    stage([
+      timed(pop(5, 8), { delay: 22 }),
+      timed(rise(11, 14, 2), { delay: 10, rearm: 80 }),
+      timed(drop(18, 21, 2), { delay: 15, rearm: 100 }),
+      pop(24, 27),
     ]),
   ]),
 ];
