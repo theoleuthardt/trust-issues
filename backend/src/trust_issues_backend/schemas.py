@@ -87,10 +87,23 @@ class RunResponse(Struct):
 
 class LeaderboardEntry(Struct):
     rank: int
+    run_id: int
     username: str
     score: int
     frames: int
     deaths: int
+
+
+class ReplayResponse(Struct):
+    run_id: int
+    level_id: str
+    username: str
+    score: int
+    frames: int
+    deaths: int
+    replay: list[int]
+    sim_version: int
+    level_revision: int
 
 
 class ProgressEntry(Struct):

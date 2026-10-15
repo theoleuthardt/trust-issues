@@ -36,7 +36,7 @@ from trust_issues_backend.routes.admin import (
 )
 from trust_issues_backend.routes.auth import login, me, register
 from trust_issues_backend.routes.health import health
-from trust_issues_backend.routes.leaderboard import leaderboard, progress
+from trust_issues_backend.routes.leaderboard import leaderboard, progress, replay
 from trust_issues_backend.routes.runs import submit_run
 from trust_issues_backend.security_headers import SecurityHeadersMiddleware, exception_handler
 from trust_issues_backend.settings import Settings
@@ -44,12 +44,14 @@ from trust_issues_backend.verifier import HttpVerifier, Verifier
 
 LOGIN_ATTEMPTS_PER_MINUTE = 20
 RUN_SUBMISSIONS_PER_MINUTE = 30
+REPLAY_DOWNLOADS_PER_MINUTE = 60
 
 PUBLIC_PATHS = [
     r"^/health$",
     r"^/api/auth/register$",
     r"^/api/auth/login$",
     r"^/api/leaderboard/",
+    r"^/api/replays/",
     r"^/schema",
 ]
 MAX_REQUEST_BODY_BYTES = 256 * 1024
@@ -132,6 +134,7 @@ def create_app(
             submit_run,
             leaderboard,
             progress,
+            replay,
             list_runs,
             list_users,
             hide_run,
@@ -150,6 +153,7 @@ def create_app(
                 "trusted_proxies": settings.trusted_proxy_ips,
                 "login_limiter": SlidingWindowLimiter(LOGIN_ATTEMPTS_PER_MINUTE, 60),
                 "run_limiter": SlidingWindowLimiter(RUN_SUBMISSIONS_PER_MINUTE, 60),
+                "replay_limiter": SlidingWindowLimiter(REPLAY_DOWNLOADS_PER_MINUTE, 60),
             }
         ),
         request_max_body_size=MAX_REQUEST_BODY_BYTES,
