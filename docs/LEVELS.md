@@ -70,6 +70,8 @@ until scrolling cameras are implemented.
   go back to what they were) and lets the trap fire again; if the player still stands in the
   trigger it fires again right away. Without it a trap is one-shot.
 - The effect of `delay` and `rearm` is exact in ticks, so a trap can be timed against a jump.
+- A trap with `rearm` must be the only one that changes its tiles: undoing it would otherwise
+  also undo what another trap did to the same tile, and `buildLevel` rejects the stage.
 - `remove_tiles` makes tiles air, `add_tiles` makes them solid, `add_spikes` turns **air**
   tiles into spikes (it never replaces solid tiles).
 - Dying re-arms every trap of the stage and restores its tiles.

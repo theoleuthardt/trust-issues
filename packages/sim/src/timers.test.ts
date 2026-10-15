@@ -148,6 +148,28 @@ describe('validation', () => {
     expect(() => level([trap(timing)])).toThrow(/delay|rearm/);
   });
 
+  it('rejects a re-arming trap whose tiles another trap also changes', () => {
+    const rearming = trap({ id: 'a', rearm: 30, tiles: [[6, 1]] });
+    const other = trap({ id: 'b', action: 'add_tiles', tiles: [[6, 1]] });
+
+    expect(() => level([rearming, other])).toThrow(/rearm.*tile/i);
+    expect(() => level([other, rearming])).toThrow(/rearm.*tile/i);
+  });
+
+  it('accepts traps that share tiles when none of them re-arms', () => {
+    const first = trap({ id: 'a', tiles: [[6, 1]] });
+    const second = trap({ id: 'b', action: 'add_tiles', tiles: [[6, 1]] });
+
+    expect(() => level([first, second])).not.toThrow();
+  });
+
+  it('accepts a re-arming trap whose tiles nobody else touches', () => {
+    const rearming = trap({ id: 'a', rearm: 30, tiles: [[6, 1]] });
+    const other = trap({ id: 'b', tiles: [[5, 1]] });
+
+    expect(() => level([rearming, other])).not.toThrow();
+  });
+
   it('accepts valid timings', () => {
     expect(() => level([trap({ delay: 30, rearm: 90 })])).not.toThrow();
   });

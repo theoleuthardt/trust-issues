@@ -162,6 +162,19 @@ function buildStage(levelId: string, index: number, def: StageDef): Stage {
     }
   }
 
+  for (const trap of def.traps) {
+    if (trap.rearm === undefined) continue;
+    const mine = new Set(trap.tiles.map(([x, y]) => `${x},${y}`));
+    for (const other of def.traps) {
+      if (other.id === trap.id) continue;
+      if (other.tiles.some(([x, y]) => mine.has(`${x},${y}`))) {
+        throw new Error(
+          `${where}: trap ${trap.id} rearms, so no other trap may change its tiles (${other.id} does)`,
+        );
+      }
+    }
+  }
+
   return { width, height, tiles, spawn, exit, traps: def.traps };
 }
 
