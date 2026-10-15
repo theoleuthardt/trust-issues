@@ -48,6 +48,7 @@ test('a run from the leaderboard can be watched to the end', async ({ page }) =>
   await openBoard(page);
 
   await page.getByRole('button', { name: 'Watch the run of alice' }).click();
+  await page.waitForSelector('body[data-screen="replay"]');
   await advance(page, 6);
   await expect(page.locator('body')).toHaveAttribute('data-screen', 'replay');
   await advance(page, (solution?.frames ?? 0) + 10);
@@ -60,6 +61,7 @@ test('the speed keys make the replay run faster', async ({ page }) => {
   await serveBoard(page);
   await openBoard(page);
   await page.getByRole('button', { name: 'Watch the run of alice' }).click();
+  await page.waitForSelector('body[data-screen="replay"]');
   await advance(page, 6);
 
   await page.keyboard.press('5');
@@ -75,6 +77,7 @@ test('escape closes the viewer and returns to the board', async ({ page }) => {
   await serveBoard(page);
   await openBoard(page);
   await page.getByRole('button', { name: 'Watch the run of alice' }).click();
+  await page.waitForSelector('body[data-screen="replay"]');
   await advance(page, 6);
 
   await page.keyboard.press('Escape');
