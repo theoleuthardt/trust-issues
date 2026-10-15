@@ -4,1303 +4,1357 @@
  */
 
 export interface paths {
-    "/api/admin/runs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** ListRuns */
-        get: operations["ApiAdminRunsListRuns"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  '/api/admin/runs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/admin/runs/{run_id}/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** DeleteRun */
-        post: operations["ApiAdminRunsRunIdDeleteDeleteRun"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** ListRuns */
+    get: operations['ApiAdminRunsListRuns'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/runs/{run_id}/delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/admin/runs/{run_id}/hide": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** HideRun */
-        post: operations["ApiAdminRunsRunIdHideHideRun"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** DeleteRun */
+    post: operations['ApiAdminRunsRunIdDeleteDeleteRun'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/runs/{run_id}/hide': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/admin/runs/{run_id}/unhide": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** UnhideRun */
-        post: operations["ApiAdminRunsRunIdUnhideUnhideRun"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** HideRun */
+    post: operations['ApiAdminRunsRunIdHideHideRun'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/runs/{run_id}/unhide': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/admin/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** ListUsers */
-        get: operations["ApiAdminUsersListUsers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** UnhideRun */
+    post: operations['ApiAdminRunsRunIdUnhideUnhideRun'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/users': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/admin/users/{user_id}/flag": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** FlagUser */
-        post: operations["ApiAdminUsersUserIdFlagFlagUser"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** ListUsers */
+    get: operations['ApiAdminUsersListUsers'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/users/{user_id}/flag': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/admin/users/{user_id}/unflag": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** UnflagUser */
-        post: operations["ApiAdminUsersUserIdUnflagUnflagUser"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** FlagUser */
+    post: operations['ApiAdminUsersUserIdFlagFlagUser'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/users/{user_id}/unflag': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/auth/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** DeleteAccount */
-        post: operations["ApiAuthDeleteDeleteAccount"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** UnflagUser */
+    post: operations['ApiAdminUsersUserIdUnflagUnflagUser'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Login */
-        post: operations["ApiAuthLoginLogin"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** DeleteAccount */
+    post: operations['ApiAuthDeleteDeleteAccount'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/login': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/auth/logout-all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** LogoutAll */
-        post: operations["ApiAuthLogoutAllLogoutAll"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Login */
+    post: operations['ApiAuthLoginLogin'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/logout-all': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/auth/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Me */
-        get: operations["ApiAuthMeMe"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** LogoutAll */
+    post: operations['ApiAuthLogoutAllLogoutAll'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/me': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/auth/password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** ChangePassword */
-        post: operations["ApiAuthPasswordChangePassword"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Me */
+    get: operations['ApiAuthMeMe'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/password': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/auth/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Register */
-        post: operations["ApiAuthRegisterRegister"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** ChangePassword */
+    post: operations['ApiAuthPasswordChangePassword'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/register': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/leaderboard/{level_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Leaderboard */
-        get: operations["ApiLeaderboardLevelIdLeaderboard"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Register */
+    post: operations['ApiAuthRegisterRegister'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/leaderboard/{level_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/leaderboard/{level_id}/around-me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** AroundMe */
-        get: operations["ApiLeaderboardLevelIdAroundMeAroundMe"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Leaderboard */
+    get: operations['ApiLeaderboardLevelIdLeaderboard'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/leaderboard/{level_id}/around-me': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/leaderboard/{level_id}/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** LeaderboardPage */
-        get: operations["ApiLeaderboardLevelIdPageLeaderboardPage"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** AroundMe */
+    get: operations['ApiLeaderboardLevelIdAroundMeAroundMe'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/leaderboard/{level_id}/page': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/players/{username}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Profile */
-        get: operations["ApiPlayersUsernameProfile"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** LeaderboardPage */
+    get: operations['ApiLeaderboardLevelIdPageLeaderboardPage'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/players/{username}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Progress */
-        get: operations["ApiProgressProgress"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Profile */
+    get: operations['ApiPlayersUsernameProfile'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/progress': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/ranking": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Ranking */
-        get: operations["ApiRankingRanking"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Progress */
+    get: operations['ApiProgressProgress'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/ranking': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/replays/{run_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Replay */
-        get: operations["ApiReplaysRunIdReplay"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Ranking */
+    get: operations['ApiRankingRanking'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/replays/{run_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/runs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** SubmitRun */
-        post: operations["ApiRunsSubmitRun"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Replay */
+    get: operations['ApiReplaysRunIdReplay'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/runs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Health */
-        get: operations["HealthHealth"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** SubmitRun */
+    post: operations['ApiRunsSubmitRun'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/health': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    /** Health */
+    get: operations['HealthHealth'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        /** AdminRun */
-        AdminRun: {
-            deaths: number;
-            flags: string[];
-            frames: number;
-            hidden: boolean;
-            id: number;
-            level_id: string;
-            level_revision: number;
-            score: number;
-            sim_version: number;
-            /** Format: date-time */
-            submitted_at: string;
-            user_id: number;
-            username: string;
-        };
-        /** AdminUser */
-        AdminUser: {
-            /** Format: date-time */
-            created_at: string;
-            flagged: boolean;
-            id: number;
-            is_admin: boolean;
-            username: string;
-        };
-        /** AroundMe */
-        AroundMe: {
-            entries: components["schemas"]["LeaderboardEntry"][];
-            rank: number;
-        };
-        /** ChangePasswordRequest */
-        ChangePasswordRequest: {
-            current_password: string;
-            new_password: string;
-        };
-        /** DeleteAccountRequest */
-        DeleteAccountRequest: {
-            password: string;
-        };
-        /** LeaderboardEntry */
-        LeaderboardEntry: {
-            deaths: number;
-            frames: number;
-            rank: number;
-            run_id: number;
-            score: number;
-            username: string;
-        };
-        /** LeaderboardPage */
-        LeaderboardPage: {
-            entries: components["schemas"]["LeaderboardEntry"][];
-            next_cursor: string | null;
-        };
-        /** LoginRequest */
-        LoginRequest: {
-            password: string;
-            username: string;
-        };
-        /** ModerationNote */
-        ModerationNote: {
-            /** @default  */
-            reason: string;
-        };
-        /** Profile */
-        Profile: {
-            runs: components["schemas"]["ProfileRun"][];
-            username: string;
-        };
-        /** ProfileRun */
-        ProfileRun: {
-            /** Format: date-time */
-            completed_at: string;
-            deaths: number;
-            frames: number;
-            level_id: string;
-            run_id: number;
-            score: number;
-        };
-        /** ProgressEntry */
-        ProgressEntry: {
-            /** Format: date-time */
-            completed_at: string;
-            deaths: number;
-            frames: number;
-            level_id: string;
-            score: number;
-        };
-        /** RankingEntry */
-        RankingEntry: {
-            /** Format: date-time */
-            completed_at: string;
-            rank: number;
-            total_frames: number;
-            username: string;
-        };
-        /** RegisterRequest */
-        RegisterRequest: {
-            password: string;
-            username: string;
-        };
-        /** ReplayResponse */
-        ReplayResponse: {
-            deaths: number;
-            frames: number;
-            level_id: string;
-            level_revision: number;
-            replay: number[];
-            run_id: number;
-            score: number;
-            sim_version: number;
-            username: string;
-        };
-        /** RunResponse */
-        RunResponse: {
-            deaths: number;
-            frames: number;
-            personal_best: boolean;
-            rank: number;
-            score: number;
-        };
-        /** RunSubmission */
-        RunSubmission: {
-            level_id: string;
-            level_revision: number;
-            replay: number[];
-            sim_version: number;
-        };
-        /** TokenResponse */
-        TokenResponse: {
-            access_token: string;
-            /** @default bearer */
-            token_type: string;
-        };
-        /** UserResponse */
-        UserResponse: {
-            id: number;
-            username: string;
-        };
+  schemas: {
+    /** AdminRun */
+    AdminRun: {
+      deaths: number;
+      flags: string[];
+      frames: number;
+      hidden: boolean;
+      id: number;
+      level_id: string;
+      level_revision: number;
+      score: number;
+      sim_version: number;
+      /** Format: date-time */
+      submitted_at: string;
+      user_id: number;
+      username: string;
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    /** AdminUser */
+    AdminUser: {
+      /** Format: date-time */
+      created_at: string;
+      flagged: boolean;
+      id: number;
+      is_admin: boolean;
+      username: string;
+    };
+    /** AroundMe */
+    AroundMe: {
+      entries: components['schemas']['LeaderboardEntry'][];
+      rank: number;
+    };
+    /** ChangePasswordRequest */
+    ChangePasswordRequest: {
+      current_password: string;
+      new_password: string;
+    };
+    /** DeleteAccountRequest */
+    DeleteAccountRequest: {
+      password: string;
+    };
+    /** LeaderboardEntry */
+    LeaderboardEntry: {
+      deaths: number;
+      frames: number;
+      rank: number;
+      run_id: number;
+      score: number;
+      username: string;
+    };
+    /** LeaderboardPage */
+    LeaderboardPage: {
+      entries: components['schemas']['LeaderboardEntry'][];
+      next_cursor: string | null;
+    };
+    /** LoginRequest */
+    LoginRequest: {
+      password: string;
+      username: string;
+    };
+    /** ModerationNote */
+    ModerationNote: {
+      /** @default  */
+      reason: string;
+    };
+    /** Profile */
+    Profile: {
+      runs: components['schemas']['ProfileRun'][];
+      username: string;
+    };
+    /** ProfileRun */
+    ProfileRun: {
+      /** Format: date-time */
+      completed_at: string;
+      deaths: number;
+      frames: number;
+      level_id: string;
+      run_id: number;
+      score: number;
+    };
+    /** ProgressEntry */
+    ProgressEntry: {
+      /** Format: date-time */
+      completed_at: string;
+      deaths: number;
+      frames: number;
+      level_id: string;
+      score: number;
+    };
+    /** RankingEntry */
+    RankingEntry: {
+      /** Format: date-time */
+      completed_at: string;
+      rank: number;
+      total_frames: number;
+      username: string;
+    };
+    /** RegisterRequest */
+    RegisterRequest: {
+      password: string;
+      username: string;
+    };
+    /** ReplayResponse */
+    ReplayResponse: {
+      deaths: number;
+      frames: number;
+      level_id: string;
+      level_revision: number;
+      replay: number[];
+      run_id: number;
+      score: number;
+      sim_version: number;
+      username: string;
+    };
+    /** RunResponse */
+    RunResponse: {
+      deaths: number;
+      frames: number;
+      personal_best: boolean;
+      rank: number;
+      score: number;
+    };
+    /** RunSubmission */
+    RunSubmission: {
+      level_id: string;
+      level_revision: number;
+      replay: number[];
+      sim_version: number;
+    };
+    /** TokenResponse */
+    TokenResponse: {
+      access_token: string;
+      /** @default bearer */
+      token_type: string;
+    };
+    /** UserResponse */
+    UserResponse: {
+      id: number;
+      username: string;
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    ApiAdminRunsListRuns: {
-        parameters: {
-            query?: {
-                level_id?: string | null;
-                flagged?: boolean;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminRun"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
-        };
+  ApiAdminRunsListRuns: {
+    parameters: {
+      query?: {
+        level_id?: string | null;
+        flagged?: boolean;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiAdminRunsRunIdDeleteDeleteRun: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                run_id: number;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ModerationNote"];
-            };
+        content: {
+          'application/json': components['schemas']['AdminRun'][];
         };
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
     };
-    ApiAdminRunsRunIdHideHideRun: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                run_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ModerationNote"];
-            };
-        };
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
-        };
+  };
+  ApiAdminRunsRunIdDeleteDeleteRun: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        run_id: number;
+      };
+      cookie?: never;
     };
-    ApiAdminRunsRunIdUnhideUnhideRun: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                run_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ModerationNote"];
-            };
-        };
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ModerationNote'];
+      };
     };
-    ApiAdminUsersListUsers: {
-        parameters: {
-            query?: {
-                flagged?: boolean;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminUser"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
+        content?: never;
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
     };
-    ApiAdminUsersUserIdFlagFlagUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ModerationNote"];
-            };
-        };
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
-        };
+  };
+  ApiAdminRunsRunIdHideHideRun: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        run_id: number;
+      };
+      cookie?: never;
     };
-    ApiAdminUsersUserIdUnflagUnflagUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ModerationNote"];
-            };
-        };
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ModerationNote'];
+      };
     };
-    ApiAuthDeleteDeleteAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteAccountRequest"];
-            };
+        content?: never;
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
         };
+      };
     };
-    ApiAuthLoginLogin: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginRequest"];
-            };
-        };
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
-        };
+  };
+  ApiAdminRunsRunIdUnhideUnhideRun: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        run_id: number;
+      };
+      cookie?: never;
     };
-    ApiAuthLogoutAllLogoutAll: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, nothing follows */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ModerationNote'];
+      };
     };
-    ApiAuthMeMe: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserResponse"];
-                };
-            };
+        content?: never;
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
     };
-    ApiAuthPasswordChangePassword: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChangePasswordRequest"];
-            };
-        };
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
-        };
+  };
+  ApiAdminUsersListUsers: {
+    parameters: {
+      query?: {
+        flagged?: boolean;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiAuthRegisterRegister: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterRequest"];
-            };
+        content: {
+          'application/json': components['schemas']['AdminUser'][];
         };
-        responses: {
-            /** @description Document created, URL follows */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
     };
-    ApiLeaderboardLevelIdLeaderboard: {
-        parameters: {
-            query?: {
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                level_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LeaderboardEntry"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
-        };
+  };
+  ApiAdminUsersUserIdFlagFlagUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
     };
-    ApiLeaderboardLevelIdAroundMeAroundMe: {
-        parameters: {
-            query?: {
-                radius?: number;
-            };
-            header?: never;
-            path: {
-                level_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AroundMe"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ModerationNote'];
+      };
     };
-    ApiLeaderboardLevelIdPageLeaderboardPage: {
-        parameters: {
-            query?: {
-                limit?: number;
-                cursor?: string | null;
-            };
-            header?: never;
-            path: {
-                level_id: string;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LeaderboardPage"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
+        content?: never;
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
     };
-    ApiPlayersUsernameProfile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                username: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Profile"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
-        };
+  };
+  ApiAdminUsersUserIdUnflagUnflagUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
     };
-    ApiProgressProgress: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProgressEntry"][];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ModerationNote'];
+      };
     };
-    ApiRankingRanking: {
-        parameters: {
-            query?: {
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RankingEntry"][];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
+        content?: never;
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
     };
-    ApiReplaysRunIdReplay: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                run_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReplayResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
-        };
+  };
+  ApiAuthDeleteDeleteAccount: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    ApiRunsSubmitRun: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RunSubmission"];
-            };
-        };
-        responses: {
-            /** @description Document created, URL follows */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RunResponse"];
-                };
-            };
-            /** @description Bad request syntax or unsupported method */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail: string;
-                        extra?: null | {
-                            [key: string]: unknown;
-                        } | unknown[];
-                        status_code: number;
-                    };
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DeleteAccountRequest'];
+      };
     };
-    HealthHealth: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Request fulfilled, document follows */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
-                };
-            };
+        content?: never;
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
     };
+  };
+  ApiAuthLoginLogin: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LoginRequest'];
+      };
+    };
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TokenResponse'];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
+    };
+  };
+  ApiAuthLogoutAllLogoutAll: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, nothing follows */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  ApiAuthMeMe: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UserResponse'];
+        };
+      };
+    };
+  };
+  ApiAuthPasswordChangePassword: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChangePasswordRequest'];
+      };
+    };
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TokenResponse'];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
+    };
+  };
+  ApiAuthRegisterRegister: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RegisterRequest'];
+      };
+    };
+    responses: {
+      /** @description Document created, URL follows */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UserResponse'];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
+    };
+  };
+  ApiLeaderboardLevelIdLeaderboard: {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        level_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LeaderboardEntry'][];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
+    };
+  };
+  ApiLeaderboardLevelIdAroundMeAroundMe: {
+    parameters: {
+      query?: {
+        radius?: number;
+      };
+      header?: never;
+      path: {
+        level_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AroundMe'];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
+    };
+  };
+  ApiLeaderboardLevelIdPageLeaderboardPage: {
+    parameters: {
+      query?: {
+        limit?: number;
+        cursor?: string | null;
+      };
+      header?: never;
+      path: {
+        level_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LeaderboardPage'];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
+    };
+  };
+  ApiPlayersUsernameProfile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        username: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Profile'];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
+    };
+  };
+  ApiProgressProgress: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProgressEntry'][];
+        };
+      };
+    };
+  };
+  ApiRankingRanking: {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RankingEntry'][];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
+    };
+  };
+  ApiReplaysRunIdReplay: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        run_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReplayResponse'];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
+    };
+  };
+  ApiRunsSubmitRun: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RunSubmission'];
+      };
+    };
+    responses: {
+      /** @description Document created, URL follows */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RunResponse'];
+        };
+      };
+      /** @description Bad request syntax or unsupported method */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            detail: string;
+            extra?:
+              | null
+              | {
+                  [key: string]: unknown;
+                }
+              | unknown[];
+            status_code: number;
+          };
+        };
+      };
+    };
+  };
+  HealthHealth: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request fulfilled, document follows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            [key: string]: string;
+          };
+        };
+      };
+    };
+  };
 }

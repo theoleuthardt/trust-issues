@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LEG_LENGTH, advancePhase, figurePose, legFoot } from './figure';
+import { LEG_LENGTH, advancePhase, facingAfter, figurePose, legFoot } from './figure';
 import type { FigurePose } from './figure';
 
 const standing = { vx: 0, vy: 0, onGround: true };
@@ -142,5 +142,17 @@ describe('legFoot', () => {
     const lifted = legFoot(hip, { swing: 0, lift: 3 }, 1);
 
     expect(grounded.y - lifted.y).toBeCloseTo(3);
+  });
+});
+
+describe('facingAfter', () => {
+  it('faces the way the figure moves', () => {
+    expect(facingAfter(3, -1)).toBe(1);
+    expect(facingAfter(-3, 1)).toBe(-1);
+  });
+
+  it('keeps the way it faced while standing still', () => {
+    expect(facingAfter(0, 1)).toBe(1);
+    expect(facingAfter(0, -1)).toBe(-1);
   });
 });

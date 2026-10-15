@@ -31,7 +31,7 @@ import {
 } from './effects';
 import type { Particle } from './effects';
 import { appearanceOf } from './appearance';
-import { advancePhase, figurePose, legFoot } from './figure';
+import { advancePhase, facingAfter, figurePose, legFoot } from './figure';
 import { nextLevel, stageDots } from './progress';
 import { PALETTE, colorNumber } from '../theme';
 
@@ -216,11 +216,10 @@ export class GameScene extends Phaser.Scene {
       const ticks = this.stepper.advance(delta * this.speed);
       for (let i = 0; i < ticks && !this.state.finished; i++) {
         const mask = this.cursor ? this.cursor.next() : this.controls.mask();
-        if ((mask & Input.Right) !== 0 && (mask & Input.Left) === 0) this.facing = 1;
-        if ((mask & Input.Left) !== 0 && (mask & Input.Right) === 0) this.facing = -1;
         if (!this.cursor) this.recorded.push(mask);
         const grounded = this.state.onGround;
         step(this.level, this.state, mask);
+        this.facing = facingAfter(this.state.vx, this.facing);
         if (grounded && (mask & Input.Jump) !== 0 && this.state.vy < 0) this.onSound?.('jump');
         this.phase = advancePhase(this.phase, this.state.vx, this.state.onGround);
         this.stepGhost();
@@ -289,9 +288,8 @@ export class GameScene extends Phaser.Scene {
     }
     const mask = inputs[ghost.index] ?? 0;
     ghost.index += 1;
-    if ((mask & Input.Right) !== 0 && (mask & Input.Left) === 0) ghost.facing = 1;
-    if ((mask & Input.Left) !== 0 && (mask & Input.Right) === 0) ghost.facing = -1;
     step(this.level, ghost.state, mask);
+    ghost.facing = facingAfter(ghost.state.vx, ghost.facing);
     ghost.phase = advancePhase(ghost.phase, ghost.state.vx, ghost.state.onGround);
   }
 
