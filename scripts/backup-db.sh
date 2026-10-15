@@ -7,11 +7,18 @@ set -euo pipefail
 : "${DB_USER:=trust}"
 : "${DB_NAME:=trustissues}"
 
+umask 077
 mkdir -p "$BACKUP_DIR"
-stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+chmod 700 "$BACKUP_DIR"
+stamp="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 target="$BACKUP_DIR/trustissues-$stamp.dump"
 partial="$target.partial"
 trap 'rm -f "$partial"' EXIT
+
+if [ -e "$target" ]; then
+  echo "backup failed: $target already exists" >&2
+  exit 1
+fi
 
 $DB_EXEC pg_dump -U "$DB_USER" -Fc "$DB_NAME" > "$partial"
 
@@ -24,7 +31,7 @@ if ! $DB_EXEC pg_restore --list < "$partial" > /dev/null; then
   exit 1
 fi
 
-mv "$partial" "$target"
+mv -n "$partial" "$target"
 find "$BACKUP_DIR" -name 'trustissues-*.dump' -type f -mtime "+$BACKUP_RETENTION_DAYS" -delete
 
 if [ -n "${BACKUP_PING_URL:-}" ]; then

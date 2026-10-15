@@ -56,13 +56,25 @@ paths with stand-in commands (`scripts/test-backup-scripts.sh`).
 
 ### Restoring for real
 
-Stop the backend, then restore into a fresh database and start the backend again; it migrates
-on start:
+Restore into a **separate** database first, look at it, and only then switch; the live database
+is never dropped before its replacement has been checked. `--exit-on-error` makes a bad dump
+stop the procedure instead of restoring half of it.
+
+```sh
+podman compose exec -T db createdb -U trust trustissues_restored
+podman compose exec -T db pg_restore -U trust -d trustissues_restored --no-owner --exit-on-error < backups/<dump>
+podman compose exec -T db psql -U trust -d trustissues_restored -c 'SELECT count(*) FROM users'
+```
+
+When the numbers look right, stop the backend and swap the names (the old database stays as
+`trustissues_old` until you are sure):
 
 ```sh
 podman compose stop backend
-podman compose exec -T db dropdb -U trust trustissues
-podman compose exec -T db createdb -U trust trustissues
-podman compose exec -T db pg_restore -U trust -d trustissues --no-owner < backups/<dump>
+podman compose exec -T db psql -U trust -d postgres -c 'ALTER DATABASE trustissues RENAME TO trustissues_old'
+podman compose exec -T db psql -U trust -d postgres -c 'ALTER DATABASE trustissues_restored RENAME TO trustissues'
 podman compose start backend
 ```
+
+Backups contain password hashes and all runs, so the script creates them readable by the owner
+only (directory 700, files 600); keep copies equally private.

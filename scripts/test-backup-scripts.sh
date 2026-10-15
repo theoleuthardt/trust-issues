@@ -22,6 +22,7 @@ STUB
 cat > "$bin/createdb" <<'STUB'
 #!/usr/bin/env bash
 echo "createdb $*" >> "$STUB_LOG"
+if [ "${STUB_CREATE_FAILS:-}" = "1" ]; then exit 1; fi
 STUB
 cat > "$bin/dropdb" <<'STUB'
 #!/usr/bin/env bash
@@ -50,6 +51,15 @@ leftovers() { find "$BACKUP_DIR" -name '*.partial' | wc -l | tr -d ' '; }
 "$root/scripts/backup-db.sh" > /dev/null
 check "$(dumps)" 1 "a backup writes one dump"
 check "$(leftovers)" 0 "no partial file stays behind"
+
+check "$(stat -c %a "$BACKUP_DIR")" 700 "the backup directory is private"
+check "$(stat -c %a "$BACKUP_DIR"/trustissues-*.dump | sort -u)" 600 "a dump is readable by its owner only"
+first="$(ls "$BACKUP_DIR"/trustissues-*.dump | head -n 1)"
+"$root/scripts/backup-db.sh" > /dev/null
+"$root/scripts/backup-db.sh" > /dev/null
+check "$(dumps)" 3 "runs in the same second do not overwrite each other"
+check "$(test -s "$first" && echo kept)" kept "an earlier dump is kept"
+rm -f "$BACKUP_DIR"/*.dump
 
 touch -d '30 days ago' "$BACKUP_DIR/trustissues-20200101T000000Z.dump"
 touch -d '2 days ago' "$BACKUP_DIR/trustissues-20990101T000000Z.dump"
@@ -86,6 +96,14 @@ else
   check "failed" "failed" "a failing restore fails the test"
 fi
 check "$(grep -c '^dropdb' "$STUB_LOG")" 1 "the scratch database is dropped after a failure"
+
+: > "$STUB_LOG"
+if STUB_CREATE_FAILS=1 "$root/scripts/restore-test.sh" > /dev/null 2>&1; then
+  check "succeeded" "failed" "a scratch database that cannot be created fails the test"
+else
+  check "failed" "failed" "a scratch database that cannot be created fails the test"
+fi
+check "$(grep -c '^dropdb' "$STUB_LOG")" 0 "nothing is dropped that this run did not create"
 
 rm -f "$BACKUP_DIR"/*.dump
 if "$root/scripts/restore-test.sh" > /dev/null 2>&1; then
