@@ -1,0 +1,57 @@
+name: trust-issues
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+
+services:
+  db:
+    image: docker.io/library/postgres:17-alpine
+    environment:
+      POSTGRES_USER: trust
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: trustissues
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U trust -d trustissues']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    logging: *logging
+
+  verifier:
+    image: ghcr.io/theoleuthardt/trust-issues-verifier:${IMAGE_TAG:-latest}
+    environment:
+      VERIFIER_TOKEN: ${VERIFIER_TOKEN:?set VERIFIER_TOKEN in .env}
+    restart: unless-stopped
+    logging: *logging
+
+  backend:
+    image: ghcr.io/theoleuthardt/trust-issues-backend:${IMAGE_TAG:-latest}
+    environment:
+      DATABASE_URL: postgresql+asyncpg://trust:${POSTGRES_PASSWORD}@db:5432/trustissues
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      VERIFIER_URL: http://verifier:8081
+      VERIFIER_TOKEN: ${VERIFIER_TOKEN}
+      TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-}
+      AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-90}
+    ports:
+      - '127.0.0.1:${API_PORT:-8000}:8000'
+    depends_on:
+      - db
+      - verifier
+    restart: unless-stopped
+    logging: *logging
+
+  frontend:
+    image: ghcr.io/theoleuthardt/trust-issues-frontend:${IMAGE_TAG:-latest}
+    ports:
+      - '127.0.0.1:${WEB_PORT:-8080}:8080'
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  db-data:

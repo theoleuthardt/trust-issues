@@ -75,6 +75,7 @@ jobs:
       - uses: actions/checkout@v7
       - run: bash scripts/test-backup-scripts.sh
       - run: bash scripts/test-check-health.sh
+      - run: bash scripts/test-release-notes.sh
       - uses: astral-sh/setup-uv@v7
       - name: Start PostgreSQL and migrate it
         working-directory: backend
