@@ -57,8 +57,8 @@ The determinism of `packages/sim` is a security property. Do not break it:
 The verifier marks a finished run that is valid but looks made by a tool
 (`packages/sim/src/plausibility.ts`). The run still counts and is stored, with its flags on
 the `best_runs` row, and the backend logs one warning line (user id, level, flags, frames;
-never the replay) for a flagged best run. Moderation uses the flags; nothing is hidden
-automatically.
+never the replay) for a flagged best run. Moderators see the flags and decide
+([MODERATION.md](MODERATION.md)); nothing is hidden automatically.
 
 | Flag                   | Raised when                                                                                                                                            |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -84,4 +84,4 @@ them. These remain open:
 
 Tracked on the board as part of the anti-cheat epic:
 
-- Replay viewer and moderation tools (flag, hide, delete an entry).
+- Replay viewer for moderators and players.

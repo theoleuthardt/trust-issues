@@ -80,6 +80,9 @@ REVISION_COLUMNS: tuple[tuple[str, str, frozenset[str]], ...] = (
             }
         ),
     ),
+    ("0006", "users", frozenset({"is_admin", "flagged"})),
+    ("0006", "best_runs", frozenset({"hidden"})),
+    ("0006", "audit_events", frozenset({"actor_id"})),
 )
 
 

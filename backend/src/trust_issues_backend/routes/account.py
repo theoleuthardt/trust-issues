@@ -82,5 +82,8 @@ async def delete_account(
     await session.execute(
         update(AuditEvent).where(AuditEvent.user_id == user.id).values(user_id=None)
     )
+    await session.execute(
+        update(AuditEvent).where(AuditEvent.actor_id == user.id).values(actor_id=None)
+    )
     await session.delete(user)
     await session.commit()

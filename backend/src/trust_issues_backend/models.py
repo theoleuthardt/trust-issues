@@ -2,7 +2,17 @@
 
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+    false,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -24,6 +34,8 @@ class User(Base):
     token_version: Mapped[int] = mapped_column(Integer, default=0)
     failed_logins: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    flagged: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
@@ -46,6 +58,7 @@ class BestRun(Base):
     sim_version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     level_revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     flags: Mapped[list[str]] = mapped_column(JSON, default=list, server_default="[]")
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
@@ -63,6 +76,9 @@ class AuditEvent(Base):
     )
     kind: Mapped[str] = mapped_column(String(40))
     user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    actor_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     level_id: Mapped[str | None] = mapped_column(String(40), nullable=True)

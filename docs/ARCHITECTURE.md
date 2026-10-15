@@ -54,11 +54,11 @@ verification cheap and drift-free (see [ADR 0002](adr/0002-node-verifier-reusing
 
 ## Data model
 
-| Table          | Columns                                                                                                                                    | Notes                                                                                                               |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| `users`        | `id`, `username`, `username_key` (unique, lower case), `password_hash` (argon2), `token_version`, `created_at`                             | `token_version` is embedded in JWTs and allows revoking all tokens of a user.                                       |
-| `best_runs`    | `id`, `user_id`, `level_id`, `score`, `frames`, `deaths`, `replay` (JSON), `sim_version`, `level_revision`, `flags` (JSON), `submitted_at` | Unique per `(user_id, level_id)`. A row doubles as the completion record, so progress is derived, not stored twice. |
-| `audit_events` | `id`, `created_at`, `kind`, `user_id` (nullable), `level_id`, `reason`, `replay_size`, `request_id`                                        | One row per refused submission. No replay and no credentials; purged after `AUDIT_RETENTION_DAYS`.                  |
+| Table          | Columns                                                                                                                                              | Notes                                                                                                                   |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `users`        | `id`, `username`, `username_key` (unique, lower case), `password_hash` (argon2), `token_version`, `is_admin`, `flagged`, `created_at`                | `token_version` is embedded in JWTs and allows revoking all tokens of a user.                                           |
+| `best_runs`    | `id`, `user_id`, `level_id`, `score`, `frames`, `deaths`, `replay` (JSON), `sim_version`, `level_revision`, `flags` (JSON), `hidden`, `submitted_at` | Unique per `(user_id, level_id)`. A row doubles as the completion record, so progress is derived, not stored twice.     |
+| `audit_events` | `id`, `created_at`, `kind`, `user_id` (nullable), `actor_id` (nullable), `level_id`, `reason`, `replay_size`, `request_id`                           | One row per refused submission or moderation action. No replay and no credentials; purged after `AUDIT_RETENTION_DAYS`. |
 
 The schema is owned by Alembic migrations (`backend/alembic`). The backend container runs
 `python -m trust_issues_backend.migrate` before the server starts: it waits for the database,
@@ -69,18 +69,19 @@ test fails when the models and the migrations drift apart.
 
 ## HTTP API
 
-| Method | Path                          | Auth | Purpose                                  |
-| ------ | ----------------------------- | ---- | ---------------------------------------- |
-| GET    | `/health`                     | no   | Liveness plus database round trip        |
-| POST   | `/api/auth/register`          | no   | Create an account                        |
-| POST   | `/api/auth/login`             | no   | Exchange credentials for a bearer token  |
-| GET    | `/api/auth/me`                | yes  | Current user                             |
-| POST   | `/api/auth/logout-all`        | yes  | Revoke every token of the caller         |
-| POST   | `/api/auth/password`          | yes  | Change the password, returns a new token |
-| POST   | `/api/auth/delete`            | yes  | Delete the account and its runs          |
-| POST   | `/api/runs`                   | yes  | Submit a replay                          |
-| GET    | `/api/progress`               | yes  | Own completed levels with best runs      |
-| GET    | `/api/leaderboard/{level_id}` | no   | Best scores, `?limit=1..100`             |
+| Method | Path                          | Auth  | Purpose                                        |
+| ------ | ----------------------------- | ----- | ---------------------------------------------- |
+| GET    | `/health`                     | no    | Liveness plus database round trip              |
+| POST   | `/api/auth/register`          | no    | Create an account                              |
+| POST   | `/api/auth/login`             | no    | Exchange credentials for a bearer token        |
+| GET    | `/api/auth/me`                | yes   | Current user                                   |
+| POST   | `/api/auth/logout-all`        | yes   | Revoke every token of the caller               |
+| POST   | `/api/auth/password`          | yes   | Change the password, returns a new token       |
+| POST   | `/api/auth/delete`            | yes   | Delete the account and its runs                |
+| POST   | `/api/runs`                   | yes   | Submit a replay                                |
+| GET    | `/api/progress`               | yes   | Own completed levels with best runs            |
+| GET    | `/api/leaderboard/{level_id}` | no    | Best scores, `?limit=1..100`                   |
+| \*     | `/api/admin/...`              | admin | Moderation, see [MODERATION.md](MODERATION.md) |
 
 The OpenAPI schema is served at `/schema` only when `ENABLE_DOCS=true`.
 
