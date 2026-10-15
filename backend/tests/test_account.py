@@ -156,3 +156,22 @@ async def test_concurrent_wrong_logins_cannot_dodge_the_lockout(client: AsyncTes
     )
 
     assert (await login(client, "mallory", PASSWORD)).status_code == 429
+
+
+async def test_a_locked_account_cannot_change_its_password_or_delete_itself(
+    client: AsyncTestClient,
+) -> None:
+    headers = await auth_headers(client, "mallory")
+    for _ in range(5):
+        await login(client, "mallory", "definitely-the-wrong-password")
+
+    changed = await client.post(
+        "/api/auth/password",
+        json={"current_password": PASSWORD, "new_password": NEW_PASSWORD},
+        headers=headers,
+    )
+    deleted = await client.post("/api/auth/delete", json={"password": PASSWORD}, headers=headers)
+
+    assert changed.status_code == 429
+    assert deleted.status_code == 429
+    assert (await client.get("/api/auth/me", headers=headers)).status_code == 200
