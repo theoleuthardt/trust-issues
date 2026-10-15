@@ -14,6 +14,9 @@ with.
 Raise a version for every change that can make an existing replay end differently. Changes
 that cannot (names, comments, par times, rendering) do not need one.
 
+New optional fields and new tile or trap kinds that no existing level uses (for example the
+`delay` and `rearm` of a trap) do not change what any stored replay does and need no bump.
+
 ## What carries them
 
 - The client sends `sim_version` and `level_revision` with every run, taken from the build

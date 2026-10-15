@@ -84,12 +84,25 @@ class MinHeap {
 }
 
 function clone(state: GameState): GameState {
-  return { ...state, tiles: state.tiles.slice(), fired: new Set(state.fired) };
+  return {
+    ...state,
+    tiles: state.tiles.slice(),
+    fired: new Set(state.fired),
+    pending: new Map(state.pending),
+    active: new Map(
+      Array.from(state.active, ([id, entry]) => [id, { ...entry, before: [...entry.before] }]),
+    ),
+  };
 }
 
 function keyOf(state: GameState): string {
   const fired = state.fired.size === 0 ? '' : Array.from(state.fired).sort().join('|');
-  return `${state.x},${state.y},${state.vy},${state.onGround ? 1 : 0},${fired}`;
+  const waiting = Array.from(state.pending, ([id, at]) => `${id}>${at - state.tick}`).sort();
+  const lasting = Array.from(
+    state.active,
+    ([id, entry]) => `${id}<${entry.until - state.tick}`,
+  ).sort();
+  return `${state.x},${state.y},${state.vy},${state.onGround ? 1 : 0},${fired},${waiting.join('|')},${lasting.join('|')}`;
 }
 
 /**
