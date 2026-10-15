@@ -15,6 +15,7 @@ export default defineConfig([
       '**/dist/**',
       '**/node_modules/**',
       'backend/**',
+      'frontend/src/api/schema.d.ts',
       'e2e/test-results/**',
       'e2e/playwright-report/**',
     ],

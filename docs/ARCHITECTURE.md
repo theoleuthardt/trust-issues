@@ -90,6 +90,15 @@ test fails when the models and the migrations drift apart.
 
 The OpenAPI schema is served at `/schema` only when `ENABLE_DOCS=true`.
 
+## API client
+
+The frontend does not hand-write request or response types. `frontend/src/api/openapi.json` is
+the OpenAPI schema of the backend (dumped by `backend/scripts/dump_openapi.py`) and
+`schema.d.ts` is generated from it with `openapi-typescript`; `ApiClient` calls the API through
+`openapi-fetch`, so a path, a parameter or a body that does not exist is a type error. After
+changing a route or a schema of the backend run `task api:generate` and commit the two files.
+CI fails when either does not match what the backend and the schema produce.
+
 ## Build size
 
 The production build has two script chunks. `index-*.js` holds the menus, the account and

@@ -1,6 +1,8 @@
 import type { RunVersions } from '@trust-issues/sim';
+import createClient from 'openapi-fetch';
 import { messageFor } from './errors';
 import type { ErrorContext } from './errors';
+import type { paths } from './schema';
 
 export type { RunVersions };
 
@@ -67,36 +69,56 @@ export interface RunResult {
   rank: number;
 }
 
-/** Typed access to the REST API under `/api`; errors come back as `ApiError`. */
+interface Answer<T> {
+  data?: T;
+  error?: unknown;
+  response: Response;
+}
+
+function origin(): string {
+  return typeof window === 'undefined' ? 'http://localhost' : window.location.origin;
+}
+
+/**
+ * Access to the REST API. Requests and answers are typed by the client generated from the
+ * OpenAPI schema of the backend (`schema.d.ts`, see docs/ARCHITECTURE.md); this class maps them
+ * to the shapes of the game and failures to `ApiError` with a message a player can act on.
+ */
 export class ApiClient {
-  constructor(
-    private readonly fetchFn: typeof fetch,
-    private readonly token: () => string | undefined,
-    private readonly base = '/api',
-  ) {}
+  private readonly http: ReturnType<typeof createClient<paths>>;
+
+  constructor(fetchFn: typeof fetch, token: () => string | undefined, baseUrl: string = origin()) {
+    this.http = createClient<paths>({ baseUrl, fetch: (request) => fetchFn(request) });
+    this.http.use({
+      onRequest: ({ request }) => {
+        const bearer = token();
+        if (bearer) request.headers.set('authorization', `Bearer ${bearer}`);
+        return request;
+      },
+    });
+  }
 
   register(username: string, password: string): Promise<User> {
-    return this.request<User>('POST', '/auth/register', { username, password });
+    return this.call(this.http.POST('/api/auth/register', { body: { username, password } }));
   }
 
   async login(username: string, password: string): Promise<string> {
-    const body = await this.request<{ access_token: string }>('POST', '/auth/login', {
-      username,
-      password,
-    });
+    const body = await this.call(
+      this.http.POST('/api/auth/login', { body: { username, password } }),
+    );
     return body.access_token;
   }
 
   me(): Promise<User> {
-    return this.request<User>('GET', '/auth/me');
+    return this.call(this.http.GET('/api/auth/me'));
   }
 
   /** Changes the password; every older token stops working, the answer is a fresh one. */
   async changePassword(current: string, next: string): Promise<string> {
-    const body = await this.request<{ access_token: string }>(
-      'POST',
-      '/auth/password',
-      { current_password: current, new_password: next },
+    const body = await this.call(
+      this.http.POST('/api/auth/password', {
+        body: { current_password: current, new_password: next },
+      }),
       'account',
     );
     return body.access_token;
@@ -104,26 +126,22 @@ export class ApiClient {
 
   /** Revokes every token of the player, on all devices. */
   async logoutAll(): Promise<void> {
-    await this.request<undefined>('POST', '/auth/logout-all', undefined, 'account');
+    await this.call(this.http.POST('/api/auth/logout-all'), 'account');
   }
 
   /** Deletes the account with all its runs after confirming the password. */
   async deleteAccount(password: string): Promise<void> {
-    await this.request<undefined>('POST', '/auth/delete', { password }, 'account');
+    await this.call(this.http.POST('/api/auth/delete', { body: { password } }), 'account');
   }
 
   /** The best verified runs on a level, best score first; public. */
   async leaderboard(levelId: string, limit = 50): Promise<LeaderboardEntry[]> {
-    const rows = await this.request<
-      {
-        rank: number;
-        run_id: number;
-        username: string;
-        score: number;
-        frames: number;
-        deaths: number;
-      }[]
-    >('GET', `/leaderboard/${encodeURIComponent(levelId)}?limit=${limit}`, undefined, 'run');
+    const rows = await this.call(
+      this.http.GET('/api/leaderboard/{level_id}', {
+        params: { path: { level_id: levelId }, query: { limit } },
+      }),
+      'run',
+    );
     return rows.map((row) => ({
       rank: row.rank,
       runId: row.run_id,
@@ -136,17 +154,10 @@ export class ApiClient {
 
   /** What a player shows on the leaderboards: their best run per level; public. */
   async profile(username: string): Promise<PlayerProfile> {
-    const body = await this.request<{
-      username: string;
-      runs: {
-        run_id: number;
-        level_id: string;
-        score: number;
-        frames: number;
-        deaths: number;
-        completed_at: string;
-      }[];
-    }>('GET', `/players/${encodeURIComponent(username)}`, undefined, 'profile');
+    const body = await this.call(
+      this.http.GET('/api/players/{username}', { params: { path: { username } } }),
+      'profile',
+    );
     return {
       username: body.username,
       runs: body.runs.map((run) => ({
@@ -162,17 +173,10 @@ export class ApiClient {
 
   /** The stored replay of a run on the leaderboard; public. */
   async replay(runId: number): Promise<StoredReplay> {
-    const body = await this.request<{
-      run_id: number;
-      level_id: string;
-      username: string;
-      score: number;
-      frames: number;
-      deaths: number;
-      replay: number[];
-      sim_version: number;
-      level_revision: number;
-    }>('GET', `/replays/${runId}`, undefined, 'run');
+    const body = await this.call(
+      this.http.GET('/api/replays/{run_id}', { params: { path: { run_id: runId } } }),
+      'run',
+    );
     return {
       runId: body.run_id,
       levelId: body.level_id,
@@ -187,9 +191,7 @@ export class ApiClient {
 
   /** The best verified run of the signed-in player on every level they cleared. */
   async progress(): Promise<ServerRun[]> {
-    const rows = await this.request<
-      { level_id: string; score: number; frames: number; deaths: number }[]
-    >('GET', '/progress', undefined, 'run');
+    const rows = await this.call(this.http.GET('/api/progress'), 'run');
     return rows.map((row) => ({
       levelId: row.level_id,
       score: row.score,
@@ -200,21 +202,15 @@ export class ApiClient {
 
   /** Sends a recorded run; the server replays it and answers with what it derived. */
   async submitRun(levelId: string, replay: number[], versions: RunVersions): Promise<RunResult> {
-    const body = await this.request<{
-      frames: number;
-      deaths: number;
-      score: number;
-      personal_best: boolean;
-      rank: number;
-    }>(
-      'POST',
-      '/runs',
-      {
-        level_id: levelId,
-        replay,
-        sim_version: versions.simVersion,
-        level_revision: versions.levelRevision,
-      },
+    const body = await this.call(
+      this.http.POST('/api/runs', {
+        body: {
+          level_id: levelId,
+          replay,
+          sim_version: versions.simVersion,
+          level_revision: versions.levelRevision,
+        },
+      }),
       'run',
     );
     return {
@@ -226,44 +222,21 @@ export class ApiClient {
     };
   }
 
-  private async request<T>(
-    method: string,
-    path: string,
-    body?: unknown,
+  private async call<T>(
+    pending: Promise<Answer<T>>,
     context: ErrorContext = 'credentials',
   ): Promise<T> {
-    const headers = new Headers({ accept: 'application/json' });
-    if (body !== undefined) headers.set('content-type', 'application/json');
-    const token = this.token();
-    if (token) headers.set('authorization', `Bearer ${token}`);
-
-    let response: Response;
+    let answer: Answer<T>;
     try {
-      response = await this.fetchFn(`${this.base}${path}`, {
-        method,
-        headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
-      });
+      answer = await pending;
     } catch {
       throw new ApiError(0, 'Could not reach the server.');
     }
-
-    let text: string;
-    try {
-      text = await response.text();
-    } catch {
-      throw new ApiError(0, 'Could not reach the server.');
+    if (!answer.response.ok) {
+      const body =
+        typeof answer.error === 'object' && answer.error !== null ? answer.error : undefined;
+      throw new ApiError(answer.response.status, messageFor(answer.response.status, body, context));
     }
-    let parsed: unknown;
-    try {
-      parsed = text === '' ? undefined : JSON.parse(text);
-    } catch {
-      parsed = undefined;
-    }
-    if (!response.ok) {
-      const errorBody = typeof parsed === 'object' && parsed !== null ? parsed : undefined;
-      throw new ApiError(response.status, messageFor(response.status, errorBody, context));
-    }
-    return parsed as T;
+    return answer.data as T;
   }
 }

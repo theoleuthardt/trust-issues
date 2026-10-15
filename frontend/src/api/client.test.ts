@@ -8,14 +8,22 @@ interface Call {
 
 function fakeFetch(status: number, body: unknown) {
   const calls: Call[] = [];
-  const fetchFn = (url: string, init: RequestInit = {}) => {
-    calls.push({ url, init });
-    return Promise.resolve(
-      new Response(body === undefined ? null : JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json' },
-      }),
-    );
+  const fetchFn = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const request = input instanceof Request ? input : new Request(input, init);
+    const target = new URL(request.url);
+    const text = await request.clone().text();
+    calls.push({
+      url: `${target.pathname}${target.search}`,
+      init: {
+        method: request.method,
+        body: text === '' ? undefined : text,
+        headers: request.headers,
+      },
+    });
+    return new Response(body === undefined ? null : JSON.stringify(body), {
+      status,
+      headers: { 'content-type': 'application/json' },
+    });
   };
   return { fetchFn: fetchFn as typeof fetch, calls };
 }

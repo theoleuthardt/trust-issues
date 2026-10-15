@@ -101,6 +101,12 @@ tasks:
     cmds:
       - npm run build
 
+  api:generate:
+    desc: Dump the OpenAPI schema of the backend and regenerate the typed frontend client
+    cmds:
+      - cd backend && uv run python scripts/dump_openapi.py ../frontend/src/api/openapi.json
+      - npm run api:types --workspace @trust-issues/frontend
+
   levels:solve:
     desc: Solve every level, write par times and reference solutions
     cmds:

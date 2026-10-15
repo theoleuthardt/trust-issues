@@ -42,6 +42,9 @@ Single suites: `npm test --workspace @trust-issues/sim`, `cd backend && uv run p
   bump (`SIM_VERSION`, a level's `revision`), see `docs/VERSIONING.md`.
 - **The client never reports a time.** It submits inputs; the verifier derives
   `finished`, `frames`, `deaths`. Never add a backend field that trusts a client number.
+- **The API client is generated.** After changing a route or a schema of the backend run
+  `task api:generate` and commit `frontend/src/api/openapi.json` and `schema.d.ts`; CI
+  compares them with what the backend produces. Never hand-write request or response types.
 - **Levels are server-owned.** Submissions carry only a level id.
 - **Every level needs a reference solution** in `packages/sim/src/testing.ts`.
 - **One input path.** Keyboard and touch both feed `InputState`; the scene only reads
