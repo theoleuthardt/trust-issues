@@ -15,6 +15,9 @@ const button = (label: string, onClick: () => void, primary = false) =>
     text: label,
   });
 
+/** The last "t" of "Trust" is the one that lets the rest of the title down. */
+const BETRAYING_LETTER = 4;
+
 export interface TitleOptions {
   signedInAs: string | undefined;
   onPlay: () => void;
@@ -36,10 +39,21 @@ export function titleScreen(options: TitleOptions): HTMLElement {
         button('Sign in', options.onSignIn),
         button('Register', options.onRegister),
       ];
+  const logo = h('h1', { class: 'logo' });
+  logo.setAttribute('aria-label', 'Trust Issues');
+  Array.from('Trust Issues').forEach((character, index) => {
+    const letter = h('span', {
+      class: index === BETRAYING_LETTER ? 'letter letter-betray' : 'letter',
+      text: character,
+    });
+    letter.setAttribute('aria-hidden', 'true');
+    logo.append(letter);
+  });
+  logo.append(h('span', { class: 'logo-spike' }));
   return h(
     'section',
     { class: 'screen screen-title' },
-    h('h1', { class: 'logo', text: 'Trust Issues' }),
+    logo,
     h('p', { class: 'tagline', text: 'Nothing is what it seems.' }),
     h('div', { class: 'stack' }, ...actions),
   );

@@ -20,6 +20,34 @@ function byText(root: ParentNode, text: string): HTMLElement | null {
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+describe('titleScreen logo', () => {
+  const handlers = { onPlay: noop, onSignIn: noop, onRegister: noop, onSignOut: noop };
+
+  it('is read as one name although its letters are separate elements', () => {
+    const logo = titleScreen({ ...handlers, signedInAs: undefined }).querySelector('h1');
+
+    expect(logo?.getAttribute('aria-label')).toBe('Trust Issues');
+    expect(logo?.textContent).toBe('Trust Issues');
+    for (const letter of logo?.querySelectorAll('.letter') ?? []) {
+      expect(letter.getAttribute('aria-hidden')).toBe('true');
+    }
+  });
+
+  it('lets exactly one letter of Trust betray the rest', () => {
+    const logo = titleScreen({ ...handlers, signedInAs: undefined }).querySelector('h1');
+    const betrayers = Array.from(logo?.querySelectorAll('.letter-betray') ?? []);
+
+    expect(betrayers).toHaveLength(1);
+    expect(betrayers[0]?.textContent).toBe('t');
+  });
+
+  it('has a spike that pops up where the letter fell', () => {
+    const root = titleScreen({ ...handlers, signedInAs: undefined });
+
+    expect(root.querySelector('.logo-spike')).not.toBeNull();
+  });
+});
+
 describe('titleScreen', () => {
   const handlers = { onPlay: noop, onSignIn: noop, onRegister: noop, onSignOut: noop };
 

@@ -75,6 +75,11 @@ or the replay:
 With reduced motion turned on in the settings none of these effects, the pulse of the exit
 and the rise of the announcements are shown; tiles then change instantly.
 
+The title screen has its own small betrayal: after a moment the last "t" of "Trust" wobbles,
+falls off the line and lands on a spike that pops up, so the logo reads "Trus Issues" from then
+on. It is CSS only and is switched off with reduced motion. The letters are separate elements
+but the heading keeps one accessible name.
+
 ## Screens
 
 Plain HTML over the canvas in the same paper and ink: a title screen, the sign-in and

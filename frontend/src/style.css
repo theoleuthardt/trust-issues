@@ -99,9 +99,74 @@ body:not([data-screen='game']) .touch-controls {
 }
 
 .logo {
+  position: relative;
   margin: 0;
   font-size: clamp(40px, 9vw, 84px);
   letter-spacing: -0.04em;
+}
+
+.letter {
+  display: inline-block;
+  white-space: pre;
+}
+
+.letter-betray {
+  transform-origin: 50% 100%;
+  animation: betray 2.6s ease-in 1.4s both;
+}
+
+.logo-spike {
+  position: absolute;
+  left: 2.55em;
+  bottom: -0.12em;
+  width: 0;
+  height: 0;
+  border-left: 0.22em solid transparent;
+  border-right: 0.22em solid transparent;
+  border-bottom: 0.4em solid var(--ti-accent);
+  transform-origin: 50% 100%;
+  animation: spike-pop 0.25s cubic-bezier(0.3, 1.6, 0.5, 1) 2.2s both;
+}
+
+@keyframes betray {
+  0% {
+    transform: none;
+    opacity: 1;
+  }
+  8% {
+    transform: rotate(-7deg);
+  }
+  16% {
+    transform: rotate(6deg);
+  }
+  24% {
+    transform: rotate(-4deg);
+  }
+  34% {
+    transform: none;
+  }
+  100% {
+    transform: translateY(2.2em) rotate(40deg);
+    opacity: 0;
+  }
+}
+
+@keyframes spike-pop {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+body[data-reduced-motion='true'] .letter-betray,
+body[data-reduced-motion='true'] .logo-spike {
+  animation: none;
+}
+
+body[data-reduced-motion='true'] .logo-spike {
+  display: none;
 }
 
 .tagline {
