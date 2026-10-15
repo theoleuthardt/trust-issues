@@ -78,3 +78,35 @@ podman compose start backend
 
 Backups contain password hashes and all runs, so the script creates them readable by the owner
 only (directory 700, files 600); keep copies equally private.
+
+## Monitoring
+
+### Is it up
+
+`GET /health` of the backend answers `{"status":"ok"}` after a round trip to the database.
+`scripts/check-health.sh` asks it and exits non-zero for anything else, an unreachable service
+included:
+
+```sh
+HEALTH_URL=https://<your-domain>/health scripts/check-health.sh
+```
+
+- Run it from **outside** the host (another machine, or an uptime service that requests the
+  same URL) so that the proxy or tunnel is part of what is checked. The proxy has to route
+  `/health` to the backend next to `/api`.
+- From a cron job or timer, set `HEALTH_PING_URL` to the check URL of a dead man's switch
+  (healthchecks.io or self-hosted): the ping is only sent while the service is healthy, so an
+  outage, or a monitor that stopped running, turns into an alert there. That is also the alert
+  path: the dead man's switch notifies by mail or push, nothing else in this stack sends alerts.
+- Inside the stack the backend and the verifier have container health checks
+  (`podman compose ps` shows `healthy`), and the database one `pg_isready`.
+
+### Logs
+
+Every service logs to its container log with a size limit (`logging` in `compose.yml`, the log
+file of a container is rotated at 10 MB), so a chatty hour cannot fill the disk. Read them with
+`podman compose logs -f backend`. The backend and the verifier write one JSON line per request
+without bodies, tokens or replays (see DEPLOYMENT.md).
+
+Rejected submissions and moderation actions are also in the database (`audit_events`, kept for
+`AUDIT_RETENTION_DAYS`), which is the place to look when a player says a run was refused.
