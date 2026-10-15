@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateCredentials } from './credentials';
+import { validateCredentials, validateNewPassword } from './credentials';
 
 const GOOD_PASSWORD = 'correct-horse-battery';
 
@@ -29,5 +29,33 @@ describe('validateCredentials', () => {
 
   it('trims the username before checking it', () => {
     expect(validateCredentials('register', '  mallory  ', GOOD_PASSWORD)).toBeUndefined();
+  });
+});
+
+describe('validateNewPassword', () => {
+  it('accepts a different password of the right length that was typed twice', () => {
+    expect(
+      validateNewPassword('old-password-123', 'brand-new-password', 'brand-new-password'),
+    ).toBe(undefined);
+  });
+
+  it('rejects a mismatch', () => {
+    expect(
+      validateNewPassword('old-password-123', 'brand-new-password', 'brand-new-passw0rd'),
+    ).toMatch(/do not match/i);
+  });
+
+  it('rejects the old password again', () => {
+    expect(validateNewPassword('old-password-123', 'old-password-123', 'old-password-123')).toMatch(
+      /different/i,
+    );
+  });
+
+  it('applies the length rules', () => {
+    expect(validateNewPassword('old-password-123', 'short', 'short')).toMatch(/12 to 128/);
+  });
+
+  it('asks for the current password', () => {
+    expect(validateNewPassword('', 'brand-new-password', 'brand-new-password')).toMatch(/current/i);
   });
 });

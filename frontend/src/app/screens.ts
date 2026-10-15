@@ -1,5 +1,6 @@
 import { formatTime } from '../format';
 import type { AuthMode } from '../api/credentials';
+import { validateNewPassword } from '../api/credentials';
 import { h } from './dom';
 import type { LeaderboardRow } from './leaderboard';
 import type { LevelCard } from './progress';
@@ -130,6 +131,7 @@ export interface MainMenuOptions {
   onContinue: () => void;
   onLevels: () => void;
   onLeaderboards: () => void;
+  onAccount?: () => void;
   onBack: () => void;
 }
 
@@ -145,6 +147,7 @@ export function mainMenu(options: MainMenuOptions): HTMLElement {
       button(options.continueLabel, options.onContinue, true),
       button('Levels', options.onLevels),
       button('Leaderboards', options.onLeaderboards),
+      ...(options.onAccount ? [button('Account', options.onAccount)] : []),
       button('Back', options.onBack),
     ),
   );
@@ -246,5 +249,158 @@ export function leaderboardScreen(options: LeaderboardScreenOptions): HTMLElemen
     h('h2', { class: 'heading', text: `Leaderboard · ${options.title}` }),
     content,
     h('div', { class: 'stack' }, button('Back', options.onBack)),
+  );
+}
+
+export interface AccountScreenOptions {
+  username: string;
+  /** Each action resolves to an error message, or undefined when it worked. */
+  onChangePassword: (current: string, next: string) => Promise<string | undefined>;
+  onLogoutAll: () => Promise<string | undefined>;
+  onDelete: (password: string) => Promise<string | undefined>;
+  onBack: () => void;
+}
+
+function passwordInput(
+  name: string,
+  label: string,
+  autocomplete: 'current-password' | 'new-password',
+): HTMLElement {
+  const input = h('input', { class: 'input' });
+  input.name = name;
+  input.type = 'password';
+  input.autocomplete = autocomplete;
+  input.required = true;
+  return field(label, input);
+}
+
+function message(name: string): HTMLParagraphElement {
+  const element = h('p', { class: 'form-error' });
+  element.dataset.message = name;
+  element.setAttribute('role', 'alert');
+  return element;
+}
+
+function runAction(
+  action: () => Promise<string | undefined>,
+  target: HTMLElement,
+  controls: HTMLElement[],
+): void {
+  for (const control of controls) control.setAttribute('disabled', '');
+  target.textContent = '';
+  action()
+    .then((problem) => {
+      if (problem) target.textContent = problem;
+    })
+    .catch(() => {
+      target.textContent = 'Something went wrong.';
+    })
+    .finally(() => {
+      for (const control of controls) control.removeAttribute('disabled');
+    });
+}
+
+export function accountScreen(options: AccountScreenOptions): HTMLElement {
+  const passwordMessage = message('password');
+  const passwordSubmit = h('button', {
+    class: 'button button-primary',
+    type: 'submit',
+    text: 'Change password',
+  });
+  const passwordForm = h(
+    'form',
+    { class: 'stack' },
+    passwordInput('current', 'Current password', 'current-password'),
+    passwordInput('next', 'New password', 'new-password'),
+    passwordInput('again', 'New password again', 'new-password'),
+    passwordMessage,
+    passwordSubmit,
+  );
+  passwordForm.dataset.form = 'password';
+  passwordForm.noValidate = true;
+  passwordForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const [current, next, again] = Array.from(passwordForm.querySelectorAll('input')).map(
+      (input) => input.value,
+    ) as [string, string, string];
+    const problem = validateNewPassword(current, next, again);
+    if (problem) {
+      passwordMessage.textContent = problem;
+      return;
+    }
+    runAction(() => options.onChangePassword(current, next), passwordMessage, [passwordSubmit]);
+  });
+
+  const sessionMessage = message('session');
+  const logoutConfirm = h('button', {
+    class: 'button button-primary',
+    type: 'button',
+    text: 'Yes, sign out everywhere',
+  });
+  logoutConfirm.dataset.action = 'logout-all-confirm';
+  logoutConfirm.hidden = true;
+  logoutConfirm.addEventListener('click', () =>
+    runAction(options.onLogoutAll, sessionMessage, [logoutConfirm]),
+  );
+  const logoutStart = h('button', {
+    class: 'button',
+    type: 'button',
+    text: 'Sign out on all devices',
+  });
+  logoutStart.dataset.action = 'logout-all';
+  logoutStart.addEventListener('click', () => {
+    logoutStart.hidden = true;
+    logoutConfirm.hidden = false;
+  });
+
+  const deleteMessage = message('delete');
+  const deleteSubmit = h('button', {
+    class: 'button button-primary',
+    type: 'submit',
+    text: 'Delete my account for good',
+  });
+  const deleteForm = h(
+    'form',
+    { class: 'stack' },
+    h('p', {
+      class: 'account-line',
+      text: 'This removes your account and all your runs. It cannot be undone.',
+    }),
+    passwordInput('password', 'Password', 'current-password'),
+    deleteMessage,
+    deleteSubmit,
+  );
+  deleteForm.dataset.form = 'delete';
+  deleteForm.hidden = true;
+  deleteForm.noValidate = true;
+  deleteForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const password = deleteForm.querySelector('input')?.value ?? '';
+    if (password === '') {
+      deleteMessage.textContent = 'Enter your password to confirm.';
+      return;
+    }
+    runAction(() => options.onDelete(password), deleteMessage, [deleteSubmit]);
+  });
+  const deleteStart = h('button', { class: 'button', type: 'button', text: 'Delete account' });
+  deleteStart.dataset.action = 'delete';
+  deleteStart.addEventListener('click', () => {
+    deleteStart.hidden = true;
+    deleteForm.hidden = false;
+    deleteForm.querySelector('input')?.focus();
+  });
+
+  const back = button('Back', options.onBack);
+  back.dataset.action = 'back';
+
+  return h(
+    'section',
+    { class: 'screen screen-account' },
+    h('h2', { class: 'heading', text: 'Account' }),
+    h('p', { class: 'account-line', text: `Signed in as ${options.username}` }),
+    passwordForm,
+    h('div', { class: 'stack' }, logoutStart, logoutConfirm, sessionMessage),
+    h('div', { class: 'stack' }, deleteStart, deleteForm),
+    h('div', { class: 'stack' }, back),
   );
 }

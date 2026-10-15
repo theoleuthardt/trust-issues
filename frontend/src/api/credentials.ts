@@ -28,3 +28,18 @@ export function validateCredentials(
   }
   return undefined;
 }
+
+/** Checks a new password the way the server will, plus what only the form can know. */
+export function validateNewPassword(
+  current: string,
+  next: string,
+  again: string,
+): string | undefined {
+  if (current === '') return 'Enter your current password.';
+  if (next.length < MIN_PASSWORD_LENGTH || next.length > MAX_PASSWORD_LENGTH) {
+    return `Password needs ${MIN_PASSWORD_LENGTH} to ${MAX_PASSWORD_LENGTH} characters.`;
+  }
+  if (next !== again) return 'The new passwords do not match.';
+  if (next === current) return 'Choose a different password than the current one.';
+  return undefined;
+}
