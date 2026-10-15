@@ -130,6 +130,7 @@ export class GameScene extends Phaser.Scene {
   private ghost: { state: GameState; index: number; facing: 1 | -1; phase: number } | undefined;
   private world!: Phaser.GameObjects.Graphics;
   private hud!: Phaser.GameObjects.Graphics;
+  private background: Phaser.GameObjects.Graphics | undefined;
   private cameraPosition = { x: 0, y: 0 };
   private cameraSnap = true;
   private timeText!: Phaser.GameObjects.Text;
@@ -345,6 +346,7 @@ export class GameScene extends Phaser.Scene {
   private advance(): void {
     const next = nextLevel(this.levels, this.level.id) ?? this.levels[0];
     if (next) this.level = next;
+    this.drawBackground();
     this.levelText.setText(this.levelTitle());
     this.restart();
   }
@@ -460,8 +462,11 @@ export class GameScene extends Phaser.Scene {
     this.onFinished?.(event);
   }
 
+  /** Draws the paper and the skyline for the size of the current level, replacing the old one. */
   private drawBackground(): void {
-    const g = this.add.graphics();
+    this.background?.destroy();
+    const g = this.add.graphics().setDepth(-1);
+    this.background = g;
     const { width, height } = this.worldSize();
     g.fillStyle(colorNumber('paper'));
     g.fillRect(0, 0, width, height);
