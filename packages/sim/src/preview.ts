@@ -56,5 +56,10 @@ export function previewStage(stage: Stage): string {
     (zone) => `zone ${zone.effect} at ${zone.x},${zone.y} ${zone.width}x${zone.height}`,
   );
 
-  return [ruler, ...grid.map((row) => row.join('')), ...traps, ...zones].join('\n');
+  const platforms = stage.platforms.map(
+    (platform) =>
+      `platform at ${platform.x},${platform.y} width ${platform.width} moves ${platform.distance} along ${platform.axis} every ${platform.period} ticks`,
+  );
+
+  return [ruler, ...grid.map((row) => row.join('')), ...traps, ...zones, ...platforms].join('\n');
 }

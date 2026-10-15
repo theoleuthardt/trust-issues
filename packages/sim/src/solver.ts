@@ -95,14 +95,16 @@ function clone(state: GameState): GameState {
   };
 }
 
-function keyOf(state: GameState): string {
+function keyOf(state: GameState, periods: readonly number[]): string {
   const fired = state.fired.size === 0 ? '' : Array.from(state.fired).sort().join('|');
+  const phase =
+    periods.length === 0 ? '' : periods.map((period) => state.stageTick % period).join('|');
   const waiting = Array.from(state.pending, ([id, at]) => `${id}>${at - state.tick}`).sort();
   const lasting = Array.from(
     state.active,
     ([id, entry]) => `${id}<${entry.until - state.tick}`,
   ).sort();
-  return `${state.x},${state.y},${state.vy},${state.onGround ? 1 : 0},${fired},${waiting.join('|')},${lasting.join('|')}`;
+  return `${state.x},${state.y},${state.vy},${state.onGround ? 1 : 0},${fired},${waiting.join('|')},${lasting.join('|')},${phase}`;
 }
 
 /**
@@ -121,6 +123,9 @@ export function solveStage(stage: Stage, options: SolveOptions = {}): SolveResul
     parFrames: 1,
     revision: 1,
   };
+  const periods = Array.from(new Set(stage.platforms.map((platform) => platform.period))).sort(
+    (a, b) => a - b,
+  );
   const exitCentre = stage.exit.x * TILE_SIZE + TILE_SIZE / 2;
   const slack = (TILE_SIZE + PLAYER_WIDTH) / 2;
   const heuristic = (state: GameState): number => {
@@ -132,12 +137,13 @@ export function solveStage(stage: Stage, options: SolveOptions = {}): SolveResul
   const open = new MinHeap();
   const best = new Map<string, number>();
   open.push({ state: start, g: 0, f: heuristic(start), parent: undefined, mask: 0 });
-  best.set(keyOf(start), 0);
+  best.set(keyOf(start, periods), 0);
 
   let expansions = 0;
   for (let node = open.pop(); node !== undefined; node = open.pop()) {
     if (node.state.finished) return { solved: true, inputs: reconstruct(node), expansions };
-    if (!node.state.finished && (best.get(keyOf(node.state)) ?? Infinity) < node.g) continue;
+    if (!node.state.finished && (best.get(keyOf(node.state, periods)) ?? Infinity) < node.g)
+      continue;
     if (++expansions > maxExpansions) return { solved: false, reason: 'budget', expansions };
 
     for (const mask of MASKS) {
@@ -151,7 +157,7 @@ export function solveStage(stage: Stage, options: SolveOptions = {}): SolveResul
         if (state.deaths > 0 || state.tick > maxFrames) break;
         if (state.tick === previous.tick) break;
 
-        const key = state.finished ? undefined : keyOf(state);
+        const key = state.finished ? undefined : keyOf(state, periods);
         const known = key === undefined ? undefined : best.get(key);
         if (known !== undefined && known <= state.tick) continue;
         if (key !== undefined) best.set(key, state.tick);
