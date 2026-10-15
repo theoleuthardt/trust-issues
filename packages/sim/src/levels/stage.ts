@@ -10,6 +10,7 @@ const TRIGGER_HEIGHT = 3;
 const TRIGGER_WIDTH = 2;
 
 interface Canvas {
+  width: number;
   cells: string[][];
   traps: TrapDef[];
   zones: ZoneDef[];
@@ -21,7 +22,7 @@ export type Feature = (canvas: Canvas) => void;
 
 function put(canvas: Canvas, x: number, y: number, char: string): void {
   const row = canvas.cells[y];
-  if (!row || x < 0 || x >= STAGE_WIDTH) {
+  if (!row || x < 0 || x >= canvas.width) {
     throw new Error(`feature tile ${x},${y} is outside the stage`);
   }
   row[x] = char;
@@ -34,7 +35,7 @@ function addTrap(
   tiles: [number, number][],
 ): void {
   for (const [x, y] of tiles) {
-    if (x < 0 || x >= STAGE_WIDTH || y < 0 || y >= STAGE_HEIGHT) {
+    if (x < 0 || x >= canvas.width || y < 0 || y >= STAGE_HEIGHT) {
       throw new Error(`trap tile ${x},${y} is outside the stage`);
     }
   }
@@ -243,14 +244,25 @@ export interface StageOptions {
   end?: number;
   /** Row of the exit, the floor row by default. */
   endY?: number;
+  /** Width in tiles, 32 (one screen) by default. */
+  width?: number;
 }
+
+/** Narrowest and widest stage the builder makes, in tiles. */
+export const MIN_STAGE_WIDTH = 16;
+export const MAX_STAGE_WIDTH = 256;
 
 /** Builds a stage: a two-row floor, the given features, a spawn and an exit. */
 export function stage(features: readonly Feature[], options: StageOptions = {}): StageDef {
-  const { start = 1, end = 30, endY = FLOOR_ROW } = options;
+  const { width = STAGE_WIDTH, start = 1, endY = FLOOR_ROW } = options;
+  const end = options.end ?? width - 2;
+  if (!Number.isInteger(width) || width < MIN_STAGE_WIDTH || width > MAX_STAGE_WIDTH) {
+    throw new Error(`stage width must be ${MIN_STAGE_WIDTH} to ${MAX_STAGE_WIDTH} tiles`);
+  }
   const canvas: Canvas = {
+    width,
     cells: Array.from({ length: STAGE_HEIGHT }, (_, y) =>
-      Array.from({ length: STAGE_WIDTH }, () =>
+      Array.from({ length: width }, () =>
         (GROUND_ROWS as readonly number[]).includes(y) ? '#' : '.',
       ),
     ),

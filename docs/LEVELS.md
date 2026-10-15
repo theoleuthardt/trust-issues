@@ -49,8 +49,12 @@ Adding tile kinds does not change what any existing replay does, so it needs no
 `SIM_VERSION` bump (see [VERSIONING.md](VERSIONING.md)); changing how an existing kind
 behaves would.
 
-The game canvas is currently 32 x 18 tiles (1024 x 576 px); levels should use that size
-until scrolling cameras are implemented.
+The view of the game is 32 x 18 tiles (1024 x 576 px). A stage may be larger, up to 256 tiles
+in each direction: the camera follows the player, eases towards them, stops at the edges of
+the level and snaps when the player respawns or a new stage starts, while the HUD stays on the
+screen. All stages of a level must have the same size. The DSL builds the usual 32 tiles wide
+stage, or wider with `stage([...], { width: 64 })` (16 to 256; the exit then defaults to the
+second last column).
 
 ### Zones
 
@@ -205,6 +209,7 @@ target that skilled players can beat; beating it scores more than 1000 points (s
 | 26  | `second-thoughts`     | Second Thoughts     | 3      | Traps that wait a moment, and traps that put themselves back |
 | 27  | `looking-glass`       | Looking Glass       | 3      | Zones that swap the controls or take the weight off          |
 | 28  | `ferryman`            | The Ferryman        | 3      | Platforms that carry you over the gaps                       |
+| 29  | `long-road`           | The Long Road       | 3      | Two screens wide: the camera follows you                     |
 
 ## Design guidance
 

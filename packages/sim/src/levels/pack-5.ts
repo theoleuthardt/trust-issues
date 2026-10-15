@@ -28,7 +28,8 @@ const level = (id: string, name: string, stages: StageDef[], maxFrames = 7200): 
 /**
  * Levels 21 to 25: walls you can walk through, floors that are not there, doors that kill.
  * Level 26 adds traps with a delay and traps that put themselves back, level 27 zones that
- * swap the controls or take the weight off, level 28 platforms that carry you over the gaps.
+ * swap the controls or take the weight off, level 28 platforms that carry you over the gaps,
+ * level 29 a stage that is two screens wide.
  */
 export const PACK_5: LevelContent[] = [
   level('paper-walls', 'Paper Walls', [
@@ -108,5 +109,35 @@ export const PACK_5: LevelContent[] = [
       movingPlatform(16, 14, 3, { axis: 'x', distance: 5, period: 80, phase: 40 }),
       pop(27, 29),
     ]),
+  ]),
+  level('long-road', 'The Long Road', [
+    stage([pop(8, 12), drop(18, 22, 2), spikes(30, 2), pop(36, 40, 2), gap(46, 3), wall(56, 2)], {
+      width: 64,
+    }),
+    stage(
+      [
+        wall(7, 2),
+        pop(12, 16),
+        drop(22, 26, 3),
+        pop(32, 35, 2),
+        gap(41, 3),
+        rise(48, 52, 2),
+        spikes(58, 2),
+      ],
+      { width: 64 },
+    ),
+    stage(
+      [
+        pop(6, 9),
+        gap(15, 2),
+        wall(22, 2),
+        drop(28, 32, 2),
+        pop(38, 42, 2),
+        rise(46, 50, 2),
+        gap(54, 3),
+        pop(59, 61),
+      ],
+      { width: 64 },
+    ),
   ]),
 ];

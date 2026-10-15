@@ -124,6 +124,9 @@ export function runVersions(level: Level): RunVersions {
   return { simVersion: SIM_VERSION, levelRevision: level.revision };
 }
 
+/** Largest width or height of a stage, in tiles. */
+export const MAX_STAGE_TILES = 256;
+
 /** Most stages one level may have. */
 export const MAX_STAGES = 4;
 
@@ -147,6 +150,9 @@ function buildStage(levelId: string, index: number, def: StageDef): Stage {
 
   const width = firstRow.length;
   const height = def.rows.length;
+  if (width > MAX_STAGE_TILES || height > MAX_STAGE_TILES) {
+    throw new Error(`${where}: a stage may be at most ${MAX_STAGE_TILES} tiles large`);
+  }
   const tiles = new Uint8Array(width * height);
   let spawn: { x: number; y: number } | undefined;
   let exit: { x: number; y: number } | undefined;
