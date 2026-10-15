@@ -1,5 +1,8 @@
+import type { RunVersions } from '@trust-issues/sim';
 import { messageFor } from './errors';
 import type { ErrorContext } from './errors';
+
+export type { RunVersions };
 
 export class ApiError extends Error {
   constructor(
@@ -107,14 +110,24 @@ export class ApiClient {
   }
 
   /** Sends a recorded run; the server replays it and answers with what it derived. */
-  async submitRun(levelId: string, replay: number[]): Promise<RunResult> {
+  async submitRun(levelId: string, replay: number[], versions: RunVersions): Promise<RunResult> {
     const body = await this.request<{
       frames: number;
       deaths: number;
       score: number;
       personal_best: boolean;
       rank: number;
-    }>('POST', '/runs', { level_id: levelId, replay }, 'run');
+    }>(
+      'POST',
+      '/runs',
+      {
+        level_id: levelId,
+        replay,
+        sim_version: versions.simVersion,
+        level_revision: versions.levelRevision,
+      },
+      'run',
+    );
     return {
       frames: body.frames,
       deaths: body.deaths,

@@ -55,6 +55,13 @@ describe('messageFor with a context', () => {
     expect(messageFor(409, {}, 'run')).not.toMatch(/username/i);
   });
 
+  it('asks to reload when the game version is no longer accepted', () => {
+    const message = messageFor(409, { detail: 'outdated' }, 'run');
+
+    expect(message).toMatch(/reload/i);
+    expect(message).not.toMatch(/username/i);
+  });
+
   it('says the level is unknown to the server', () => {
     expect(messageFor(404, { detail: 'unknown level' }, 'run')).toMatch(/level/i);
   });

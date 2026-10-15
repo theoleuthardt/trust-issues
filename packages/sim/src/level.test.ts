@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+  LEVELS,
   MAX_STAGES,
+  SIM_VERSION,
   PLAYER_HEIGHT,
   PLAYER_WIDTH,
   TILE_SIZE,
   Tile,
   buildLevel,
+  runVersions,
   stageOf,
 } from './index';
 import type { LevelDef, StageDef } from './index';
@@ -163,5 +166,32 @@ describe('stages', () => {
 
   it('throws for a stage index that does not exist', () => {
     expect(() => stageOf(buildLevel(def()), 3)).toThrow(/stage/);
+  });
+});
+
+describe('versions', () => {
+  it('has a positive integer simulation version', () => {
+    expect(Number.isInteger(SIM_VERSION)).toBe(true);
+    expect(SIM_VERSION).toBeGreaterThan(0);
+  });
+
+  it('gives a level revision 1 unless its definition says otherwise', () => {
+    expect(buildLevel(def()).revision).toBe(1);
+    expect(buildLevel(def({ revision: 3 })).revision).toBe(3);
+  });
+
+  it.each([0, -1, 1.5])('rejects the level revision %s', (revision) => {
+    expect(() => buildLevel(def({ revision }))).toThrow(/revision/);
+  });
+
+  it('names the versions a run of a level is recorded with', () => {
+    expect(runVersions(buildLevel(def({ revision: 3 })))).toEqual({
+      simVersion: SIM_VERSION,
+      levelRevision: 3,
+    });
+  });
+
+  it('gives every shipped level a revision', () => {
+    for (const level of LEVELS) expect(level.revision).toBeGreaterThanOrEqual(1);
   });
 });

@@ -17,6 +17,7 @@ from trust_issues_backend.observability import request_id_for
 from trust_issues_backend.schemas import RunResponse, RunSubmission
 from trust_issues_backend.verifier import (
     InvalidReplayError,
+    OutdatedVersionError,
     UnknownLevelError,
     VerifiedRun,
     VerifierUnavailableError,
@@ -26,24 +27,25 @@ from trust_issues_backend.verifier import (
 async def _store_if_best(
     session: AsyncSession,
     user_id: int,
-    level_id: str,
-    replay: list[int],
+    submission: RunSubmission,
     run: VerifiedRun,
 ) -> tuple[BestRun, bool]:
     """Keeps the best-scoring run per user and level; returns it and whether it is new."""
     best = await session.scalar(
-        select(BestRun).where(BestRun.user_id == user_id, BestRun.level_id == level_id)
+        select(BestRun).where(BestRun.user_id == user_id, BestRun.level_id == submission.level_id)
     )
     if best is not None and (best.score, -best.frames) >= (run.score, -run.frames):
         return best, False
 
     if best is None:
-        best = BestRun(user_id=user_id, level_id=level_id)
+        best = BestRun(user_id=user_id, level_id=submission.level_id)
         session.add(best)
     best.score = run.score
     best.frames = run.frames
     best.deaths = run.deaths
-    best.replay = replay
+    best.replay = submission.replay
+    best.sim_version = submission.sim_version
+    best.level_revision = submission.level_revision
     best.submitted_at = utcnow()
     await session.commit()
     return best, True
@@ -65,10 +67,19 @@ async def submit_run(
         )
     try:
         run = await state.verifier.verify(
-            data.level_id, data.replay, request_id=request_id_for(request.scope)
+            data.level_id,
+            data.replay,
+            data.sim_version,
+            data.level_revision,
+            request_id=request_id_for(request.scope),
         )
     except UnknownLevelError as error:
         raise NotFoundException(detail="unknown level") from error
+    except OutdatedVersionError as error:
+        raise ClientException(
+            detail="this version of the game is outdated, please reload the page",
+            status_code=409,
+        ) from error
     except InvalidReplayError as error:
         raise ClientException(detail=str(error), status_code=422) from error
     except VerifierUnavailableError as error:
@@ -78,14 +89,10 @@ async def submit_run(
         raise ClientException(detail="replay does not finish the level", status_code=422)
 
     try:
-        best, personal_best = await _store_if_best(
-            session, request.user.id, data.level_id, data.replay, run
-        )
+        best, personal_best = await _store_if_best(session, request.user.id, data, run)
     except IntegrityError:
         await session.rollback()
-        best, personal_best = await _store_if_best(
-            session, request.user.id, data.level_id, data.replay, run
-        )
+        best, personal_best = await _store_if_best(session, request.user.id, data, run)
 
     faster = await session.scalar(
         select(func.count())

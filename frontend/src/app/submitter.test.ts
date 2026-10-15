@@ -4,7 +4,8 @@ import type { RunResult } from '../api/client';
 import { RunSubmitter } from './submitter';
 
 const RESULT: RunResult = { frames: 900, deaths: 0, score: 1000, personalBest: true, rank: 2 };
-const RUN = { levelId: 'trust-nothing', replay: [2, 60] };
+const VERSIONS = { simVersion: 2, levelRevision: 3 };
+const RUN = { levelId: 'trust-nothing', replay: [2, 60], versions: VERSIONS };
 
 function setup(
   options: { signedIn?: boolean; submit?: (...a: unknown[]) => Promise<RunResult> } = {},
@@ -46,7 +47,7 @@ describe('RunSubmitter', () => {
 
     await submitter.send(RUN);
 
-    expect(submit).toHaveBeenCalledWith('trust-nothing', [2, 60]);
+    expect(submit).toHaveBeenCalledWith('trust-nothing', [2, 60], VERSIONS);
     expect(statuses).toEqual(['Sending the run…', 'New personal best · rank 2 · 1000 pts']);
   });
 
@@ -106,8 +107,8 @@ describe('RunSubmitter', () => {
     const answers = [first.promise, second.promise];
     const { submitter, statuses } = setup({ submit: () => answers.shift() as Promise<RunResult> });
 
-    const older = submitter.send({ levelId: 'a', replay: [1, 1] });
-    const newer = submitter.send({ levelId: 'b', replay: [2, 2] });
+    const older = submitter.send({ ...RUN, levelId: 'a', replay: [1, 1] });
+    const newer = submitter.send({ ...RUN, levelId: 'b', replay: [2, 2] });
     second.resolve({ ...RESULT, rank: 1 });
     await newer;
     first.resolve({ ...RESULT, rank: 9 });

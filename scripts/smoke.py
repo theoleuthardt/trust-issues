@@ -26,7 +26,9 @@ def expect(label: str, got, want) -> None:
 
 
 def main() -> None:
-    base, replay = sys.argv[1], json.loads(sys.argv[2])
+    base, run = sys.argv[1], json.loads(sys.argv[2])
+    replay = run["replay"]
+    versions = {"sim_version": run["simVersion"], "level_revision": run["levelRevision"]}
     credentials = {"username": "smoke_player", "password": "smoke-test-password-123"}
 
     status, _ = call("POST", f"{base}/api/auth/register", credentials)
@@ -36,10 +38,14 @@ def main() -> None:
     expect("login", status, 200)
     token = body["access_token"]
 
-    status, body = call("POST", f"{base}/api/runs", {"level_id": "trust-nothing", "replay": [2, 30]}, token)
+    status, body = call("POST", f"{base}/api/runs", {"level_id": "trust-nothing", "replay": [2, 30], **versions}, token)
     expect("unfinished replay is rejected", status, 422)
 
-    status, body = call("POST", f"{base}/api/runs", {"level_id": "trust-nothing", "replay": replay}, token)
+    outdated = {**versions, "sim_version": versions["sim_version"] + 1}
+    status, body = call("POST", f"{base}/api/runs", {"level_id": "trust-nothing", "replay": replay, **outdated}, token)
+    expect("outdated simulation version is rejected", status, 409)
+
+    status, body = call("POST", f"{base}/api/runs", {"level_id": "trust-nothing", "replay": replay, **versions}, token)
     expect("winning replay is accepted", status, 201)
     expect("rank", body["rank"], 1)
     expect("score at par", body["score"], 1000)

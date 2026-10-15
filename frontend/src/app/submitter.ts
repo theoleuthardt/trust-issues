@@ -1,15 +1,16 @@
 import { ApiError } from '../api/client';
-import type { RunResult } from '../api/client';
+import type { RunResult, RunVersions } from '../api/client';
 import { submissionText } from './submission';
 
 export interface FinishedRun {
   levelId: string;
   replay: number[];
+  versions: RunVersions;
 }
 
 export interface SubmitterDeps {
   signedIn: () => boolean;
-  submit: (levelId: string, replay: number[]) => Promise<RunResult>;
+  submit: (levelId: string, replay: number[], versions: RunVersions) => Promise<RunResult>;
   signOut: () => void;
   setStatus: (text: string) => void;
 }
@@ -34,7 +35,7 @@ export class RunSubmitter {
     }
     this.deps.setStatus('Sending the run…');
     try {
-      const result = await this.deps.submit(run.levelId, run.replay);
+      const result = await this.deps.submit(run.levelId, run.replay, run.versions);
       if (mine === this.sequence) this.deps.setStatus(submissionText(result));
     } catch (error) {
       if (mine !== this.sequence) return;

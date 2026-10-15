@@ -4,6 +4,7 @@ import pytest
 from trust_issues_backend.verifier import (
     HttpVerifier,
     InvalidReplayError,
+    OutdatedVersionError,
     UnknownLevelError,
     VerifiedRun,
     VerifierUnavailableError,
@@ -28,26 +29,35 @@ async def test_returns_the_verified_run_and_sends_level_and_replay() -> None:
             200, json={"finished": True, "frames": 290, "deaths": 1, "score": 975}
         )
 
-    result = await make(handler).verify("trust-nothing", [2, 10])
+    result = await make(handler).verify("trust-nothing", [2, 10], sim_version=1, level_revision=3)
 
     assert result == VerifiedRun(finished=True, frames=290, deaths=1, score=975)
     assert seen[0].url.path == "/verify"
     assert seen[0].headers["x-verifier-token"] == "secret-token"
-    assert seen[0].read() == b'{"levelId":"trust-nothing","replay":[2,10]}'
+    assert seen[0].read() == (
+        b'{"levelId":"trust-nothing","replay":[2,10],"simVersion":1,"levelRevision":3}'
+    )
 
 
 async def test_maps_404_to_unknown_level() -> None:
     verifier = make(lambda _: httpx.Response(404, json={"error": "unknown level x"}))
 
     with pytest.raises(UnknownLevelError):
-        await verifier.verify("x", [])
+        await verifier.verify("x", [], 1, 1)
 
 
 async def test_maps_400_to_invalid_replay() -> None:
     verifier = make(lambda _: httpx.Response(400, json={"error": "invalid input mask 9"}))
 
     with pytest.raises(InvalidReplayError, match="invalid input mask 9"):
-        await verifier.verify("trust-nothing", [9, 1])
+        await verifier.verify("trust-nothing", [9, 1], 1, 1)
+
+
+async def test_maps_409_to_an_outdated_version() -> None:
+    verifier = make(lambda _: httpx.Response(409, json={"error": "no longer accepted"}))
+
+    with pytest.raises(OutdatedVersionError):
+        await verifier.verify("trust-nothing", [2, 10], 1, 1)
 
 
 @pytest.mark.parametrize("status", [401, 413, 500, 502])
@@ -55,7 +65,7 @@ async def test_maps_other_failures_to_unavailable(status: int) -> None:
     verifier = make(lambda _: httpx.Response(status, json={"error": "nope"}))
 
     with pytest.raises(VerifierUnavailableError):
-        await verifier.verify("trust-nothing", [])
+        await verifier.verify("trust-nothing", [], 1, 1)
 
 
 async def test_maps_transport_errors_to_unavailable() -> None:
@@ -63,14 +73,14 @@ async def test_maps_transport_errors_to_unavailable() -> None:
         raise httpx.ConnectError("refused")
 
     with pytest.raises(VerifierUnavailableError):
-        await make(handler).verify("trust-nothing", [])
+        await make(handler).verify("trust-nothing", [], 1, 1)
 
 
 async def test_maps_garbage_responses_to_unavailable() -> None:
     verifier = make(lambda _: httpx.Response(200, json={"unexpected": True}))
 
     with pytest.raises(VerifierUnavailableError):
-        await verifier.verify("trust-nothing", [])
+        await verifier.verify("trust-nothing", [], 1, 1)
 
 
 async def test_forwards_the_request_id() -> None:
@@ -80,6 +90,6 @@ async def test_forwards_the_request_id() -> None:
         seen.append(request)
         return httpx.Response(200, json={"finished": True, "frames": 1, "deaths": 0, "score": 1})
 
-    await make(handler).verify("trust-nothing", [2, 1], request_id="trace-abcdef12")
+    await make(handler).verify("trust-nothing", [2, 1], 1, 1, request_id="trace-abcdef12")
 
     assert seen[0].headers["x-request-id"] == "trace-abcdef12"

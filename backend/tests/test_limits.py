@@ -1,6 +1,6 @@
 from litestar.testing import AsyncTestClient
 
-from tests.conftest import auth_headers
+from tests.conftest import RUN_VERSIONS, auth_headers
 
 
 async def test_rejects_request_bodies_over_the_size_limit(client: AsyncTestClient) -> None:
@@ -20,7 +20,7 @@ async def test_accepts_a_maximum_size_replay_within_the_limit(client: AsyncTestC
 
     response = await client.post(
         "/api/runs",
-        json={"level_id": "trust-nothing", "replay": [0, 1] * 10000},
+        json={"level_id": "trust-nothing", "replay": [0, 1] * 10000, **RUN_VERSIONS},
         headers=headers,
     )
 

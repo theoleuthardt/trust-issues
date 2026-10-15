@@ -1,10 +1,10 @@
-import type { RunResult, ServerRun } from '../api/client';
+import type { RunResult, RunVersions, ServerRun } from '../api/client';
 import type { ProgressStore } from './progress';
 import type { RunRecord } from './progress';
 
 export interface SyncDeps {
   fetchServer: () => Promise<ServerRun[]>;
-  submit: (levelId: string, replay: number[]) => Promise<RunResult>;
+  submit: (levelId: string, replay: number[], versions: RunVersions) => Promise<RunResult>;
   guest: ProgressStore;
   account: ProgressStore;
 }
@@ -14,6 +14,9 @@ export interface SyncOutcome {
   submitted: number;
   failed: number;
 }
+
+/** Runs stored before versions were recorded were all made with the first version of both. */
+const FIRST_VERSIONS: RunVersions = { simVersion: 1, levelRevision: 1 };
 
 function beats(candidate: RunRecord, other: RunRecord | undefined): boolean {
   if (!other) return true;
@@ -52,7 +55,7 @@ export async function syncAccount(deps: SyncDeps): Promise<SyncOutcome> {
   for (const [levelId, record] of Object.entries(deps.account.load())) {
     if (!record.replay || !beats(record, known.get(levelId))) continue;
     try {
-      await deps.submit(levelId, record.replay);
+      await deps.submit(levelId, record.replay, record.versions ?? FIRST_VERSIONS);
       submitted += 1;
     } catch {
       failed += 1;

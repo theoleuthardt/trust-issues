@@ -1,8 +1,8 @@
 from litestar.testing import AsyncTestClient
 
-from tests.conftest import FakeVerifier, auth_headers
+from tests.conftest import RUN_VERSIONS, FakeVerifier, auth_headers
 
-SUBMISSION = {"level_id": "trust-nothing", "replay": [2, 60]}
+SUBMISSION = {"level_id": "trust-nothing", "replay": [2, 60], **RUN_VERSIONS}
 
 
 async def test_limits_login_attempts_per_address(client: AsyncTestClient) -> None:

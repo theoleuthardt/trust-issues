@@ -11,6 +11,7 @@ Username = Annotated[str, Meta(min_length=3, max_length=24, pattern=r"^[A-Za-z0-
 Password = Annotated[str, Meta(min_length=12, max_length=128)]
 LevelId = Annotated[str, Meta(min_length=1, max_length=40, pattern=r"^[a-z0-9-]+$")]
 Replay = Annotated[list[int], Meta(max_length=MAX_REPLAY_VALUES)]
+Version = Annotated[int, Meta(ge=1, le=1_000_000)]
 
 
 class RegisterRequest(Struct):
@@ -45,6 +46,8 @@ class UserResponse(Struct):
 class RunSubmission(Struct):
     level_id: LevelId
     replay: Replay
+    sim_version: Version
+    level_revision: Version
 
 
 class RunResponse(Struct):

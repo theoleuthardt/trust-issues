@@ -2,7 +2,7 @@ from litestar.testing import AsyncTestClient
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import StaticPool
 
-from tests.conftest import FakeVerifier, auth_headers
+from tests.conftest import RUN_VERSIONS, FakeVerifier, auth_headers
 from trust_issues_backend.app import create_app
 from trust_issues_backend.settings import Settings
 
@@ -57,7 +57,9 @@ async def test_unexpected_errors_carry_the_headers_and_are_not_cached(
     verifier.next = RuntimeError("boom")
 
     response = await client.post(
-        "/api/runs", json={"level_id": "trust-nothing", "replay": [2, 60]}, headers=headers
+        "/api/runs",
+        json={"level_id": "trust-nothing", "replay": [2, 60], **RUN_VERSIONS},
+        headers=headers,
     )
 
     assert response.status_code == 500

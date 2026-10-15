@@ -84,19 +84,20 @@ them with `?touch=0`.
 
 ## Documentation
 
-| Document                                     | Contents                                                 |
-| -------------------------------------------- | -------------------------------------------------------- |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Components, data flow of a run, data model               |
-| [docs/ANTI_CHEAT.md](docs/ANTI_CHEAT.md)     | Threat model, the layers of defence, what is not covered |
-| [docs/SCORING.md](docs/SCORING.md)           | How the score is computed and how the leaderboard ranks  |
-| [docs/LEVELS.md](docs/LEVELS.md)             | Level format and how to add a level                      |
-| [docs/DESIGN.md](docs/DESIGN.md)             | Visual language and palette                              |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)     | Running it with Podman on a home lab                     |
-| [docs/WORKFLOW.md](docs/WORKFLOW.md)         | Issues, Kanban board, branches, PRs, reviews             |
-| [docs/adr/](docs/adr/)                       | Architecture decision records                            |
-| [CONTRIBUTING.md](CONTRIBUTING.md)           | How to contribute                                        |
-| [SECURITY.md](SECURITY.md)                   | Reporting vulnerabilities                                |
-| [CLAUDE.md](CLAUDE.md)                       | Instructions for Claude Code sessions                    |
+| Document                                     | Contents                                                  |
+| -------------------------------------------- | --------------------------------------------------------- |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Components, data flow of a run, data model                |
+| [docs/ANTI_CHEAT.md](docs/ANTI_CHEAT.md)     | Threat model, the layers of defence, what is not covered  |
+| [docs/SCORING.md](docs/SCORING.md)           | How the score is computed and how the leaderboard ranks   |
+| [docs/VERSIONING.md](docs/VERSIONING.md)     | Simulation and level versions, changing physics or levels |
+| [docs/LEVELS.md](docs/LEVELS.md)             | Level format and how to add a level                       |
+| [docs/DESIGN.md](docs/DESIGN.md)             | Visual language and palette                               |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)     | Running it with Podman on a home lab                      |
+| [docs/WORKFLOW.md](docs/WORKFLOW.md)         | Issues, Kanban board, branches, PRs, reviews              |
+| [docs/adr/](docs/adr/)                       | Architecture decision records                             |
+| [CONTRIBUTING.md](CONTRIBUTING.md)           | How to contribute                                         |
+| [SECURITY.md](SECURITY.md)                   | Reporting vulnerabilities                                 |
+| [CLAUDE.md](CLAUDE.md)                       | Instructions for Claude Code sessions                     |
 
 ## License
 

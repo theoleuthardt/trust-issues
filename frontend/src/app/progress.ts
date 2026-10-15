@@ -1,9 +1,15 @@
-/** The best result of a player on one level; the replay is kept to be sent after signing in. */
+import type { RunVersions } from '../api/client';
+
+/**
+ * The best result of a player on one level; the replay is kept to be sent after signing in,
+ * together with the versions it was recorded with.
+ */
 export interface RunRecord {
   score: number;
   frames: number;
   deaths: number;
   replay?: number[];
+  versions?: RunVersions;
 }
 
 export type Progress = Readonly<Record<string, RunRecord>>;
@@ -93,6 +99,16 @@ function replayOf(value: unknown): number[] | undefined {
   return replay.every((entry) => Number.isInteger(entry)) ? (replay as number[]) : undefined;
 }
 
+function versionsOf(value: unknown): RunVersions | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const versions = (value as Record<string, unknown>).versions;
+  if (typeof versions !== 'object' || versions === null) return undefined;
+  const { simVersion, levelRevision } = versions as Record<string, unknown>;
+  if (!Number.isInteger(simVersion) || !Number.isInteger(levelRevision)) return undefined;
+  if ((simVersion as number) < 1 || (levelRevision as number) < 1) return undefined;
+  return { simVersion: simVersion as number, levelRevision: levelRevision as number };
+}
+
 type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
 
 /**
@@ -155,11 +171,13 @@ export class ProgressStore {
       for (const [id, value] of Object.entries(parsed)) {
         if (isRunRecord(value)) {
           const replay = replayOf(value);
+          const versions = versionsOf(value);
           progress[id] = {
             score: value.score,
             frames: value.frames,
             deaths: value.deaths,
             ...(replay ? { replay } : {}),
+            ...(versions ? { versions } : {}),
           };
         }
       }

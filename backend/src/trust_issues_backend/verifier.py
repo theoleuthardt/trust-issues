@@ -26,13 +26,22 @@ class InvalidReplayError(VerifierError):
     """The replay is malformed or longer than the level allows."""
 
 
+class OutdatedVersionError(VerifierError):
+    """The replay was recorded with a simulation version or level revision that is retired."""
+
+
 class VerifierUnavailableError(VerifierError):
     """The verifier could not be reached or answered something unusable."""
 
 
 class Verifier(Protocol):
     async def verify(
-        self, level_id: str, replay: list[int], request_id: str | None = None
+        self,
+        level_id: str,
+        replay: list[int],
+        sim_version: int,
+        level_revision: int,
+        request_id: str | None = None,
     ) -> VerifiedRun: ...
 
 
@@ -43,18 +52,32 @@ class HttpVerifier:
         self._client = client
 
     async def verify(
-        self, level_id: str, replay: list[int], request_id: str | None = None
+        self,
+        level_id: str,
+        replay: list[int],
+        sim_version: int,
+        level_revision: int,
+        request_id: str | None = None,
     ) -> VerifiedRun:
         headers = {"x-request-id": request_id} if request_id else None
         try:
             response = await self._client.post(
-                "/verify", json={"levelId": level_id, "replay": replay}, headers=headers
+                "/verify",
+                json={
+                    "levelId": level_id,
+                    "replay": replay,
+                    "simVersion": sim_version,
+                    "levelRevision": level_revision,
+                },
+                headers=headers,
             )
         except httpx.HTTPError as error:
             raise VerifierUnavailableError(str(error)) from error
 
         if response.status_code == 404:
             raise UnknownLevelError(level_id)
+        if response.status_code == 409:
+            raise OutdatedVersionError(_error_message(response))
         if response.status_code == 400:
             raise InvalidReplayError(_error_message(response))
         if response.status_code != 200:

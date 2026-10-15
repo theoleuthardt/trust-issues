@@ -5,7 +5,7 @@ import sys
 import pytest
 from litestar.testing import AsyncTestClient
 
-from tests.conftest import PASSWORD, FakeVerifier, auth_headers, register
+from tests.conftest import PASSWORD, RUN_VERSIONS, FakeVerifier, auth_headers, register
 from trust_issues_backend.observability import JsonFormatter, configure_logging, request_id_for
 
 ACCESS = "trust_issues.access"
@@ -94,7 +94,7 @@ async def test_passes_the_request_id_to_the_verifier(
 
     response = await client.post(
         "/api/runs",
-        json={"level_id": "trust-nothing", "replay": [2, 60]},
+        json={"level_id": "trust-nothing", "replay": [2, 60], **RUN_VERSIONS},
         headers={**headers, "X-Request-ID": "trace-abcdef12"},
     )
 

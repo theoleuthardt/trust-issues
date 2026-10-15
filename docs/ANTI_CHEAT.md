@@ -48,6 +48,9 @@ The determinism of `packages/sim` is a security property. Do not break it:
 - Iterate collections in a defined order. Arrays and `Set` insertion order are fine.
 - Every level needs a reference solution in `packages/sim/src/testing.ts`. A test replays
   it, so an unwinnable or changed level fails CI.
+- Changing physics or a level means bumping `SIM_VERSION` or the level's `revision`; the
+  procedure is in [VERSIONING.md](VERSIONING.md). A replay recorded with other versions is
+  refused instead of being judged by rules it was not played under.
 
 ## What this does not prevent
 
@@ -65,8 +68,6 @@ them. These remain open:
 
 Tracked on the board as part of the anti-cheat epic:
 
-- Version the simulation and the levels, so changed physics cannot silently invalidate or
-  re-validate old replays.
 - Plausibility checks on replays (minimum frame count per level, input pattern heuristics).
 - Replay viewer and moderation tools (flag, hide, delete an entry).
 - An audit log of rejected submissions.

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { RunResult } from '../api/client';
+import type { RunResult, RunVersions } from '../api/client';
 import { syncAccount } from './accountSync';
 import { ProgressStore } from './progress';
 
@@ -17,7 +17,8 @@ const RESULT: RunResult = { frames: 900, deaths: 0, score: 1000, personalBest: t
 
 function setup(
   server: { levelId: string; score: number; frames: number; deaths: number }[],
-  submit: (levelId: string, replay: number[]) => Promise<RunResult> = () => Promise.resolve(RESULT),
+  submit: (levelId: string, replay: number[], versions: RunVersions) => Promise<RunResult> = () =>
+    Promise.resolve(RESULT),
 ) {
   const storage = new MemoryStorage();
   const guest = new ProgressStore(storage, 'guest');
@@ -43,9 +44,24 @@ describe('syncAccount', () => {
 
     const outcome = await run();
 
-    expect(submitFn).toHaveBeenCalledWith('a', [2, 930]);
+    expect(submitFn).toHaveBeenCalledWith('a', [2, 930], { simVersion: 1, levelRevision: 1 });
     expect(outcome.submitted).toBe(1);
     expect(account.load().a).toMatchObject({ score: 900 });
+  });
+
+  it('submits a run with the versions it was recorded with', async () => {
+    const { guest, submitFn, run } = setup([]);
+    guest.record('a', {
+      score: 900,
+      frames: 930,
+      deaths: 0,
+      replay: [2, 930],
+      versions: { simVersion: 1, levelRevision: 4 },
+    });
+
+    await run();
+
+    expect(submitFn).toHaveBeenCalledWith('a', [2, 930], { simVersion: 1, levelRevision: 4 });
   });
 
   it('does not submit a guest run the server already beats', async () => {
@@ -103,7 +119,7 @@ describe('syncAccount', () => {
       account,
     });
 
-    expect(working).toHaveBeenCalledWith('a', [2, 930]);
+    expect(working).toHaveBeenCalledWith('a', [2, 930], { simVersion: 1, levelRevision: 1 });
     expect(outcome.submitted).toBe(1);
   });
 

@@ -122,7 +122,7 @@ async function syncProgress(): Promise<void> {
   if (!username) return;
   await syncAccount({
     fetchServer: () => api.progress(),
-    submit: (levelId, replay) => api.submitRun(levelId, replay),
+    submit: (levelId, replay, versions) => api.submitRun(levelId, replay, versions),
     guest: guestStore,
     account: storeFor(username),
   });
@@ -227,7 +227,7 @@ function showLevels(): void {
 
 const submitter = new RunSubmitter({
   signedIn: () => sessions.current() !== undefined,
-  submit: (levelId, replay) => api.submitRun(levelId, replay),
+  submit: (levelId, replay, versions) => api.submitRun(levelId, replay, versions),
   signOut: () => sessions.clear(),
   setStatus: (text) => {
     if (!game?.scene.isActive(SCENE_KEY)) return;
@@ -333,6 +333,7 @@ function startLevel(index: number): void {
         frames: event.frames,
         deaths: event.deaths,
         replay: event.replay,
+        versions: event.versions,
       });
       void submitter.send(event);
     },
