@@ -68,6 +68,35 @@ jobs:
           uv run python scripts/dump_openapi.py ../frontend/src/api/openapi.json
           git diff --exit-code -- ../frontend/src/api/openapi.json
 
+  backup:
+    name: Backup and restore
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: bash scripts/test-backup-scripts.sh
+      - uses: astral-sh/setup-uv@v7
+      - name: Start PostgreSQL and migrate it
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://trust:ci-only-password@localhost:5432/trustissues
+          JWT_SECRET: ci-only-jwt-secret-0123456789abcdef0123
+          VERIFIER_URL: http://localhost:8081
+          VERIFIER_TOKEN: ci-only-verifier-token-0123456789abcd
+        run: |
+          docker run -d --name pg -p 5432:5432 -e POSTGRES_USER=trust -e POSTGRES_PASSWORD=ci-only-password -e POSTGRES_DB=trustissues docker.io/library/postgres:17-alpine
+          until docker exec pg pg_isready -U trust -d trustissues; do sleep 1; done
+          uv sync --frozen
+          uv run python -m trust_issues_backend.migrate
+      - name: Back up, restore into a scratch database and compare
+        env:
+          DB_EXEC: docker exec -i pg
+          BACKUP_DIR: ${{ runner.temp }}/backups
+        run: |
+          docker exec pg psql -U trust -d trustissues -c "INSERT INTO users (username, username_key, password_hash, token_version, created_at, failed_logins, is_admin, flagged) VALUES ('backup', 'backup', 'x', 0, now(), 0, false, false)"
+          scripts/backup-db.sh
+          scripts/restore-test.sh | tee restore.log
+          grep -q '1 users' restore.log
+
   e2e:
     name: Browser end-to-end
     runs-on: ubuntu-latest

@@ -14,4 +14,5 @@ __pycache__/
 
 .claude/settings.local.json
 e2e/test-results/
+backups/
 e2e/playwright-report/

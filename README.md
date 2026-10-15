@@ -113,6 +113,7 @@ there for the same effect).
 | [docs/LEVELS.md](docs/LEVELS.md)             | Level format and how to add a level                       |
 | [docs/DESIGN.md](docs/DESIGN.md)             | Visual language and palette                               |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)     | Running it with Podman on a home lab                      |
+| [docs/OPERATIONS.md](docs/OPERATIONS.md)     | Backups, restore test and what to watch                   |
 | [docs/WORKFLOW.md](docs/WORKFLOW.md)         | Issues, Kanban board, branches, PRs, reviews              |
 | [docs/adr/](docs/adr/)                       | Architecture decision records                             |
 | [CONTRIBUTING.md](CONTRIBUTING.md)           | How to contribute                                         |
