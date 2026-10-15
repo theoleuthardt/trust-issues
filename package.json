@@ -5,7 +5,8 @@
   "workspaces": [
     "packages/*",
     "frontend",
-    "verifier"
+    "verifier",
+    "e2e"
   ],
   "engines": {
     "node": ">=22.12.0"

@@ -73,6 +73,10 @@ behaviour it is fixed: if it fails, assume the code is wrong. Change a test only
 desired behaviour itself changed, and say so explicitly. Never edit a test to get a suite
 green.
 
+Browser tests (`task e2e`, Playwright in `e2e/`) build the game and play the recorded
+reference solutions through it with a fake frame clock (six levels by default, all of them with
+`E2E_ALL_LEVELS=1`); `npx playwright install chromium` once per machine.
+
 Backend tests use SQLite in memory with a fake verifier (see `backend/tests/conftest.py`);
 with `TEST_DATABASE_URL=postgresql+asyncpg://...` set they run against a real PostgreSQL
 (CI runs both). The verifier tests start a real HTTP server on an ephemeral port.

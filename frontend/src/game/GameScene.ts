@@ -50,6 +50,7 @@ export interface GameSceneData {
   onFinished?: (event: RunFinishedEvent) => void;
   onRetrySubmit?: () => void;
   onShowLeaderboard?: (levelId: string) => void;
+  onStage?: (index: number, total: number) => void;
 }
 
 const HEAD_WIDTH = 8;
@@ -84,6 +85,7 @@ export class GameScene extends Phaser.Scene {
   private onFinished: ((event: RunFinishedEvent) => void) | undefined;
   private onRetrySubmit: (() => void) | undefined;
   private onShowLeaderboard: ((levelId: string) => void) | undefined;
+  private onStage: ((index: number, total: number) => void) | undefined;
   private statusText: Phaser.GameObjects.Text | undefined;
   private state!: GameState;
   private recorded: number[] = [];
@@ -116,6 +118,7 @@ export class GameScene extends Phaser.Scene {
     this.onFinished = data.onFinished;
     this.onRetrySubmit = data.onRetrySubmit;
     this.onShowLeaderboard = data.onShowLeaderboard;
+    this.onStage = data.onStage;
   }
 
   create(): void {
@@ -314,6 +317,7 @@ export class GameScene extends Phaser.Scene {
   private trackEffects(now: number): void {
     if (this.state.stage !== this.knownStage) {
       this.announce(`Stage ${this.state.stage + 1}`);
+      this.onStage?.(this.state.stage, this.level.stages.length);
       this.knownStage = this.state.stage;
       this.knownDeaths = this.state.deaths;
       this.tileEffects.clear();

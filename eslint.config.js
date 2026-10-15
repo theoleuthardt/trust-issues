@@ -10,7 +10,15 @@ const nondeterministicApis = [
 ];
 
 export default defineConfig([
-  { ignores: ['**/dist/**', '**/node_modules/**', 'backend/**'] },
+  {
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      'backend/**',
+      'e2e/test-results/**',
+      'e2e/playwright-report/**',
+    ],
+  },
   {
     files: ['**/*.ts'],
     extends: [js.configs.recommended, tseslint.configs.strict, tseslint.configs.stylistic],
@@ -40,7 +48,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['frontend/**/*.ts'],
+    files: ['frontend/**/*.ts', 'e2e/**/*.ts'],
     languageOptions: { globals: globals.browser },
   },
   {
