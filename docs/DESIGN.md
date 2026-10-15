@@ -69,7 +69,11 @@ or the replay:
 
 - A spike pops out of the ground with a small overshoot when a trap reveals it.
 - A tile that a trap removes shrinks away instead of vanishing.
-- Dying throws a short burst of ink particles.
+- Dying throws a short burst of ink particles and shakes the view for a moment. The respawn
+  is immediate and the effects never wait for or delay the next input.
+
+With reduced motion turned on in the settings none of these effects, the pulse of the exit
+and the rise of the announcements are shown; tiles then change instantly.
 
 ## Screens
 

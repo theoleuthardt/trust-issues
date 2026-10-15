@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { advance, installFakeClock } from '../support/clock';
 
 test('a guest can open the first level from the title screen', async ({ page }) => {
   await page.goto('/');
@@ -52,4 +53,20 @@ test('the leaderboard of a level reports a server that cannot be reached', async
   await page.locator('.card').first().click();
 
   await expect(page.locator('[role=alert]')).toBeVisible();
+});
+
+test('running into a trap again and again keeps the game running', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await installFakeClock(page);
+  await page.goto('/?level=trust-nothing');
+  await advance(page, 6);
+
+  await page.keyboard.down('ArrowRight');
+  await advance(page, 900);
+  await page.keyboard.up('ArrowRight');
+  await advance(page, 10);
+
+  expect(errors).toEqual([]);
+  await expect(page.locator('canvas')).toBeVisible();
 });

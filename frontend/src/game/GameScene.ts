@@ -19,6 +19,7 @@ import { ReplayCursor, SPEEDS } from '../app/replayPlayback';
 import type { InputState } from '../input/InputState';
 import { FixedStepper } from '../loop';
 import {
+  DEATH_SHAKE,
   POP_MS,
   VANISH_MS,
   burst,
@@ -480,6 +481,7 @@ export class GameScene extends Phaser.Scene {
         y: this.lastPosition.y + PLAYER_HEIGHT / 2,
       };
       if (!this.calm) {
+        this.cameras.main.shake(DEATH_SHAKE.durationMs, DEATH_SHAKE.intensity);
         for (const particle of burst(origin, DEATH_PARTICLES)) {
           this.particles.push({ particle, bornAt: now });
         }
