@@ -283,3 +283,7 @@ body:not([data-screen='game']) .touch-controls {
 .row-you td {
   border-bottom-color: var(--ti-ink);
 }
+
+[hidden] {
+  display: none !important;
+}

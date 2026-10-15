@@ -7,7 +7,14 @@ import { SessionStore } from './api/session';
 import { syncAccount } from './app/accountSync';
 import { ProgressStore, accountKey, firstOpenIndex, levelCards } from './app/progress';
 import { leaderboardRows } from './app/leaderboard';
-import { authScreen, leaderboardScreen, levelSelect, mainMenu, titleScreen } from './app/screens';
+import {
+  accountScreen,
+  authScreen,
+  leaderboardScreen,
+  levelSelect,
+  mainMenu,
+  titleScreen,
+} from './app/screens';
 import { memoryStorage } from './app/storage';
 import { RunSubmitter } from './app/submitter';
 import type { StorageLike } from './app/storage';
@@ -24,7 +31,7 @@ const LEVEL_WIDTH_TILES = 32;
 const LEVEL_HEIGHT_TILES = 18;
 const TILE_PX = 32;
 
-type Screen = 'title' | 'auth' | 'menu' | 'levels' | 'board' | 'game';
+type Screen = 'title' | 'auth' | 'menu' | 'levels' | 'board' | 'account' | 'game';
 
 applyPaletteToCss(document.documentElement);
 
@@ -188,6 +195,7 @@ function showMenu(): void {
       onContinue: () => startLevel(next),
       onLevels: showLevels,
       onLeaderboards: showLeaderboardPicker,
+      onAccount: account ? showAccount : undefined,
       onBack: showTitle,
     }),
   );
@@ -207,6 +215,54 @@ const submitter = new RunSubmitter({
     if (scene instanceof GameScene) scene.setStatus(text);
   },
 });
+
+function messageOf(error: unknown): string {
+  return error instanceof ApiError ? error.message : 'Something went wrong.';
+}
+
+function showAccount(): void {
+  const username = sessions.current()?.username;
+  if (!username) {
+    showTitle();
+    return;
+  }
+  show(
+    'account',
+    accountScreen({
+      username,
+      onBack: showMenu,
+      onChangePassword: async (current, next) => {
+        try {
+          sessions.save(await api.changePassword(current, next), username);
+          return 'Password changed. Other devices were signed out.';
+        } catch (error) {
+          return messageOf(error);
+        }
+      },
+      onLogoutAll: async () => {
+        try {
+          await api.logoutAll();
+          sessions.clear();
+          showTitle();
+          return undefined;
+        } catch (error) {
+          return messageOf(error);
+        }
+      },
+      onDelete: async (password) => {
+        try {
+          await api.deleteAccount(password);
+          storeFor(username).clear();
+          sessions.clear();
+          showTitle();
+          return undefined;
+        } catch (error) {
+          return messageOf(error);
+        }
+      },
+    }),
+  );
+}
 
 function showLeaderboardPicker(): void {
   const cards = levelCards(LEVELS, currentStore().load()).map((card) =>

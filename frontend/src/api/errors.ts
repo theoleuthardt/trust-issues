@@ -14,7 +14,7 @@ function firstValidationMessage(body: ErrorBody | undefined): string | undefined
   return undefined;
 }
 
-export type ErrorContext = 'credentials' | 'run';
+export type ErrorContext = 'credentials' | 'run' | 'account';
 
 function detailOf(body: ErrorBody | undefined): string | undefined {
   return typeof body?.detail === 'string' ? body.detail : undefined;
@@ -36,6 +36,11 @@ export function messageFor(
     if (status === 429) return 'Too many runs in a short time, please wait a moment.';
     if (status >= 500) return 'The server is busy, please try again later.';
     return 'The run could not be sent.';
+  }
+  if (context === 'account') {
+    if (status === 403) return 'Wrong password.';
+    if (status === 401) return 'Your session ended, please sign in again.';
+    if (status === 429) return 'Too many wrong passwords. Please wait a few minutes.';
   }
   if (status === 409) return 'That username is taken.';
   if (status === 401) return 'Wrong username or password.';

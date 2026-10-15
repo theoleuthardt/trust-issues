@@ -92,6 +92,11 @@ inverted.
 
 ![Leaderboard](images/leaderboard.png)
 
+The account screen changes the password, signs out on every device and deletes the account
+after a second confirmation with the password.
+
+![Account screen](images/account.png)
+
 ## Touch
 
 Two circular buttons left (move) and one right (jump), 64 px, semi-transparent paper with an

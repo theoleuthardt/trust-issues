@@ -62,6 +62,27 @@ export class ApiClient {
     return this.request<User>('GET', '/auth/me');
   }
 
+  /** Changes the password; every older token stops working, the answer is a fresh one. */
+  async changePassword(current: string, next: string): Promise<string> {
+    const body = await this.request<{ access_token: string }>(
+      'POST',
+      '/auth/password',
+      { current_password: current, new_password: next },
+      'account',
+    );
+    return body.access_token;
+  }
+
+  /** Revokes every token of the player, on all devices. */
+  async logoutAll(): Promise<void> {
+    await this.request<undefined>('POST', '/auth/logout-all', undefined, 'account');
+  }
+
+  /** Deletes the account with all its runs after confirming the password. */
+  async deleteAccount(password: string): Promise<void> {
+    await this.request<undefined>('POST', '/auth/delete', { password }, 'account');
+  }
+
   /** The best verified runs on a level, best score first; public. */
   leaderboard(levelId: string, limit = 50): Promise<LeaderboardEntry[]> {
     return this.request<LeaderboardEntry[]>(

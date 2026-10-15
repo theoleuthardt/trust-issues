@@ -148,6 +148,50 @@ describe('ApiClient', () => {
     expect(calls[0]?.url).toBe('/api/leaderboard/a%2Fb%20c?limit=50');
   });
 
+  it('changes the password and returns the fresh token', async () => {
+    const { fetchFn, calls } = fakeFetch(200, { access_token: 'fresh', token_type: 'bearer' });
+    const client = new ApiClient(fetchFn, () => 'tok');
+
+    const token = await client.changePassword('old-password-123', 'new-password-456');
+
+    expect(token).toBe('fresh');
+    expect(calls[0]?.url).toBe('/api/auth/password');
+    expect(JSON.parse(String(calls[0]?.init.body))).toEqual({
+      current_password: 'old-password-123',
+      new_password: 'new-password-456',
+    });
+  });
+
+  it('signs out everywhere', async () => {
+    const { fetchFn, calls } = fakeFetch(204, undefined);
+    const client = new ApiClient(fetchFn, () => 'tok');
+
+    await client.logoutAll();
+
+    expect(calls[0]?.url).toBe('/api/auth/logout-all');
+    expect(calls[0]?.init.method).toBe('POST');
+  });
+
+  it('deletes the account with the password', async () => {
+    const { fetchFn, calls } = fakeFetch(204, undefined);
+    const client = new ApiClient(fetchFn, () => 'tok');
+
+    await client.deleteAccount('my-password-123');
+
+    expect(calls[0]?.url).toBe('/api/auth/delete');
+    expect(JSON.parse(String(calls[0]?.init.body))).toEqual({ password: 'my-password-123' });
+  });
+
+  it('reports a wrong password as such', async () => {
+    const { fetchFn } = fakeFetch(403, { detail: 'wrong password' });
+    const client = new ApiClient(fetchFn, () => 'tok');
+
+    await expect(client.deleteAccount('nope')).rejects.toMatchObject({
+      status: 403,
+      message: 'Wrong password.',
+    });
+  });
+
   it('turns a failure while reading the body into an ApiError', async () => {
     const broken = {
       ok: true,
