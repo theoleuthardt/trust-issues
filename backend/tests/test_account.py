@@ -1,3 +1,5 @@
+import asyncio
+
 from litestar.testing import AsyncTestClient
 
 from tests.conftest import PASSWORD, FakeVerifier, auth_headers, register
@@ -125,3 +127,32 @@ async def test_delete_account_requires_a_token(client: AsyncTestClient) -> None:
     response = await client.post("/api/auth/delete", json={"password": PASSWORD})
 
     assert response.status_code == 401
+
+
+async def test_concurrent_wrong_passwords_cannot_dodge_the_lockout(
+    client: AsyncTestClient,
+) -> None:
+    headers = await auth_headers(client, "mallory")
+
+    await asyncio.gather(
+        *(
+            client.post(
+                "/api/auth/password",
+                json={"current_password": "not-my-password-at-all", "new_password": NEW_PASSWORD},
+                headers=headers,
+            )
+            for _ in range(5)
+        )
+    )
+
+    assert (await login(client, "mallory", PASSWORD)).status_code == 429
+
+
+async def test_concurrent_wrong_logins_cannot_dodge_the_lockout(client: AsyncTestClient) -> None:
+    await register(client, "mallory")
+
+    await asyncio.gather(
+        *(login(client, "mallory", "definitely-the-wrong-password") for _ in range(5))
+    )
+
+    assert (await login(client, "mallory", PASSWORD)).status_code == 429

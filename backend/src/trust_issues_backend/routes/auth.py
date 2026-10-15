@@ -10,7 +10,7 @@ from litestar.exceptions import (
     TooManyRequestsException,
 )
 from litestar.security.jwt import Token
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -71,11 +71,22 @@ def ensure_not_locked(user: User, now: datetime) -> None:
 
 
 async def register_failed_attempt(session: AsyncSession, user: User, now: datetime) -> None:
-    """Counts a wrong password and locks the account after too many."""
-    user.failed_logins += 1
-    if user.failed_logins >= MAX_FAILED_LOGINS:
-        user.locked_until = now + LOCKOUT
-        user.failed_logins = 0
+    """
+    Counts a wrong password and locks the account after too many. The counter is incremented
+    in the database so concurrent wrong guesses cannot overwrite each other.
+    """
+    failures = await session.scalar(
+        update(User)
+        .where(User.id == user.id)
+        .values(failed_logins=User.failed_logins + 1)
+        .returning(User.failed_logins)
+    )
+    if failures is not None and failures >= MAX_FAILED_LOGINS:
+        await session.execute(
+            update(User)
+            .where(User.id == user.id, User.failed_logins >= MAX_FAILED_LOGINS)
+            .values(failed_logins=0, locked_until=now + LOCKOUT)
+        )
     await session.commit()
 
 
