@@ -14,6 +14,7 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from trust_issues_backend import audit
 from trust_issues_backend.models import BestRun, User, utcnow
 from trust_issues_backend.observability import request_id_for
 from trust_issues_backend.schemas import RunResponse, RunSubmission
@@ -70,27 +71,43 @@ async def submit_run(
             detail="too many runs, please try again later",
             headers={"Retry-After": str(wait)},
         )
+    request_id = request_id_for(request.scope)
+
+    async def reject(reason: str) -> None:
+        await audit.record_rejected_run(
+            session,
+            user_id=request.user.id,
+            level_id=data.level_id,
+            reason=reason,
+            replay_size=len(data.replay),
+            request_id=request_id,
+        )
+
     try:
         run = await state.verifier.verify(
             data.level_id,
             data.replay,
             data.sim_version,
             data.level_revision,
-            request_id=request_id_for(request.scope),
+            request_id=request_id,
         )
     except UnknownLevelError as error:
+        await reject("unknown level")
         raise NotFoundException(detail="unknown level") from error
     except OutdatedVersionError as error:
+        await reject(f"outdated version sim={data.sim_version} level={data.level_revision}")
         raise ClientException(
             detail="this version of the game is outdated, please reload the page",
             status_code=409,
         ) from error
     except InvalidReplayError as error:
+        await reject(str(error))
         raise ClientException(detail=str(error), status_code=422) from error
     except VerifierUnavailableError as error:
         raise ServiceUnavailableException(detail="run verification is unavailable") from error
 
     if not run.finished:
+        await reject("replay does not finish the level")
         raise ClientException(detail="replay does not finish the level", status_code=422)
 
     try:

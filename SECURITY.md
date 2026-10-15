@@ -34,6 +34,10 @@ start with short or placeholder values.
 - **Client address:** behind a reverse proxy or tunnel the peer is always the proxy. Set
   `TRUSTED_PROXY_IPS` to its address or network so the limits use the real client address
   (`CF-Connecting-IP`, then `X-Forwarded-For`); headers from any other peer are ignored.
+- **Audit log:** every refused submission (invalid replay, replay that does not finish, unknown
+  level, retired version) is stored with user id, level id, reason, replay size and request id;
+  never the replay itself or a credential. Events older than `AUDIT_RETENTION_DAYS` (default 90) are deleted at start and then every hour. Deleting an account detaches its events from
+  the user id.
 - The limits are kept in the memory of one backend process, which is how this deployment
   runs. Several processes would each count separately.
 

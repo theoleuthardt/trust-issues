@@ -64,6 +64,22 @@ REVISION_COLUMNS: tuple[tuple[str, str, frozenset[str]], ...] = (
     ("0002", "users", frozenset({"failed_logins", "locked_until"})),
     ("0003", "best_runs", frozenset({"sim_version", "level_revision"})),
     ("0004", "best_runs", frozenset({"flags"})),
+    (
+        "0005",
+        "audit_events",
+        frozenset(
+            {
+                "id",
+                "created_at",
+                "kind",
+                "user_id",
+                "level_id",
+                "reason",
+                "replay_size",
+                "request_id",
+            }
+        ),
+    ),
 )
 
 
@@ -98,8 +114,14 @@ def _adoptable_revision(sync: Connection) -> str | None:
             return None
     adopted = "0001"
     gap = False
+    tables = set(inspector.get_table_names())
     for revision, table, columns in REVISION_COLUMNS:
-        present = columns & {column["name"] for column in inspector.get_columns(table)}
+        actual = (
+            {column["name"] for column in inspector.get_columns(table)}
+            if table in tables
+            else set()
+        )
+        present = columns & actual
         if present and present != columns:
             return None
         if present and gap:

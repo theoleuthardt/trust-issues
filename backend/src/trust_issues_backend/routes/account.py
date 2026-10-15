@@ -5,10 +5,10 @@ from litestar.datastructures import State
 from litestar.di import NamedDependency
 from litestar.exceptions import ClientException
 from litestar.security.jwt import Token
-from sqlalchemy import delete
+from sqlalchemy import delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from trust_issues_backend.models import BestRun, User
+from trust_issues_backend.models import AuditEvent, BestRun, User
 from trust_issues_backend.routes.auth import ensure_not_locked, register_failed_attempt
 from trust_issues_backend.schemas import (
     ChangePasswordRequest,
@@ -79,5 +79,8 @@ async def delete_account(
     """Deletes the account and all its runs after confirming the password."""
     user = await _confirmed_user(session, request, state, data.password)
     await session.execute(delete(BestRun).where(BestRun.user_id == user.id))
+    await session.execute(
+        update(AuditEvent).where(AuditEvent.user_id == user.id).values(user_id=None)
+    )
     await session.delete(user)
     await session.commit()

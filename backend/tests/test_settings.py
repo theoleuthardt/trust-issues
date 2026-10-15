@@ -40,3 +40,17 @@ def test_rejects_short_secrets(name: str) -> None:
 def test_rejects_placeholder_secrets(name: str) -> None:
     with pytest.raises(SettingsError, match=name):
         Settings.from_env({**GOOD, name: "change-me-change-me-change-me-change-me"})
+
+
+def test_audit_retention_defaults_to_ninety_days() -> None:
+    assert Settings.from_env(GOOD).audit_retention_days == 90
+
+
+def test_audit_retention_can_be_set() -> None:
+    assert Settings.from_env({**GOOD, "AUDIT_RETENTION_DAYS": "30"}).audit_retention_days == 30
+
+
+@pytest.mark.parametrize("value", ["0", "-5", "abc", "1.5", "3651"])
+def test_rejects_an_invalid_audit_retention(value: str) -> None:
+    with pytest.raises(SettingsError, match="AUDIT_RETENTION_DAYS"):
+        Settings.from_env({**GOOD, "AUDIT_RETENTION_DAYS": value})

@@ -47,3 +47,25 @@ class BestRun(Base):
     level_revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     flags: Mapped[list[str]] = mapped_column(JSON, default=list, server_default="[]")
     submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class AuditEvent(Base):
+    """
+    One thing worth knowing about what is thrown at the API, for example a rejected run. It
+    holds a user id, a level id, a short reason and sizes, never a replay or a credential.
+    """
+
+    __tablename__ = "audit_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, index=True
+    )
+    kind: Mapped[str] = mapped_column(String(40))
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    level_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    reason: Mapped[str] = mapped_column(String(200))
+    replay_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    request_id: Mapped[str | None] = mapped_column(String(64), nullable=True)

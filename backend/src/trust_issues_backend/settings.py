@@ -8,6 +8,9 @@ from dataclasses import dataclass
 MIN_SECRET_LENGTH = 32
 PLACEHOLDER = re.compile(r"change[-_ ]?me|example|placeholder", re.IGNORECASE)
 ACCESS_TOKEN_MINUTES = 7 * 24 * 60
+DEFAULT_AUDIT_RETENTION_DAYS = 90
+MAX_AUDIT_RETENTION_DAYS = 3650
+AUDIT_PURGE_INTERVAL_SECONDS = 3600.0
 
 
 class SettingsError(Exception):
@@ -23,6 +26,8 @@ class Settings:
     enable_docs: bool = False
     access_token_minutes: int = ACCESS_TOKEN_MINUTES
     trusted_proxy_ips: tuple[str, ...] = ()
+    audit_retention_days: int = DEFAULT_AUDIT_RETENTION_DAYS
+    audit_purge_interval_seconds: float = AUDIT_PURGE_INTERVAL_SECONDS
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "Settings":
@@ -43,6 +48,14 @@ class Settings:
                 )
             return value
 
+        retention = source.get("AUDIT_RETENTION_DAYS", "").strip()
+        if retention and not (
+            retention.isdecimal() and 1 <= int(retention) <= MAX_AUDIT_RETENTION_DAYS
+        ):
+            raise SettingsError(
+                f"AUDIT_RETENTION_DAYS must be a whole number from 1 to {MAX_AUDIT_RETENTION_DAYS}"
+            )
+
         return cls(
             database_url=required("DATABASE_URL"),
             jwt_secret=secret("JWT_SECRET"),
@@ -54,4 +67,5 @@ class Settings:
                 for part in source.get("TRUSTED_PROXY_IPS", "").split(",")
                 if part.strip()
             ),
+            audit_retention_days=int(retention) if retention else DEFAULT_AUDIT_RETENTION_DAYS,
         )

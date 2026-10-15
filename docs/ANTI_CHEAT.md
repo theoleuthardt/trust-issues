@@ -85,4 +85,3 @@ them. These remain open:
 Tracked on the board as part of the anti-cheat epic:
 
 - Replay viewer and moderation tools (flag, hide, delete an entry).
-- An audit log of rejected submissions.
