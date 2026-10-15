@@ -36,6 +36,8 @@ class VerifierUnavailableError(VerifierError):
 
 
 class Verifier(Protocol):
+    async def levels(self) -> list[str]: ...
+
     async def verify(
         self,
         level_id: str,
@@ -51,6 +53,22 @@ class HttpVerifier:
 
     def __init__(self, client: httpx.AsyncClient) -> None:
         self._client = client
+
+    async def levels(self) -> list[str]:
+        """The ids of the levels the verifier knows, in play order."""
+        try:
+            response = await self._client.get("/levels")
+        except httpx.HTTPError as error:
+            raise VerifierUnavailableError(str(error)) from error
+        if response.status_code != 200:
+            raise VerifierUnavailableError(f"verifier answered {response.status_code}")
+        try:
+            levels = response.json()["levels"]
+        except (ValueError, KeyError, TypeError) as error:
+            raise VerifierUnavailableError("verifier sent an unusable response") from error
+        if not isinstance(levels, list) or not all(isinstance(level, str) for level in levels):
+            raise VerifierUnavailableError("verifier sent an unusable level list")
+        return levels
 
     async def verify(
         self,

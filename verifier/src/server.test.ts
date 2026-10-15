@@ -1,6 +1,6 @@
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { SIM_VERSION, getLevel } from '@trust-issues/sim';
+import { LEVELS, SIM_VERSION, getLevel } from '@trust-issues/sim';
 import { SOLUTIONS } from '@trust-issues/sim/testing';
 import { createVerifierServer } from './server';
 
@@ -67,6 +67,31 @@ describe('verifier server', () => {
     });
 
     expect(response.status).toBe(409);
+  });
+
+  it('lists the level ids in play order for a caller with the token', async () => {
+    const response = await fetch(`${base}/levels`, { headers: { 'x-verifier-token': TOKEN } });
+    const body = (await response.json()) as { levels: string[] };
+
+    expect(response.status).toBe(200);
+    expect(body.levels[0]).toBe('trust-nothing');
+    expect(body.levels).toHaveLength(LEVELS.length);
+    expect(new Set(body.levels).size).toBe(body.levels.length);
+  });
+
+  it('does not list the levels without the token', async () => {
+    const response = await fetch(`${base}/levels`);
+
+    expect(response.status).toBe(401);
+  });
+
+  it('only lists levels for GET', async () => {
+    const response = await fetch(`${base}/levels`, {
+      method: 'POST',
+      headers: { 'x-verifier-token': TOKEN },
+    });
+
+    expect(response.status).toBe(405);
   });
 
   it('rejects a missing or wrong token', async () => {

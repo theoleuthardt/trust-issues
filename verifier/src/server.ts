@@ -1,6 +1,7 @@
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
+import { LEVELS } from '@trust-issues/sim';
 import { verifyRun } from './verify';
 
 export interface VerifierServerOptions {
@@ -85,17 +86,21 @@ export function createVerifierServer(options: VerifierServerOptions): Server {
       sendJson(response, 200, { status: 'ok' });
       return;
     }
-    if (url !== '/verify') {
+    if (url !== '/verify' && url !== '/levels') {
       sendJson(response, 404, { error: 'not found' });
       return;
     }
-    if (request.method !== 'POST') {
+    if (request.method !== (url === '/levels' ? 'GET' : 'POST')) {
       sendJson(response, 405, { error: 'method not allowed' });
       return;
     }
     const header = request.headers['x-verifier-token'];
     if (!tokenMatches(Array.isArray(header) ? header[0] : header, options.token)) {
       sendJson(response, 401, { error: 'unauthorized' });
+      return;
+    }
+    if (url === '/levels') {
+      sendJson(response, 200, { levels: LEVELS.map((level) => level.id) });
       return;
     }
 
