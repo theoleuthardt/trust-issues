@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEATH_SHAKE,
   POP_MS,
   VANISH_MS,
   PARTICLE_LIFE_MS,
@@ -120,5 +121,18 @@ describe('particleAt', () => {
     const at = particleAt(resting, 300);
 
     expect(at?.y ?? 0).toBeGreaterThan(0);
+  });
+});
+
+describe('DEATH_SHAKE', () => {
+  it('is short and gentle so that a death never gets in the way of the next try', () => {
+    expect(DEATH_SHAKE.durationMs).toBeGreaterThan(0);
+    expect(DEATH_SHAKE.durationMs).toBeLessThanOrEqual(200);
+    expect(DEATH_SHAKE.intensity).toBeGreaterThan(0);
+    expect(DEATH_SHAKE.intensity).toBeLessThanOrEqual(0.01);
+  });
+
+  it('ends before the death particles do', () => {
+    expect(DEATH_SHAKE.durationMs).toBeLessThan(PARTICLE_LIFE_MS);
   });
 });

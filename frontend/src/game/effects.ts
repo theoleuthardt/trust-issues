@@ -4,6 +4,8 @@ export const POP_MS = 180;
 export const VANISH_MS = 220;
 /** Lifetime of a death particle. */
 export const PARTICLE_LIFE_MS = 450;
+/** Camera shake on a death; `intensity` is a fraction of the view size. */
+export const DEATH_SHAKE = { durationMs: 140, intensity: 0.006 } as const;
 
 const OVERSHOOT = 1.70158;
 const GRAVITY_PX_PER_S2 = 600;
