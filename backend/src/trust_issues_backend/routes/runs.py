@@ -10,13 +10,14 @@ from litestar.exceptions import (
     TooManyRequestsException,
 )
 from litestar.security.jwt import Token
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from trust_issues_backend import audit
 from trust_issues_backend.models import BestRun, User, utcnow
 from trust_issues_backend.observability import request_id_for
+from trust_issues_backend.ranking import Position, before
 from trust_issues_backend.schemas import RunResponse, RunSubmission
 from trust_issues_backend.verifier import (
     InvalidReplayError,
@@ -131,15 +132,7 @@ async def submit_run(
         .where(
             BestRun.level_id == data.level_id,
             BestRun.hidden.is_(False),
-            or_(
-                BestRun.score > best.score,
-                and_(BestRun.score == best.score, BestRun.frames < best.frames),
-                and_(
-                    BestRun.score == best.score,
-                    BestRun.frames == best.frames,
-                    BestRun.submitted_at < best.submitted_at,
-                ),
-            ),
+            before(Position(best.score, best.frames, best.submitted_at, best.id)),
         )
     )
     return RunResponse(

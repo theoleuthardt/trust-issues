@@ -94,6 +94,16 @@ class LeaderboardEntry(Struct):
     deaths: int
 
 
+class LeaderboardPage(Struct):
+    entries: list[LeaderboardEntry]
+    next_cursor: str | None
+
+
+class AroundMe(Struct):
+    rank: int
+    entries: list[LeaderboardEntry]
+
+
 class ReplayResponse(Struct):
     run_id: int
     level_id: str
