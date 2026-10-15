@@ -22,6 +22,7 @@ function fakeAudio() {
       const node = {
         gain: {
           value: 0,
+          cancelScheduledValues: () => undefined,
           setValueAtTime(value: number) {
             gains.push(value);
           },
@@ -39,6 +40,7 @@ function fakeAudio() {
           entry.type = value;
         },
         frequency: {
+          value: 0,
           setValueAtTime(value: number) {
             entry.from = value;
           },
@@ -186,5 +188,19 @@ describe('SoundBoard', () => {
     expect(await board.unlock()).toBe(false);
     allow = true;
     expect(await board.unlock()).toBe(true);
+  });
+
+  it('hands its context to other players only while it runs', async () => {
+    const { context, state } = fakeAudio();
+    const board = new SoundBoard(
+      () => context,
+      () => settings,
+    );
+
+    expect(board.runningContext()).toBeUndefined();
+    await board.unlock();
+    expect(board.runningContext()).toBe(context);
+    state.current = 'suspended';
+    expect(board.runningContext()).toBeUndefined();
   });
 });

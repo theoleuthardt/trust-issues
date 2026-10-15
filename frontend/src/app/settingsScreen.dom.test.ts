@@ -13,6 +13,7 @@ function render(overrides: Partial<Parameters<typeof settingsScreen>[0]> = {}) {
     opacity: vi.fn(),
     muted: vi.fn(),
     volume: vi.fn(),
+    music: vi.fn(),
     motion: vi.fn(),
     back: vi.fn(),
   };
@@ -25,6 +26,7 @@ function render(overrides: Partial<Parameters<typeof settingsScreen>[0]> = {}) {
     onTouchOpacity: calls.opacity,
     onSoundMuted: calls.muted,
     onSoundVolume: calls.volume,
+    onMusic: calls.music,
     onReducedMotion: calls.motion,
     onBack: calls.back,
     ...overrides,
@@ -163,7 +165,7 @@ describe('settingsScreen touch and motion', () => {
 
   it('shows and reports the sound settings', () => {
     const { root, calls } = render({
-      settings: { ...DEFAULT_SETTINGS, sound: { muted: true, volume: 40 } },
+      settings: { ...DEFAULT_SETTINGS, sound: { muted: true, volume: 40, music: false } },
     });
     const muted = root.querySelector<HTMLInputElement>('input[name=muted]');
     const volume = root.querySelector<HTMLInputElement>('input[name=volume]');
@@ -178,8 +180,15 @@ describe('settingsScreen touch and motion', () => {
       volume.value = '80';
       volume.dispatchEvent(new Event('change'));
     }
+    const music = root.querySelector<HTMLInputElement>('input[name=music]');
+    expect(music?.checked).toBe(false);
+    if (music) {
+      music.checked = true;
+      music.dispatchEvent(new Event('change'));
+    }
     expect(calls.muted).toHaveBeenCalledWith(false);
     expect(calls.volume).toHaveBeenCalledWith(80);
+    expect(calls.music).toHaveBeenCalledWith(true);
   });
 
   it('goes back', () => {

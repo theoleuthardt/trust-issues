@@ -7,7 +7,7 @@ export type TouchSize = 'small' | 'medium' | 'large';
 export interface Settings {
   keys: Record<Action, string[]>;
   touch: { size: TouchSize; swapped: boolean; opacity: number };
-  sound: { muted: boolean; volume: number };
+  sound: { muted: boolean; volume: number; music: boolean };
   reducedMotion: boolean;
 }
 
@@ -23,7 +23,7 @@ export const DEFAULT_SETTINGS: Settings = {
     jump: ['ArrowUp', 'KeyW', 'Space'],
   },
   touch: { size: 'medium', swapped: false, opacity: 60 },
-  sound: { muted: false, volume: 60 },
+  sound: { muted: false, volume: 60, music: true },
   reducedMotion: false,
 };
 
@@ -122,6 +122,7 @@ function parseSound(value: unknown): Settings['sound'] {
   const sound = { ...DEFAULT_SETTINGS.sound };
   if (!isRecord(value)) return sound;
   if (typeof value.muted === 'boolean') sound.muted = value.muted;
+  if (typeof value.music === 'boolean') sound.music = value.music;
   const volume = value.volume;
   if (typeof volume === 'number' && Number.isInteger(volume) && volume >= 0 && volume <= 100) {
     sound.volume = volume;

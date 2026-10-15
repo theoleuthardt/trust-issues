@@ -10,6 +10,7 @@ export interface AudioLike {
   createGain(): {
     gain: {
       value: number;
+      cancelScheduledValues(at: number): void;
       setValueAtTime(value: number, at: number): void;
       linearRampToValueAtTime(value: number, at: number): void;
       exponentialRampToValueAtTime(value: number, at: number): void;
@@ -19,6 +20,7 @@ export interface AudioLike {
   createOscillator(): {
     type: string;
     frequency: {
+      value: number;
       setValueAtTime(value: number, at: number): void;
       exponentialRampToValueAtTime(value: number, at: number): void;
     };
@@ -54,6 +56,11 @@ export class SoundBoard {
       }
     }
     return this.context.state === 'running';
+  }
+
+  /** The audio context once it runs, for other players such as the music. */
+  runningContext(): AudioLike | undefined {
+    return this.context?.state === 'running' ? this.context : undefined;
   }
 
   play(name: SoundName): void {

@@ -91,7 +91,7 @@ them with `?touch=0`.
 
 The Settings screen in the menu changes the keys of left, right and jump (a few keys the game
 itself uses are not available), the size, side and opacity of the touch buttons, the sound
-(mute and volume) and reduced motion, which skips particles, pops and pulses. Reduced motion follows the system
+(mute, volume and music) and reduced motion, which skips particles, pops and pulses. Reduced motion follows the system
 preference until you choose. Settings are stored in the browser.
 
 ## Documentation

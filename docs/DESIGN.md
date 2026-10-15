@@ -142,3 +142,8 @@ generated from oscillators in the browser (`frontend/src/audio/effects.ts`), so 
 no audio files and there are no licenses to record. The audio context is created and resumed
 on the first key press or tap, which is what iOS and Android require. Mute and volume are in
 the settings and kept in the browser. Replays are silent.
+
+Two short loops of music are generated the same way (`audio/music.ts`): a slow minor arpeggio
+for the menus and a lower, tenser pulse while playing. The tracks cross-fade when the screen
+changes and the music ducks for a moment when you die. Music has its own switch next to
+mute and volume, and stays far below the level of the effects.
