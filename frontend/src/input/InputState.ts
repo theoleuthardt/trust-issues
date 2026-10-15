@@ -1,24 +1,27 @@
-import { Input } from '@trust-issues/sim';
+import { DEFAULT_SETTINGS, bindingsOf } from '../app/settings';
 
-const KEY_BINDINGS: Readonly<Record<string, number>> = {
-  ArrowLeft: Input.Left,
-  KeyA: Input.Left,
-  ArrowRight: Input.Right,
-  KeyD: Input.Right,
-  ArrowUp: Input.Jump,
-  KeyW: Input.Jump,
-  Space: Input.Jump,
-};
+type Bindings = Readonly<Record<string, number>>;
 
 /**
  * Single input path of the game: keyboard and touch both end up as one simulation input mask.
+ * The key bindings can be replaced at any time.
  */
 export class InputState {
   private readonly heldKeys = new Set<string>();
   private touchMask = 0;
 
+  constructor(private bindings: Bindings = bindingsOf(DEFAULT_SETTINGS.keys)) {}
+
+  /** Replaces the key bindings; keys that are held but no longer bound are let go. */
+  setBindings(bindings: Bindings): void {
+    this.bindings = bindings;
+    for (const code of this.heldKeys) {
+      if (!(code in bindings)) this.heldKeys.delete(code);
+    }
+  }
+
   setKey(code: string, down: boolean): void {
-    if (!(code in KEY_BINDINGS)) return;
+    if (!(code in this.bindings)) return;
     if (down) this.heldKeys.add(code);
     else this.heldKeys.delete(code);
   }
@@ -29,7 +32,7 @@ export class InputState {
 
   mask(): number {
     let mask = this.touchMask;
-    for (const code of this.heldKeys) mask |= KEY_BINDINGS[code] ?? 0;
+    for (const code of this.heldKeys) mask |= this.bindings[code] ?? 0;
     return mask;
   }
 
@@ -39,7 +42,7 @@ export class InputState {
   }
 
   /** Whether the key code is one the game reacts to, so callers can suppress page scrolling. */
-  static isBound(code: string): boolean {
-    return code in KEY_BINDINGS;
+  isBound(code: string): boolean {
+    return code in this.bindings;
   }
 }

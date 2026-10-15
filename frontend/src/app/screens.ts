@@ -4,6 +4,8 @@ import { validateNewPassword } from '../api/credentials';
 import { h } from './dom';
 import type { LeaderboardRow } from './leaderboard';
 import type { LevelCard } from './progress';
+import { ACTIONS, MAX_OPACITY, MIN_OPACITY, TOUCH_SIZES } from './settings';
+import type { Action, Settings, TouchSize } from './settings';
 
 const button = (label: string, onClick: () => void, primary = false) =>
   h('button', {
@@ -131,6 +133,7 @@ export interface MainMenuOptions {
   onContinue: () => void;
   onLevels: () => void;
   onLeaderboards: () => void;
+  onSettings: () => void;
   onAccount?: () => void;
   onBack: () => void;
 }
@@ -148,6 +151,7 @@ export function mainMenu(options: MainMenuOptions): HTMLElement {
       button('Levels', options.onLevels),
       button('Leaderboards', options.onLeaderboards),
       ...(options.onAccount ? [button('Account', options.onAccount)] : []),
+      button('Settings', options.onSettings),
       button('Back', options.onBack),
     ),
   );
@@ -448,5 +452,175 @@ export function pauseScreen(options: PauseScreenOptions): HTMLElement {
       button('Restart level', options.onRestart),
       button('Level select', options.onLevels),
     ),
+  );
+}
+
+const KEY_LABELS: Readonly<Record<string, string>> = {
+  ArrowLeft: '←',
+  ArrowRight: '→',
+  ArrowUp: '↑',
+  ArrowDown: '↓',
+};
+
+const ACTION_LABELS: Readonly<Record<Action, string>> = {
+  left: 'Move left',
+  right: 'Move right',
+  jump: 'Jump',
+};
+
+/** A short name for a key code, for example `KeyK` as `K` and `ArrowLeft` as `←`. */
+export function keyLabel(code: string): string {
+  const known = KEY_LABELS[code];
+  if (known) return known;
+  const letter = /^Key([A-Z])$/.exec(code);
+  if (letter?.[1]) return letter[1];
+  const digit = /^Digit(\d)$/.exec(code);
+  if (digit?.[1]) return digit[1];
+  return code;
+}
+
+export interface SettingsScreenOptions {
+  settings: Settings;
+  /** Gives `code` to `action`; resolves to a message when it was refused. */
+  onRebind: (action: Action, code: string) => string | undefined;
+  onResetKeys: () => void;
+  onTouchSize: (size: TouchSize) => void;
+  onTouchSwapped: (swapped: boolean) => void;
+  onTouchOpacity: (opacity: number) => void;
+  onReducedMotion: (on: boolean) => void;
+  onBack: () => void;
+}
+
+function checkbox(name: string, label: string, checked: boolean, onChange: (on: boolean) => void) {
+  const input = h('input', { class: 'check' });
+  input.type = 'checkbox';
+  input.name = name;
+  input.checked = checked;
+  input.addEventListener('change', () => onChange(input.checked));
+  return h('label', { class: 'check-row' }, input, h('span', { text: label }));
+}
+
+export function settingsScreen(options: SettingsScreenOptions): HTMLElement {
+  const { settings } = options;
+  const problem = h('p', { class: 'form-error' });
+  problem.setAttribute('role', 'alert');
+  let stopListening: (() => void) | undefined;
+  const afterListening =
+    <A extends unknown[]>(action: (...args: A) => void) =>
+    (...args: A): void => {
+      stopListening?.();
+      action(...args);
+    };
+
+  const listen = (action: Action, status: HTMLElement): void => {
+    stopListening?.();
+    status.textContent = 'Press a key… (Esc cancels)';
+    const onKey = (event: KeyboardEvent): void => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.code === 'Escape') {
+        stopListening?.();
+        status.textContent = settings.keys[action].map(keyLabel).join(' · ');
+        return;
+      }
+      const refusal = options.onRebind(action, event.code);
+      if (refusal) {
+        problem.textContent = refusal;
+        return;
+      }
+      stopListening?.();
+    };
+    document.addEventListener('keydown', onKey, true);
+    stopListening = () => {
+      document.removeEventListener('keydown', onKey, true);
+      stopListening = undefined;
+    };
+  };
+
+  const keyRows = ACTIONS.map((action) => {
+    const status = h('span', {
+      class: 'key-names',
+      text: settings.keys[action].map(keyLabel).join(' · '),
+    });
+    const row = h(
+      'div',
+      { class: 'setting-row' },
+      h('span', { class: 'setting-label', text: ACTION_LABELS[action] }),
+      status,
+      h('button', {
+        class: 'button button-small',
+        type: 'button',
+        text: 'Change',
+        onClick: () => {
+          problem.textContent = '';
+          listen(action, status);
+        },
+      }),
+    );
+    row.dataset.action = action;
+    return row;
+  });
+
+  const sizeButtons = TOUCH_SIZES.map((size) => {
+    const choice = h('button', {
+      class: 'button button-small',
+      type: 'button',
+      text: size[0]?.toUpperCase() + size.slice(1),
+      onClick: afterListening(() => options.onTouchSize(size)),
+    });
+    choice.dataset.size = size;
+    choice.setAttribute('aria-pressed', String(settings.touch.size === size));
+    return choice;
+  });
+
+  const opacity = h('input', { class: 'range' });
+  opacity.type = 'range';
+  opacity.name = 'opacity';
+  opacity.min = String(MIN_OPACITY);
+  opacity.max = String(MAX_OPACITY);
+  opacity.step = '10';
+  opacity.value = String(settings.touch.opacity);
+  opacity.addEventListener(
+    'change',
+    afterListening(() => options.onTouchOpacity(Number(opacity.value))),
+  );
+
+  return h(
+    'section',
+    { class: 'screen screen-settings' },
+    h('h2', { class: 'heading', text: 'Settings' }),
+    h(
+      'fieldset',
+      { class: 'settings-group' },
+      h('legend', { text: 'Keyboard' }),
+      ...keyRows,
+      problem,
+      button('Reset keys', afterListening(options.onResetKeys)),
+    ),
+    h(
+      'fieldset',
+      { class: 'settings-group' },
+      h('legend', { text: 'Touch controls' }),
+      h('div', { class: 'setting-row' }, h('span', { text: 'Size' }), ...sizeButtons),
+      checkbox(
+        'swapped',
+        'Swap the sides of the buttons',
+        settings.touch.swapped,
+        afterListening(options.onTouchSwapped),
+      ),
+      h('label', { class: 'setting-row' }, h('span', { text: 'Opacity' }), opacity),
+    ),
+    h(
+      'fieldset',
+      { class: 'settings-group' },
+      h('legend', { text: 'Motion' }),
+      checkbox(
+        'motion',
+        'Reduce motion',
+        settings.reducedMotion,
+        afterListening(options.onReducedMotion),
+      ),
+    ),
+    h('div', { class: 'stack' }, button('Back', afterListening(options.onBack))),
   );
 }

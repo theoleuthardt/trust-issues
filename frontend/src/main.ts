@@ -6,6 +6,8 @@ import { validateCredentials } from './api/credentials';
 import { SessionStore } from './api/session';
 import { syncAccount } from './app/accountSync';
 import { ghostInputs } from './app/ghost';
+import { SettingsStore, bindingsOf, rebind, resetKeys } from './app/settings';
+import type { Settings } from './app/settings';
 import { GhostPreference } from './app/ghostPreference';
 import { ProgressStore, accountKey, firstOpenIndex, levelCards } from './app/progress';
 import { finishAnnouncement, stageAnnouncement } from './app/announcement';
@@ -19,6 +21,7 @@ import {
   levelSelect,
   mainMenu,
   pauseScreen,
+  settingsScreen,
   titleScreen,
 } from './app/screens';
 import { memoryStorage } from './app/storage';
@@ -39,7 +42,16 @@ const LEVEL_HEIGHT_TILES = 18;
 const TILE_PX = 32;
 
 type Screen =
-  'title' | 'auth' | 'menu' | 'levels' | 'board' | 'account' | 'pause' | 'game' | 'replay';
+  | 'title'
+  | 'auth'
+  | 'menu'
+  | 'levels'
+  | 'board'
+  | 'account'
+  | 'settings'
+  | 'pause'
+  | 'game'
+  | 'replay';
 
 applyPaletteToCss(document.documentElement);
 
@@ -54,6 +66,20 @@ const guestStore = new ProgressStore(storage);
 const accountStores = new Map<string, ProgressStore>();
 const sessions = new SessionStore(storage);
 const ghostPreference = new GhostPreference(storage);
+const settings = new SettingsStore(
+  storage,
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+);
+
+function applySettings(current: Settings): void {
+  input.setBindings(bindingsOf(current.keys));
+  document.body.dataset.touchSize = current.touch.size;
+  document.body.dataset.touchSwapped = String(current.touch.swapped);
+  document.documentElement.style.setProperty(
+    '--touch-opacity',
+    String(current.touch.opacity / 100),
+  );
+}
 const api = new ApiClient(
   (...args) => window.fetch(...args),
   () => sessions.current()?.token,
@@ -80,7 +106,7 @@ window.addEventListener('keydown', (event) => {
     if (action === 'close') closeReplay();
     return;
   }
-  if (document.body.dataset.screen !== 'game' || !InputState.isBound(event.code)) return;
+  if (document.body.dataset.screen !== 'game' || !input.isBound(event.code)) return;
   event.preventDefault();
   input.setKey(event.code, true);
 });
@@ -94,6 +120,9 @@ window.addEventListener('blur', () => {
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) pauseGame();
 });
+
+applySettings(settings.current());
+settings.subscribe(applySettings);
 
 const coarse = window.matchMedia('(pointer: coarse)').matches;
 if (shouldShowTouchControls(window.location.search, coarse)) {
@@ -222,8 +251,44 @@ function showMenu(): void {
       onContinue: () => startLevel(next),
       onLevels: showLevels,
       onLeaderboards: showLeaderboardPicker,
+      onSettings: showSettings,
       onAccount: account ? showAccount : undefined,
       onBack: showTitle,
+    }),
+  );
+}
+
+function showSettings(): void {
+  show(
+    'settings',
+    settingsScreen({
+      settings: settings.current(),
+      onRebind: (action, code) => {
+        const result = rebind(settings.current(), action, code);
+        if (!result.ok) return result.reason;
+        settings.update(() => result.settings);
+        showSettings();
+        return undefined;
+      },
+      onResetKeys: () => {
+        settings.update(resetKeys);
+        showSettings();
+      },
+      onTouchSize: (size) => {
+        settings.update((current) => ({ ...current, touch: { ...current.touch, size } }));
+        showSettings();
+      },
+      onTouchSwapped: (swapped) => {
+        settings.update((current) => ({ ...current, touch: { ...current.touch, swapped } }));
+        showSettings();
+      },
+      onTouchOpacity: (opacity) => {
+        settings.update((current) => ({ ...current, touch: { ...current.touch, opacity } }));
+      },
+      onReducedMotion: (reducedMotion) => {
+        settings.update((current) => ({ ...current, reducedMotion }));
+      },
+      onBack: showMenu,
     }),
   );
 }
@@ -381,6 +446,7 @@ function startReplay(
     startIndex: index,
     input,
     replay: { inputs, caption },
+    reducedMotion: () => settings.current().reducedMotion,
     onReplayFinished: () => announce('Replay finished'),
   });
 }
@@ -428,6 +494,7 @@ function startLevel(index: number): void {
       return level ? ghostInputs(currentStore().load()[levelId], level) : undefined;
     },
     ghostEnabled: ghostPreference.enabled(),
+    reducedMotion: () => settings.current().reducedMotion,
     onGhostToggled: (on: boolean) => {
       ghostPreference.set(on);
       announce(on ? 'Ghost on' : 'Ghost off');

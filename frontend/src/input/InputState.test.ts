@@ -73,4 +73,33 @@ describe('InputState', () => {
 
     expect(input.mask()).toBe(0);
   });
+
+  it('uses the keys of the given bindings instead of the default ones', () => {
+    const input = new InputState({ KeyJ: Input.Left, KeyK: Input.Jump });
+
+    input.setKey('KeyJ', true);
+    input.setKey('ArrowLeft', true);
+
+    expect(input.mask()).toBe(Input.Left);
+    expect(input.isBound('KeyK')).toBe(true);
+    expect(input.isBound('ArrowLeft')).toBe(false);
+  });
+
+  it('applies new bindings at once and lets go of keys that are no longer bound', () => {
+    const input = new InputState();
+    input.setKey('ArrowLeft', true);
+
+    input.setBindings({ KeyJ: Input.Left });
+
+    expect(input.mask()).toBe(0);
+    input.setKey('KeyJ', true);
+    expect(input.mask()).toBe(Input.Left);
+  });
+
+  it('knows the default keys', () => {
+    const input = new InputState();
+
+    expect(input.isBound('Space')).toBe(true);
+    expect(input.isBound('KeyQ')).toBe(false);
+  });
 });

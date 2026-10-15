@@ -38,7 +38,7 @@ body {
   pointer-events: auto;
   width: 64px;
   height: 64px;
-  opacity: 0.6;
+  opacity: var(--touch-opacity, 0.6);
   border-radius: 50%;
   border: 3px solid var(--ti-ink);
   background: var(--ti-panel);
@@ -51,6 +51,22 @@ body {
 .touch-button:active {
   background: var(--ti-ink);
   color: var(--ti-paper);
+}
+
+body[data-touch-size='small'] .touch-button {
+  width: 52px;
+  height: 52px;
+  font-size: 24px;
+}
+
+body[data-touch-size='large'] .touch-button {
+  width: 80px;
+  height: 80px;
+  font-size: 36px;
+}
+
+body[data-touch-swapped='true'] .touch-controls {
+  flex-direction: row-reverse;
 }
 
 body:not([data-screen='game']) .touch-controls {
@@ -121,6 +137,48 @@ body:not([data-screen='game']) .touch-controls {
   background: var(--ti-ink);
   color: var(--ti-paper);
   outline: none;
+}
+
+.settings-group {
+  box-sizing: border-box;
+  width: min(560px, 100%);
+  min-width: 0;
+  accent-color: var(--ti-ink);
+  border: 2px solid var(--ti-ink);
+  padding: 12px 16px;
+  margin: 0 0 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.settings-group legend {
+  padding: 0 8px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.setting-label {
+  min-width: 8em;
+}
+
+.key-names {
+  flex: 1;
+  color: var(--ti-inkSoft);
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.button-small[aria-pressed='true'] {
+  background: var(--ti-ink);
+  color: var(--ti-paper);
 }
 
 .replay-close {
