@@ -50,6 +50,33 @@ class RunSubmission(Struct):
     level_revision: Version
 
 
+class ModerationNote(Struct):
+    reason: Annotated[str, Meta(max_length=200)] = ""
+
+
+class AdminRun(Struct):
+    id: int
+    user_id: int
+    username: str
+    level_id: str
+    score: int
+    frames: int
+    deaths: int
+    flags: list[str]
+    hidden: bool
+    sim_version: int
+    level_revision: int
+    submitted_at: datetime
+
+
+class AdminUser(Struct):
+    id: int
+    username: str
+    is_admin: bool
+    flagged: bool
+    created_at: datetime
+
+
 class RunResponse(Struct):
     frames: int
     deaths: int

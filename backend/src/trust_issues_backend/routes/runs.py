@@ -130,6 +130,7 @@ async def submit_run(
         .select_from(BestRun)
         .where(
             BestRun.level_id == data.level_id,
+            BestRun.hidden.is_(False),
             or_(
                 BestRun.score > best.score,
                 and_(BestRun.score == best.score, BestRun.frames < best.frames),

@@ -1,13 +1,23 @@
 import asyncio
 from dataclasses import replace
 from datetime import timedelta
+from pathlib import Path
 
 import pytest
 from litestar.testing import AsyncTestClient
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
-from tests.conftest import PASSWORD, RUN_VERSIONS, FakeClock, FakeVerifier, auth_headers
+from tests.conftest import (
+    PASSWORD,
+    RUN_VERSIONS,
+    TEST_DATABASE_URL,
+    FakeClock,
+    FakeVerifier,
+    auth_headers,
+    require_test_database,
+)
 from trust_issues_backend import audit
 from trust_issues_backend.app import create_app
 from trust_issues_backend.models import AuditEvent, Base
@@ -164,9 +174,13 @@ async def test_purges_only_events_older_than_the_retention(engine: AsyncEngine) 
 
 
 async def test_the_running_app_purges_expired_events_at_start_and_afterwards(
-    settings: Settings, verifier: FakeVerifier, engine: AsyncEngine, clock: FakeClock
+    settings: Settings, verifier: FakeVerifier, clock: FakeClock, tmp_path: Path
 ) -> None:
+    url = TEST_DATABASE_URL or f"sqlite+aiosqlite:///{tmp_path / 'purge.db'}"
+    require_test_database(url)
+    engine = create_async_engine(url, poolclass=NullPool)
     async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)
     factory = async_sessionmaker(engine)
 
@@ -176,7 +190,7 @@ async def test_the_running_app_purges_expired_events_at_start_and_afterwards(
             await session.commit()
 
     await add("ancient at start", timedelta(days=400))
-    fast = replace(settings, audit_purge_interval_seconds=0.05)
+    fast = replace(settings, database_url=url, audit_purge_interval_seconds=0.05)
     app = create_app(fast, verifier=verifier, engine=engine, clock=clock)
 
     async with AsyncTestClient(app=app):

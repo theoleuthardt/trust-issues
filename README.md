@@ -90,6 +90,7 @@ them with `?touch=0`.
 | [docs/ANTI_CHEAT.md](docs/ANTI_CHEAT.md)     | Threat model, the layers of defence, what is not covered  |
 | [docs/SCORING.md](docs/SCORING.md)           | How the score is computed and how the leaderboard ranks   |
 | [docs/VERSIONING.md](docs/VERSIONING.md)     | Simulation and level versions, changing physics or levels |
+| [docs/MODERATION.md](docs/MODERATION.md)     | Admins, hiding and deleting runs, flagging users          |
 | [docs/LEVELS.md](docs/LEVELS.md)             | Level format and how to add a level                       |
 | [docs/DESIGN.md](docs/DESIGN.md)             | Visual language and palette                               |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)     | Running it with Podman on a home lab                      |

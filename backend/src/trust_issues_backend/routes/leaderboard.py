@@ -24,7 +24,7 @@ async def leaderboard(
     rows = await session.execute(
         select(User.username, BestRun.score, BestRun.frames, BestRun.deaths)
         .join(User, User.id == BestRun.user_id)
-        .where(BestRun.level_id == level_id)
+        .where(BestRun.level_id == level_id, BestRun.hidden.is_(False))
         .order_by(BestRun.score.desc(), BestRun.frames, BestRun.submitted_at)
         .limit(limit)
     )

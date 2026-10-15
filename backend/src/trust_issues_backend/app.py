@@ -25,6 +25,15 @@ from trust_issues_backend.models import Base, User, utcnow
 from trust_issues_backend.observability import AccessLogMiddleware
 from trust_issues_backend.ratelimit import SlidingWindowLimiter
 from trust_issues_backend.routes.account import change_password, delete_account, logout_all
+from trust_issues_backend.routes.admin import (
+    delete_run,
+    flag_user,
+    hide_run,
+    list_runs,
+    list_users,
+    unflag_user,
+    unhide_run,
+)
 from trust_issues_backend.routes.auth import login, me, register
 from trust_issues_backend.routes.health import health
 from trust_issues_backend.routes.leaderboard import leaderboard, progress
@@ -123,6 +132,13 @@ def create_app(
             submit_run,
             leaderboard,
             progress,
+            list_runs,
+            list_users,
+            hide_run,
+            unhide_run,
+            delete_run,
+            flag_user,
+            unflag_user,
         ],
         dependencies={"session": Provide(provide_session)},
         state=State(

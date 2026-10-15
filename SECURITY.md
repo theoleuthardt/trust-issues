@@ -41,6 +41,13 @@ start with short or placeholder values.
 - The limits are kept in the memory of one backend process, which is how this deployment
   runs. Several processes would each count separately.
 
+## Moderation
+
+Admins are made on the server with `python -m trust_issues_backend.admin_cli grant <username>`
+and the flag is read from the database on every request. Hiding, deleting and flagging are
+recorded in the audit log with the moderator and the reason. See
+[docs/MODERATION.md](docs/MODERATION.md).
+
 ## Browser protection
 
 - The API answers every request, errors included, with `X-Content-Type-Options`,

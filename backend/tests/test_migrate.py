@@ -188,6 +188,46 @@ async def test_adopts_a_database_from_before_the_audit_log(tmp_path: Path) -> No
     assert await scalar(url, "SELECT count(*) FROM audit_events") == 0
 
 
+async def test_adopts_a_database_from_before_moderation_with_nobody_flagged(
+    tmp_path: Path,
+) -> None:
+    url = await fresh_url(tmp_path)
+    await asyncio.to_thread(command.upgrade, alembic_config(url), "0005")
+    engine = create_async_engine(url)
+    try:
+        async with engine.begin() as connection:
+            await connection.exec_driver_sql(
+                "INSERT INTO users (id, username, username_key, password_hash, token_version, "
+                "created_at, failed_logins) VALUES (1, 'Old', 'old', 'x', 0, CURRENT_TIMESTAMP, 0)"
+            )
+            await connection.exec_driver_sql("DROP TABLE alembic_version")
+    finally:
+        await engine.dispose()
+
+    await run_migrate(url)
+
+    assert await scalar(url, "SELECT version_num FROM alembic_version") == HEAD
+    assert not await scalar(url, "SELECT is_admin FROM users")
+    assert not await scalar(url, "SELECT flagged FROM users")
+
+
+async def test_refuses_a_database_with_half_of_the_moderation_columns(tmp_path: Path) -> None:
+    url = await fresh_url(tmp_path)
+    await asyncio.to_thread(command.upgrade, alembic_config(url), "0005")
+    engine = create_async_engine(url)
+    try:
+        async with engine.begin() as connection:
+            await connection.exec_driver_sql(
+                "ALTER TABLE users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT false"
+            )
+            await connection.exec_driver_sql("DROP TABLE alembic_version")
+    finally:
+        await engine.dispose()
+
+    with pytest.raises(OutdatedDatabaseError):
+        await run_migrate(url)
+
+
 async def test_refuses_a_database_with_a_partial_audit_table(tmp_path: Path) -> None:
     url = await fresh_url(tmp_path)
     await asyncio.to_thread(command.upgrade, alembic_config(url), "0004")
