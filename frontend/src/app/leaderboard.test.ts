@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { leaderboardRows } from './leaderboard';
 
 const ENTRIES = [
-  { rank: 1, username: 'alice', score: 1010, frames: 890, deaths: 0 },
-  { rank: 2, username: 'Bob', score: 940, frames: 960, deaths: 2 },
-  { rank: 3, username: 'carol', score: 900, frames: 1000, deaths: 5 },
+  { rank: 1, runId: 11, username: 'alice', score: 1010, frames: 890, deaths: 0 },
+  { rank: 2, runId: 12, username: 'Bob', score: 940, frames: 960, deaths: 2 },
+  { rank: 3, runId: 13, username: 'carol', score: 900, frames: 1000, deaths: 5 },
 ];
 
 describe('leaderboardRows', () => {
@@ -13,6 +13,7 @@ describe('leaderboardRows', () => {
 
     expect(rows[0]).toEqual({
       rank: '1',
+      runId: 11,
       username: 'alice',
       score: '1010',
       time: '0:14.83',

@@ -132,18 +132,55 @@ describe('ApiClient', () => {
 
   it('loads the leaderboard of a level without a token', async () => {
     const { fetchFn, calls } = fakeFetch(200, [
-      { rank: 1, username: 'alice', score: 1010, frames: 890, deaths: 0 },
-      { rank: 2, username: 'bob', score: 940, frames: 960, deaths: 2 },
+      { rank: 1, run_id: 11, username: 'alice', score: 1010, frames: 890, deaths: 0 },
+      { rank: 2, run_id: 12, username: 'bob', score: 940, frames: 960, deaths: 2 },
     ]);
     const client = new ApiClient(fetchFn, () => undefined);
 
     const rows = await client.leaderboard('trust-nothing', 20);
 
     expect(rows).toEqual([
-      { rank: 1, username: 'alice', score: 1010, frames: 890, deaths: 0 },
-      { rank: 2, username: 'bob', score: 940, frames: 960, deaths: 2 },
+      { rank: 1, runId: 11, username: 'alice', score: 1010, frames: 890, deaths: 0 },
+      { rank: 2, runId: 12, username: 'bob', score: 940, frames: 960, deaths: 2 },
     ]);
     expect(calls[0]?.url).toBe('/api/leaderboard/trust-nothing?limit=20');
+  });
+
+  it('loads the replay of a run without a token', async () => {
+    const { fetchFn, calls } = fakeFetch(200, {
+      run_id: 11,
+      level_id: 'trust-nothing',
+      username: 'alice',
+      score: 1010,
+      frames: 890,
+      deaths: 0,
+      replay: [2, 60],
+      sim_version: 1,
+      level_revision: 2,
+    });
+    const client = new ApiClient(fetchFn, () => undefined);
+
+    const replay = await client.replay(11);
+
+    expect(replay).toEqual({
+      runId: 11,
+      levelId: 'trust-nothing',
+      username: 'alice',
+      score: 1010,
+      frames: 890,
+      deaths: 0,
+      replay: [2, 60],
+      versions: { simVersion: 1, levelRevision: 2 },
+    });
+    expect(calls[0]?.url).toBe('/api/replays/11');
+    expect(new Headers(calls[0]?.init.headers).get('authorization')).toBeNull();
+  });
+
+  it('reports a run that cannot be watched', async () => {
+    const { fetchFn } = fakeFetch(404, { detail: 'unknown run' });
+    const client = new ApiClient(fetchFn, () => undefined);
+
+    await expect(client.replay(5)).rejects.toMatchObject({ status: 404 });
   });
 
   it('encodes the level id in the leaderboard path', async () => {

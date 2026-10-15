@@ -5,10 +5,13 @@ import type { AuthMode } from './api/credentials';
 import { validateCredentials } from './api/credentials';
 import { SessionStore } from './api/session';
 import { syncAccount } from './app/accountSync';
+import { ghostInputs } from './app/ghost';
+import { GhostPreference } from './app/ghostPreference';
 import { ProgressStore, accountKey, firstOpenIndex, levelCards } from './app/progress';
 import { finishAnnouncement, stageAnnouncement } from './app/announcement';
 import { escapeAction } from './app/escape';
 import { leaderboardRows } from './app/leaderboard';
+import { playableInputs } from './app/replayPlayback';
 import {
   accountScreen,
   authScreen,
@@ -23,6 +26,7 @@ import { RunSubmitter } from './app/submitter';
 import type { StorageLike } from './app/storage';
 import { GameScene, SCENE_KEY } from './game/GameScene';
 import type { RunFinishedEvent } from './game/GameScene';
+import { formatTime } from './format';
 import { startIndex } from './game/progress';
 import { InputState } from './input/InputState';
 import './style.css';
@@ -34,7 +38,8 @@ const LEVEL_WIDTH_TILES = 32;
 const LEVEL_HEIGHT_TILES = 18;
 const TILE_PX = 32;
 
-type Screen = 'title' | 'auth' | 'menu' | 'levels' | 'board' | 'account' | 'pause' | 'game';
+type Screen =
+  'title' | 'auth' | 'menu' | 'levels' | 'board' | 'account' | 'pause' | 'game' | 'replay';
 
 applyPaletteToCss(document.documentElement);
 
@@ -48,6 +53,7 @@ const storage = browserStorage();
 const guestStore = new ProgressStore(storage);
 const accountStores = new Map<string, ProgressStore>();
 const sessions = new SessionStore(storage);
+const ghostPreference = new GhostPreference(storage);
 const api = new ApiClient(
   (...args) => window.fetch(...args),
   () => sessions.current()?.token,
@@ -71,6 +77,7 @@ window.addEventListener('keydown', (event) => {
     const action = escapeAction(document.body.dataset.screen, event.repeat);
     if (action === 'pause') pauseGame();
     if (action === 'resume') resumeGame();
+    if (action === 'close') closeReplay();
     return;
   }
   if (document.body.dataset.screen !== 'game' || !InputState.isBound(event.code)) return;
@@ -302,7 +309,19 @@ function showLeaderboard(index: number, back: () => void = showLeaderboardPicker
     .then((entries) => {
       if (navigation !== requested) return;
       const rows = leaderboardRows(entries, sessions.current()?.username);
-      show('board', leaderboardScreen({ title, state: { kind: 'ready', rows }, onBack: back }));
+      const render = (notice?: string): void => {
+        show(
+          'board',
+          leaderboardScreen({
+            title,
+            state: { kind: 'ready', rows },
+            onBack: back,
+            onWatch: (runId) => watchRun(runId, render, () => showLeaderboard(index, back)),
+            ...(notice ? { notice } : {}),
+          }),
+        );
+      };
+      render();
     })
     .catch((error: unknown) => {
       if (navigation !== requested) return;
@@ -310,6 +329,72 @@ function showLeaderboard(index: number, back: () => void = showLeaderboardPicker
       show('board', leaderboardScreen({ title, state: { kind: 'error', message }, onBack: back }));
     });
 }
+
+/** Loads a stored run and plays it back; a run that cannot be shown is reported on the board. */
+function watchRun(runId: number, report: (notice: string) => void, back: () => void): void {
+  const requested = navigation;
+  api
+    .replay(runId)
+    .then((stored) => {
+      if (navigation !== requested) return;
+      const index = LEVELS.findIndex((level) => level.id === stored.levelId);
+      const level = LEVELS[index];
+      if (!level) {
+        report('This level is not part of this version of the game.');
+        return;
+      }
+      const playable = playableInputs(level, stored.replay, stored.versions);
+      if (!playable.ok) {
+        report(playable.reason);
+        return;
+      }
+      startReplay(
+        index,
+        playable.inputs,
+        `${stored.username} · ${formatTime(stored.frames)}`,
+        back,
+      );
+    })
+    .catch((error: unknown) => {
+      if (navigation !== requested) return;
+      report(error instanceof ApiError ? error.message : 'Something went wrong.');
+    });
+}
+
+let leaveReplay: (() => void) | undefined;
+
+function startReplay(
+  index: number,
+  inputs: readonly number[],
+  caption: string,
+  back: () => void,
+): void {
+  setScreen('replay');
+  if (ui) {
+    ui.hidden = true;
+    ui.replaceChildren();
+  }
+  leaveReplay = back;
+  game ??= createGame();
+  game.scene.start(SCENE_KEY, {
+    levels: LEVELS,
+    startIndex: index,
+    input,
+    replay: { inputs, caption },
+    onReplayFinished: () => announce('Replay finished'),
+  });
+}
+
+function closeReplay(): void {
+  if (document.body.dataset.screen !== 'replay') return;
+  input.reset();
+  game?.scene.stop(SCENE_KEY);
+  const back = leaveReplay ?? showLevels;
+  leaveReplay = undefined;
+  back();
+}
+
+document.querySelector('.replay-close')?.addEventListener('click', closeReplay);
 
 function startLevel(index: number): void {
   setScreen('game');
@@ -338,6 +423,15 @@ function startLevel(index: number): void {
       void submitter.send(event);
     },
     onRetrySubmit: () => submitter.retry(),
+    ghostFor: (levelId: string) => {
+      const level = LEVELS.find((candidate) => candidate.id === levelId);
+      return level ? ghostInputs(currentStore().load()[levelId], level) : undefined;
+    },
+    ghostEnabled: ghostPreference.enabled(),
+    onGhostToggled: (on: boolean) => {
+      ghostPreference.set(on);
+      announce(on ? 'Ghost on' : 'Ghost off');
+    },
     onShowLeaderboard: (levelId: string) => {
       const index = LEVELS.findIndex((level) => level.id === levelId);
       input.reset();

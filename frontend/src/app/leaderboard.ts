@@ -3,6 +3,7 @@ import { formatTime } from '../format';
 
 export interface LeaderboardRow {
   rank: string;
+  runId: number;
   username: string;
   score: string;
   time: string;
@@ -18,6 +19,7 @@ export function leaderboardRows(
   const name = you?.trim().toLowerCase();
   return entries.map((entry) => ({
     rank: String(entry.rank),
+    runId: entry.runId,
     username: entry.username,
     score: String(entry.score),
     time: formatTime(entry.frames),

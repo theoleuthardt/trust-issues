@@ -8,6 +8,8 @@ levels, more of them.
 - **Accounts and progress.** Sign up, keep your completed levels across devices.
 - **Leaderboards you can trust.** Times are not reported by the client. The server replays
   your recorded inputs through the same deterministic simulation and derives the time itself.
+- **Watch the best runs.** Every leaderboard entry has a Watch button that plays the stored
+  run back in the game, with speed control. A ghost of your own best run can race you.
 
 > Status: playable. Twenty levels with three or four stages each, a deterministic simulation,
 > accounts, verified runs and a leaderboard API exist; a title screen, sign-in and registration,
@@ -68,15 +70,19 @@ the Vite proxy.
 
 ## Controls
 
-| Action      | Keyboard                  | Touch               |
-| ----------- | ------------------------- | ------------------- |
-| Move        | `←` `→` or `A` `D`        | on-screen arrows    |
-| Jump        | `Space`, `↑` or `W`       | on-screen jump      |
-| Restart run | `R`                       | tap after finishing |
-| Pause menu  | `Esc`                     | Menu button         |
-| Leaderboard | `L` on the finish screen  | -                   |
-| Send again  | `S` (after a failed send) | -                   |
-| Next level  | `Enter`                   | tap after finishing |
+| Action       | Keyboard                  | Touch               |
+| ------------ | ------------------------- | ------------------- |
+| Move         | `←` `→` or `A` `D`        | on-screen arrows    |
+| Jump         | `Space`, `↑` or `W`       | on-screen jump      |
+| Restart run  | `R`                       | tap after finishing |
+| Pause menu   | `Esc`                     | Menu button         |
+| Leaderboard  | `L` on the finish screen  | -                   |
+| Send again   | `S` (after a failed send) | -                   |
+| Next level   | `Enter`                   | tap after finishing |
+| Ghost on/off | `G`                       | -                   |
+| Replay speed | `1`-`5` (0.25x to 4x)     | -                   |
+| Replay pause | `Space`                   | -                   |
+| Close replay | `Esc`                     | Close replay button |
 
 `?level=<id>` starts a level directly (handy for testing, it ignores the unlock order).
 Touch controls show up on touch devices automatically; force them with `?touch=1` or hide

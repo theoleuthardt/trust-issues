@@ -208,6 +208,27 @@ export interface LeaderboardScreenOptions {
   title: string;
   state: LeaderboardState;
   onBack: () => void;
+  /** Opens the replay of the run with this id. */
+  onWatch?: (runId: number) => void;
+  /** A problem with the last replay the player tried to open. */
+  notice?: string;
+}
+
+function alertLine(text: string): HTMLElement {
+  const line = h('p', { class: 'form-error', text });
+  line.setAttribute('role', 'alert');
+  return line;
+}
+
+function watchButton(row: LeaderboardRow, onWatch: ((runId: number) => void) | undefined): Node {
+  const watch = h('button', {
+    class: 'button button-small',
+    type: 'button',
+    text: 'Watch',
+    onClick: () => onWatch?.(row.runId),
+  });
+  watch.setAttribute('aria-label', `Watch the run of ${row.username}`);
+  return watch;
 }
 
 export function leaderboardScreen(options: LeaderboardScreenOptions): HTMLElement {
@@ -224,7 +245,7 @@ export function leaderboardScreen(options: LeaderboardScreenOptions): HTMLElemen
     const head = h(
       'tr',
       {},
-      ...['#', 'Player', 'Score', 'Time', 'Deaths'].map((label) => h('th', { text: label })),
+      ...['#', 'Player', 'Score', 'Time', 'Deaths', ''].map((label) => h('th', { text: label })),
     );
     const body = state.rows.map((row) =>
       h(
@@ -235,6 +256,7 @@ export function leaderboardScreen(options: LeaderboardScreenOptions): HTMLElemen
         h('td', { text: row.score }),
         h('td', { text: row.time }),
         h('td', { text: row.deaths }),
+        h('td', {}, watchButton(row, options.onWatch)),
       ),
     );
     content = h(
@@ -247,6 +269,7 @@ export function leaderboardScreen(options: LeaderboardScreenOptions): HTMLElemen
     'section',
     { class: 'screen screen-board' },
     h('h2', { class: 'heading', text: `Leaderboard · ${options.title}` }),
+    ...(options.notice ? [alertLine(options.notice)] : []),
     content,
     h('div', { class: 'stack' }, button('Back', options.onBack)),
   );

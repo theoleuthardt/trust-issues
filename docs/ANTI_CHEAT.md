@@ -74,14 +74,16 @@ Verification proves that the inputs are **possible in the game**, not that a hum
 them. These remain open:
 
 - **Tool-assisted runs and bots.** A script that sends perfect inputs produces a valid
-  replay. The mitigations are social and statistical: store replays (we do), add a replay
-  viewer so anyone can inspect the top runs, flag runs with inhuman input patterns, allow
-  removing entries.
+  replay. The mitigations are social and statistical: store replays and let anyone watch
+  them (we do), flag runs with inhuman input patterns (we do), allow removing entries (we do,
+  see [MODERATION.md](MODERATION.md)).
 - **Account sharing and multiple accounts.**
 - **A stolen token** until it expires or is revoked through `token_version`.
 
-## Planned hardening
+## Replays are public
 
-Tracked on the board as part of the anti-cheat epic:
-
-- Replay viewer for moderators and players.
+`GET /api/replays/{run_id}` returns the stored replay of a run that is on the leaderboard,
+without authentication; a hidden run answers 404. The game's replay viewer plays it back through
+the same simulation, so anyone can check that a time looks like a person made it. A replay is
+only played with the simulation version and level revision it was recorded with, otherwise the
+viewer says so instead of showing something else. Downloads are limited per client address.
