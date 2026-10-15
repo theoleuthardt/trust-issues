@@ -72,6 +72,44 @@ test('a game chunk that cannot be fetched is reported and can be fetched again',
   await expect(page.locator('canvas')).toBeVisible();
 });
 
+test('the menus work with the keyboard alone', async ({ page }) => {
+  await page.goto('/');
+
+  await page.keyboard.press('Enter');
+  await expect(page.locator('body')).toHaveAttribute('data-screen', 'menu');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('body')).toHaveAttribute('data-screen', 'levels');
+  await page.keyboard.press('Enter');
+
+  await expect(page.locator('body')).toHaveAttribute('data-screen', 'game');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.screen-pause')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeFocused();
+});
+
+test('a focused menu button looks different from the same button when it is not focused', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Play as guest' }).click();
+  const levels = page.getByRole('button', { name: 'Levels' });
+  const look = () =>
+    levels.evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return `${style.backgroundColor}|${style.color}`;
+    });
+
+  await page.keyboard.press('Tab');
+  await expect(levels).toBeFocused();
+  const focused = await look();
+  await page.keyboard.press('Tab');
+  await expect(levels).not.toBeFocused();
+  const idle = await look();
+
+  expect(focused).not.toBe(idle);
+});
+
 test('running into a trap again and again keeps the game running', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));

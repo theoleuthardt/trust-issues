@@ -26,5 +26,7 @@ export function createGame(): Phaser.Game {
     scene: [],
   });
   created.scene.add(SCENE_KEY, GameScene, false);
+  created.canvas.setAttribute('role', 'img');
+  created.canvas.setAttribute('aria-label', 'The game. Progress is announced as text.');
   return created;
 }
