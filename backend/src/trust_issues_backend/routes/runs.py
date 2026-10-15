@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from trust_issues_backend.models import BestRun, User, utcnow
+from trust_issues_backend.observability import request_id_for
 from trust_issues_backend.schemas import RunResponse, RunSubmission
 from trust_issues_backend.verifier import (
     InvalidReplayError,
@@ -63,7 +64,9 @@ async def submit_run(
             headers={"Retry-After": str(wait)},
         )
     try:
-        run = await state.verifier.verify(data.level_id, data.replay)
+        run = await state.verifier.verify(
+            data.level_id, data.replay, request_id=request_id_for(request.scope)
+        )
     except UnknownLevelError as error:
         raise NotFoundException(detail="unknown level") from error
     except InvalidReplayError as error:

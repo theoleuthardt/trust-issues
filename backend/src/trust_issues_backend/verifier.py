@@ -31,7 +31,9 @@ class VerifierUnavailableError(VerifierError):
 
 
 class Verifier(Protocol):
-    async def verify(self, level_id: str, replay: list[int]) -> VerifiedRun: ...
+    async def verify(
+        self, level_id: str, replay: list[int], request_id: str | None = None
+    ) -> VerifiedRun: ...
 
 
 class HttpVerifier:
@@ -40,10 +42,13 @@ class HttpVerifier:
     def __init__(self, client: httpx.AsyncClient) -> None:
         self._client = client
 
-    async def verify(self, level_id: str, replay: list[int]) -> VerifiedRun:
+    async def verify(
+        self, level_id: str, replay: list[int], request_id: str | None = None
+    ) -> VerifiedRun:
+        headers = {"x-request-id": request_id} if request_id else None
         try:
             response = await self._client.post(
-                "/verify", json={"levelId": level_id, "replay": replay}
+                "/verify", json={"levelId": level_id, "replay": replay}, headers=headers
             )
         except httpx.HTTPError as error:
             raise VerifierUnavailableError(str(error)) from error

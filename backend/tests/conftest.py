@@ -36,10 +36,14 @@ class FakeVerifier:
         default_factory=lambda: VerifiedRun(finished=True, frames=300, deaths=0, score=1000)
     )
     calls: list[tuple[str, list[int]]] = field(default_factory=list)
+    request_ids: list[str | None] = field(default_factory=list)
     compute: Callable[[str, list[int]], VerifiedRun] | None = None
 
-    async def verify(self, level_id: str, replay: list[int]) -> VerifiedRun:
+    async def verify(
+        self, level_id: str, replay: list[int], request_id: str | None = None
+    ) -> VerifiedRun:
         self.calls.append((level_id, replay))
+        self.request_ids.append(request_id)
         if self.compute is not None:
             return self.compute(level_id, replay)
         if isinstance(self.next, Exception):

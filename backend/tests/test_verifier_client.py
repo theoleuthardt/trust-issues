@@ -71,3 +71,15 @@ async def test_maps_garbage_responses_to_unavailable() -> None:
 
     with pytest.raises(VerifierUnavailableError):
         await verifier.verify("trust-nothing", [])
+
+
+async def test_forwards_the_request_id() -> None:
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, json={"finished": True, "frames": 1, "deaths": 0, "score": 1})
+
+    await make(handler).verify("trust-nothing", [2, 1], request_id="trace-abcdef12")
+
+    assert seen[0].headers["x-request-id"] == "trace-abcdef12"
