@@ -166,6 +166,7 @@ def create_app(
                 "run_limiter": SlidingWindowLimiter(RUN_SUBMISSIONS_PER_MINUTE, 60),
                 "replay_limiter": SlidingWindowLimiter(REPLAY_DOWNLOADS_PER_MINUTE, 60),
                 "level_cache": None,
+                "level_lock": asyncio.Lock(),
             }
         ),
         request_max_body_size=MAX_REQUEST_BODY_BYTES,

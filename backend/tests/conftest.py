@@ -1,3 +1,4 @@
+import asyncio
 import os
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass, field
@@ -43,9 +44,12 @@ class FakeVerifier:
     levels_list: list[str] = field(default_factory=lambda: ["trust-nothing"])
     levels_error: Exception | None = None
     level_calls: int = 0
+    levels_delay: float = 0.0
 
     async def levels(self) -> list[str]:
         self.level_calls += 1
+        if self.levels_delay:
+            await asyncio.sleep(self.levels_delay)
         if self.levels_error is not None:
             raise self.levels_error
         return list(self.levels_list)

@@ -24,12 +24,17 @@ async def current_levels(state: State) -> list[str]:
     cached = state.level_cache
     if cached is not None and now - cached[0] < LEVEL_LIST_TTL:
         return cached[1]
-    try:
-        levels = await state.verifier.levels()
-    except VerifierUnavailableError as error:
-        raise ServiceUnavailableException(detail="the level list is unavailable") from error
-    state.level_cache = (now, levels)
-    return levels
+    async with state.level_lock:
+        now = state.clock()
+        cached = state.level_cache
+        if cached is not None and now - cached[0] < LEVEL_LIST_TTL:
+            return cached[1]
+        try:
+            levels = await state.verifier.levels()
+        except VerifierUnavailableError as error:
+            raise ServiceUnavailableException(detail="the level list is unavailable") from error
+        state.level_cache = (now, levels)
+        return levels
 
 
 @get("/api/ranking")

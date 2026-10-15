@@ -1,3 +1,5 @@
+import asyncio
+
 from litestar.testing import AsyncTestClient
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
@@ -146,3 +148,15 @@ async def test_answers_503_when_the_levels_cannot_be_fetched(
     response = await client.get(RANKING)
 
     assert response.status_code == 503
+
+
+async def test_concurrent_requests_share_one_level_list_refresh(
+    client: AsyncTestClient, verifier: FakeVerifier
+) -> None:
+    verifier.levels_list = ["trust-nothing"]
+    verifier.levels_delay = 0.05
+
+    responses = await asyncio.gather(*(client.get(RANKING) for _ in range(6)))
+
+    assert [response.status_code for response in responses] == [200] * 6
+    assert verifier.level_calls == 1
