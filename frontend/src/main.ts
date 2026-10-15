@@ -6,6 +6,7 @@ import { validateCredentials } from './api/credentials';
 import { SessionStore } from './api/session';
 import { syncAccount } from './app/accountSync';
 import { ProgressStore, accountKey, firstOpenIndex, levelCards } from './app/progress';
+import { escapeAction } from './app/escape';
 import { leaderboardRows } from './app/leaderboard';
 import {
   accountScreen,
@@ -61,8 +62,9 @@ const setScreen = (screen: Screen) => {
 
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Escape') {
-    if (document.body.dataset.screen === 'pause') resumeGame();
-    else pauseGame();
+    const action = escapeAction(document.body.dataset.screen, event.repeat);
+    if (action === 'pause') pauseGame();
+    if (action === 'resume') resumeGame();
     return;
   }
   if (document.body.dataset.screen !== 'game' || !InputState.isBound(event.code)) return;
