@@ -15,16 +15,18 @@ Requirements: Node 22.12+, uv, go-task. Podman is only needed for the full stack
 
 ## Repository layout
 
-| Path                             | Contents                                                   |
-| -------------------------------- | ---------------------------------------------------------- |
-| `packages/sim`                   | Deterministic game simulation, levels, replay format       |
-| `frontend`                       | Phaser game, input, touch controls                         |
-| `verifier`                       | Node service that replays submitted runs                   |
-| `backend`                        | Litestar API with accounts, runs and leaderboard           |
-| `e2e`                            | Playwright tests that play the built game in a browser     |
-| `docs`                           | Architecture, anti-cheat, levels, design, deployment, ADRs |
-| `scripts`                        | Smoke test and board helper                                |
-| `*/Containerfile`, `compose.yml` | Image definitions per service and the Podman compose stack |
+| Path                             | Contents                                                    |
+| -------------------------------- | ----------------------------------------------------------- |
+| `packages/sim`                   | Deterministic game simulation, levels, replay format        |
+| `frontend`                       | Phaser game, input, touch controls                          |
+| `verifier`                       | Node service that replays submitted runs                    |
+| `backend`                        | Litestar API with accounts, runs and leaderboard            |
+| `e2e`                            | Playwright tests that play the built game in a browser      |
+| `docs`                           | Architecture, anti-cheat, versioning, moderation, ops, ADRs |
+| `scripts`                        | Smoke test, board helper, backup, health and release tools  |
+| `deploy`                         | systemd units for the host (backup timer)                   |
+| `*/Containerfile`, `compose.yml` | Image definitions per service and the Podman compose stack  |
+| `compose.prod.yml`               | The same stack from published images                        |
 
 ## Running the backend tests on PostgreSQL
 

@@ -12,8 +12,11 @@ deterministic simulation in `packages/sim`, a Node replay verifier in `verifier/
 Python/Litestar backend in `backend/`, deployed with Podman compose on a home lab LXC.
 
 Read before changing related code: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
-[docs/ANTI_CHEAT.md](docs/ANTI_CHEAT.md), [docs/LEVELS.md](docs/LEVELS.md),
-[docs/DESIGN.md](docs/DESIGN.md), [docs/WORKFLOW.md](docs/WORKFLOW.md).
+[docs/ANTI_CHEAT.md](docs/ANTI_CHEAT.md), [docs/VERSIONING.md](docs/VERSIONING.md),
+[docs/LEVELS.md](docs/LEVELS.md), [docs/SCORING.md](docs/SCORING.md),
+[docs/DESIGN.md](docs/DESIGN.md), [docs/MODERATION.md](docs/MODERATION.md),
+[docs/OPERATIONS.md](docs/OPERATIONS.md), [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md),
+[docs/WORKFLOW.md](docs/WORKFLOW.md).
 
 ## Commands
 
@@ -30,6 +33,9 @@ task check         # lint + format check + typecheck + tests, what CI runs
 task format        # prettier + ruff format
 task smoke         # real verifier + backend (SQLite), submits a winning replay
 task up / down     # whole stack via podman compose
+task api:generate  # dump the OpenAPI schema, regenerate the typed frontend client
+task levels:preview -- <id> [--solve]   # a level as text, optionally with a solver run
+task levels:solve [-- <id>]             # par times and reference solutions
 ```
 
 Single suites: `npm test --workspace @trust-issues/sim`, `cd backend && uv run pytest tests/test_runs.py`.
@@ -45,7 +51,14 @@ Single suites: `npm test --workspace @trust-issues/sim`, `cd backend && uv run p
 - **The API client is generated.** After changing a route or a schema of the backend run
   `task api:generate` and commit `frontend/src/api/openapi.json` and `schema.d.ts`; CI
   compares them with what the backend produces. Never hand-write request or response types.
-- **Levels are server-owned.** Submissions carry only a level id.
+- **Levels are server-owned.** Submissions carry only a level id and the versions the
+  replay was recorded with.
+- **Platforms, zones and timed traps are additive.** New optional fields and kinds that no
+  existing level uses need no `SIM_VERSION` bump; changing how an existing one behaves does.
+  Platforms run on `stageTick`, not on the global tick.
+- **Run Prettier from the repository root** (`npx prettier --write <paths>`). From a
+  subdirectory the root `.prettierignore` is not found and the generated API client is
+  reformatted, which fails CI.
 - **Every level needs a reference solution** in `packages/sim/src/testing.ts`.
 - **One input path.** Keyboard and touch both feed `InputState`; the scene only reads
   `InputState.mask()`.
@@ -77,8 +90,14 @@ desired behaviour itself changed, and say so explicitly. Never edit a test to ge
 green.
 
 Browser tests (`task e2e`, Playwright in `e2e/`) build the game and play the recorded
-reference solutions through it with a fake frame clock (six levels by default, all of them with
-`E2E_ALL_LEVELS=1`); `npx playwright install chromium` once per machine.
+reference solutions through it with a fake frame clock (a sample of levels by default, all of
+them with `E2E_ALL_LEVELS=1`), and cover the menus, settings, replay viewer, profiles, sound
+and the phone layout; `npx playwright install chromium` once per machine. The game chunk is
+loaded lazily, so tests open levels with `openLevel` from `e2e/support/clock.ts`, which waits
+for the scene and restarts the run (platform levels depend on the exact tick).
+
+Shell scripts (`scripts/backup-db.sh`, `restore-test.sh`, `check-health.sh`,
+`release-notes.sh`) have stand-in based tests next to them (`scripts/test-*.sh`) that CI runs.
 
 Backend tests use SQLite in memory with a fake verifier (see `backend/tests/conftest.py`);
 with `TEST_DATABASE_URL=postgresql+asyncpg://...` set they run against a real PostgreSQL
