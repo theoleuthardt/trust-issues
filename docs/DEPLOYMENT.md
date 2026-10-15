@@ -59,15 +59,16 @@ the same origin) as a second layer that does not depend on the proxy.
 
 ## Configuration
 
-| Variable            | Used by           | Meaning                                                                                                                                                  |
-| ------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POSTGRES_PASSWORD` | db, backend       | Database password                                                                                                                                        |
-| `JWT_SECRET`        | backend           | Signs access tokens; 32+ random characters                                                                                                               |
-| `VERIFIER_TOKEN`    | backend, verifier | Shared secret for the internal verify call; 32+ random characters                                                                                        |
-| `WEB_PORT`          | frontend          | Loopback host port, default `8080`                                                                                                                       |
-| `API_PORT`          | backend           | Loopback host port, default `8000`                                                                                                                       |
-| `ENABLE_DOCS`       | backend           | `true` serves the OpenAPI schema at `/schema`                                                                                                            |
-| `TRUSTED_PROXY_IPS` | backend           | Comma separated addresses or networks of your reverse proxy or tunnel; only these may set the client address via `CF-Connecting-IP` or `X-Forwarded-For` |
+| Variable               | Used by           | Meaning                                                                                                                                                  |
+| ---------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POSTGRES_PASSWORD`    | db, backend       | Database password                                                                                                                                        |
+| `JWT_SECRET`           | backend           | Signs access tokens; 32+ random characters                                                                                                               |
+| `VERIFIER_TOKEN`       | backend, verifier | Shared secret for the internal verify call; 32+ random characters                                                                                        |
+| `WEB_PORT`             | frontend          | Loopback host port, default `8080`                                                                                                                       |
+| `API_PORT`             | backend           | Loopback host port, default `8000`                                                                                                                       |
+| `ENABLE_DOCS`          | backend           | `true` serves the OpenAPI schema at `/schema`                                                                                                            |
+| `TRUSTED_PROXY_IPS`    | backend           | Comma separated addresses or networks of your reverse proxy or tunnel; only these may set the client address via `CF-Connecting-IP` or `X-Forwarded-For` |
+| `AUDIT_RETENTION_DAYS` | backend           | How long audit events (rejected submissions) are kept, 1 to 3650, default `90`; older ones are deleted at start and then hourly                          |
 
 The backend and the verifier exit at startup when a secret is missing, shorter than 32
 characters or contains `change-me`/`example`/`placeholder`.

@@ -1,5 +1,6 @@
 """Application factory."""
 
+import asyncio
 from collections.abc import AsyncGenerator, Callable
 from datetime import datetime, timedelta
 
@@ -19,6 +20,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from trust_issues_backend import audit
 from trust_issues_backend.models import Base, User, utcnow
 from trust_issues_backend.observability import AccessLogMiddleware
 from trust_issues_backend.ratelimit import SlidingWindowLimiter
@@ -86,12 +88,25 @@ def create_app(
         async with session_factory() as session:
             yield session
 
+    purge_task: asyncio.Task[None] | None = None
+
     async def on_startup(_: Litestar) -> None:
+        nonlocal purge_task
         if create_schema:
             async with engine.begin() as connection:
                 await connection.run_sync(Base.metadata.create_all)
+        retention = timedelta(days=settings.audit_retention_days)
+        await audit.enforce_retention(session_factory, retention, clock)
+        purge_task = asyncio.create_task(
+            audit.purge_forever(
+                session_factory, retention, settings.audit_purge_interval_seconds, clock
+            )
+        )
 
     async def on_shutdown(_: Litestar) -> None:
+        if purge_task is not None:
+            purge_task.cancel()
+            await asyncio.gather(purge_task, return_exceptions=True)
         await engine.dispose()
         if http_client is not None:
             await http_client.aclose()

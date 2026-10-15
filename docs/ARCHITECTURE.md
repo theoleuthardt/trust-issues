@@ -54,10 +54,11 @@ verification cheap and drift-free (see [ADR 0002](adr/0002-node-verifier-reusing
 
 ## Data model
 
-| Table       | Columns                                                                                                                                    | Notes                                                                                                               |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| `users`     | `id`, `username`, `username_key` (unique, lower case), `password_hash` (argon2), `token_version`, `created_at`                             | `token_version` is embedded in JWTs and allows revoking all tokens of a user.                                       |
-| `best_runs` | `id`, `user_id`, `level_id`, `score`, `frames`, `deaths`, `replay` (JSON), `sim_version`, `level_revision`, `flags` (JSON), `submitted_at` | Unique per `(user_id, level_id)`. A row doubles as the completion record, so progress is derived, not stored twice. |
+| Table          | Columns                                                                                                                                    | Notes                                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `users`        | `id`, `username`, `username_key` (unique, lower case), `password_hash` (argon2), `token_version`, `created_at`                             | `token_version` is embedded in JWTs and allows revoking all tokens of a user.                                       |
+| `best_runs`    | `id`, `user_id`, `level_id`, `score`, `frames`, `deaths`, `replay` (JSON), `sim_version`, `level_revision`, `flags` (JSON), `submitted_at` | Unique per `(user_id, level_id)`. A row doubles as the completion record, so progress is derived, not stored twice. |
+| `audit_events` | `id`, `created_at`, `kind`, `user_id` (nullable), `level_id`, `reason`, `replay_size`, `request_id`                                        | One row per refused submission. No replay and no credentials; purged after `AUDIT_RETENTION_DAYS`.                  |
 
 The schema is owned by Alembic migrations (`backend/alembic`). The backend container runs
 `python -m trust_issues_backend.migrate` before the server starts: it waits for the database,

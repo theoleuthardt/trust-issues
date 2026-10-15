@@ -172,6 +172,37 @@ async def test_adopts_a_database_from_the_versions_era_and_gives_old_runs_no_fla
     assert str(await scalar(url, "SELECT flags FROM best_runs")).replace(" ", "") == "[]"
 
 
+async def test_adopts_a_database_from_before_the_audit_log(tmp_path: Path) -> None:
+    url = await fresh_url(tmp_path)
+    await asyncio.to_thread(command.upgrade, alembic_config(url), "0004")
+    engine = create_async_engine(url)
+    try:
+        async with engine.begin() as connection:
+            await connection.exec_driver_sql("DROP TABLE alembic_version")
+    finally:
+        await engine.dispose()
+
+    await run_migrate(url)
+
+    assert await scalar(url, "SELECT version_num FROM alembic_version") == HEAD
+    assert await scalar(url, "SELECT count(*) FROM audit_events") == 0
+
+
+async def test_refuses_a_database_with_a_partial_audit_table(tmp_path: Path) -> None:
+    url = await fresh_url(tmp_path)
+    await asyncio.to_thread(command.upgrade, alembic_config(url), "0004")
+    engine = create_async_engine(url)
+    try:
+        async with engine.begin() as connection:
+            await connection.exec_driver_sql("CREATE TABLE audit_events (id INTEGER PRIMARY KEY)")
+            await connection.exec_driver_sql("DROP TABLE alembic_version")
+    finally:
+        await engine.dispose()
+
+    with pytest.raises(OutdatedDatabaseError):
+        await run_migrate(url)
+
+
 async def test_refuses_a_database_with_flags_but_without_the_versions(tmp_path: Path) -> None:
     url = await fresh_url(tmp_path)
     await asyncio.to_thread(command.upgrade, alembic_config(url), "0002")
