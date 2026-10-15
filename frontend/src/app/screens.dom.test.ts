@@ -159,6 +159,7 @@ describe('mainMenu', () => {
       onContinue: noop,
       onLevels,
       onLeaderboards: noop,
+      onSettings: noop,
       onBack: noop,
     });
 

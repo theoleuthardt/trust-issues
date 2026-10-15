@@ -61,6 +61,8 @@ export interface GameSceneData {
   ghostFor?: (levelId: string) => number[] | undefined;
   ghostEnabled?: boolean;
   onGhostToggled?: (on: boolean) => void;
+  /** Read live: when true, render-only motion (particles, pops, pulses, tweens) is skipped. */
+  reducedMotion?: () => boolean;
 }
 
 const HEAD_WIDTH = 8;
@@ -114,6 +116,7 @@ export class GameScene extends Phaser.Scene {
   private ghostFor: ((levelId: string) => number[] | undefined) | undefined;
   private ghostOn = false;
   private onGhostToggled: ((on: boolean) => void) | undefined;
+  private reducedMotion: (() => boolean) | undefined;
   private ghostInputs: number[] | undefined;
   private ghost: { state: GameState; index: number; facing: 1 | -1; phase: number } | undefined;
   private world!: Phaser.GameObjects.Graphics;
@@ -129,6 +132,10 @@ export class GameScene extends Phaser.Scene {
 
   constructor() {
     super(SCENE_KEY);
+  }
+
+  private get calm(): boolean {
+    return this.reducedMotion?.() ?? false;
   }
 
   private get stage(): Stage {
@@ -151,6 +158,7 @@ export class GameScene extends Phaser.Scene {
     this.ghostFor = data.replay ? undefined : data.ghostFor;
     this.ghostOn = data.ghostEnabled ?? false;
     this.onGhostToggled = data.onGhostToggled;
+    this.reducedMotion = data.reducedMotion;
     this.stepper = new FixedStepper(
       1000 / TICKS_PER_SECOND,
       data.replay ? MAX_TICKS_PER_FRAME * Math.max(...SPEEDS) : MAX_TICKS_PER_FRAME,
@@ -286,7 +294,7 @@ export class GameScene extends Phaser.Scene {
     this.tweens.add({
       targets: label,
       alpha: 0,
-      y: 78,
+      ...(this.calm ? {} : { y: 78 }),
       duration: 900,
       ease: 'Quad.easeIn',
       onComplete: () => label.destroy(),
@@ -471,11 +479,13 @@ export class GameScene extends Phaser.Scene {
         x: this.lastPosition.x + PLAYER_WIDTH / 2,
         y: this.lastPosition.y + PLAYER_HEIGHT / 2,
       };
-      for (const particle of burst(origin, DEATH_PARTICLES)) {
-        this.particles.push({ particle, bornAt: now });
+      if (!this.calm) {
+        for (const particle of burst(origin, DEATH_PARTICLES)) {
+          this.particles.push({ particle, bornAt: now });
+        }
       }
       this.tileEffects.clear();
-    } else if (this.previousTiles) {
+    } else if (this.previousTiles && !this.calm) {
       for (const change of tileChanges(this.previousTiles, this.state.tiles)) {
         if (change.to === Tile.Spike) {
           this.tileEffects.set(change.index, { kind: 'pop', bornAt: now });
@@ -547,7 +557,7 @@ export class GameScene extends Phaser.Scene {
     const x = this.stage.exit.x * TILE_SIZE + TILE_SIZE / 2;
     const y = this.stage.exit.y * TILE_SIZE + TILE_SIZE / 2;
     g.fillStyle(colorNumber('paper'));
-    g.fillCircle(x, y, TILE_SIZE * 0.85 + Math.sin(now / 350) * 2);
+    g.fillCircle(x, y, TILE_SIZE * 0.85 + (this.calm ? 0 : Math.sin(now / 350) * 2));
   }
 
   private renderExit(g: Phaser.GameObjects.Graphics): void {

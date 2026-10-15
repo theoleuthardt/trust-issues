@@ -46,12 +46,16 @@ export async function advance(page: Page, frames: number): Promise<void> {
 }
 
 /** Plays a run-length encoded replay (`[mask, count, ...]`) through the keyboard. */
-export async function playReplay(page: Page, replay: readonly number[]): Promise<void> {
+export async function playReplay(
+  page: Page,
+  replay: readonly number[],
+  keys: readonly (readonly [number, string])[] = KEYS,
+): Promise<void> {
   const held = new Set<string>();
   for (let index = 0; index < replay.length; index += 2) {
     const mask = replay[index] ?? 0;
     const count = replay[index + 1] ?? 0;
-    for (const [bit, key] of KEYS) {
+    for (const [bit, key] of keys) {
       const wanted = (mask & bit) !== 0;
       if (wanted && !held.has(key)) {
         await page.keyboard.down(key);
