@@ -30,13 +30,24 @@ export const trustNothing: LevelDef = {
 
 All rows of a stage must have the same width. One character is one 32 px tile.
 
-| Char | Meaning                                                     |
-| ---- | ----------------------------------------------------------- |
-| `.`  | air                                                         |
-| `#`  | solid                                                       |
-| `^`  | spike (deadly)                                              |
-| `S`  | spawn, exactly one. The player stands on the tile below it. |
-| `E`  | exit, exactly one                                           |
+| Char | Meaning                                                        |
+| ---- | -------------------------------------------------------------- |
+| `.`  | air                                                            |
+| `#`  | solid                                                          |
+| `^`  | spike (deadly)                                                 |
+| `h`  | hidden solid: collides like `#` but is drawn as air            |
+| `f`  | fake solid: drawn like `#` but can be walked or fallen through |
+| `X`  | fake exit: drawn like the exit, kills like a spike             |
+| `S`  | spawn, exactly one. The player stands on the tile below it.    |
+| `E`  | exit, exactly one                                              |
+
+The last three are the visual lies. The real exit has a slowly pulsing halo behind it and a
+fake exit does not, which is the one tell a careful player can use. A trap's `add_spikes`
+only turns air into spikes, so it never changes a `h`, `f` or `X` tile.
+
+Adding tile kinds does not change what any existing replay does, so it needs no
+`SIM_VERSION` bump (see [VERSIONING.md](VERSIONING.md)); changing how an existing kind
+behaves would.
 
 The game canvas is currently 32 x 18 tiles (1024 x 576 px); levels should use that size
 until scrolling cameras are implemented.
@@ -76,6 +87,9 @@ exit in column 30 unless told otherwise.
 | `vanish(at, x, y, w)`       | tiles of a platform vanish                                         |
 | `trap(action, rect, tiles)` | raw trap with its own trigger rectangle (for platforms and stairs) |
 | `seal(at, x, y, h)`         | tiles appear at (`x`, `y`) downwards                               |
+| `hidden(x, y, w, h)`        | invisible solid tiles, `y` is the top row                          |
+| `fake(x, y, w, h)`          | tiles that look solid and are not, `y` is the top row              |
+| `fakeExit(x, y)`            | a deadly door that looks like the exit (row defaults to the floor) |
 
 A trap fires when the player overlaps columns `at` and `at + 1` within three tiles above
 the floor. Reference: a jump clears a wall of 2 tiles and a gap of 3 tiles.

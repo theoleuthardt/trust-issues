@@ -86,6 +86,31 @@ export const block =
     }
   };
 
+/** Solid tiles that are drawn as air: an invisible wall or floor. `y` is the top row. */
+export const hidden =
+  (x: number, y: number, width = 1, height = 1): Feature =>
+  (canvas) => {
+    for (const column of columns(x, width)) {
+      for (let row = y; row < y + height; row++) put(canvas, column, row, 'h');
+    }
+  };
+
+/** Tiles that are drawn solid but can be walked through or fallen through. `y` is the top row. */
+export const fake =
+  (x: number, y: number, width = 1, height = 1): Feature =>
+  (canvas) => {
+    for (const column of columns(x, width)) {
+      for (let row = y; row < y + height; row++) put(canvas, column, row, 'f');
+    }
+  };
+
+/** A tile that is drawn as the exit and kills whoever touches it. */
+export const fakeExit =
+  (x: number, y = FLOOR_ROW): Feature =>
+  (canvas) => {
+    put(canvas, x, y, 'X');
+  };
+
 /** A spike appears at column `x` once the player reaches column `at`. */
 export const pop =
   (at: number, x: number, width = 1, y = FLOOR_ROW): Feature =>

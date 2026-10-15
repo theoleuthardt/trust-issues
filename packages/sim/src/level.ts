@@ -22,8 +22,9 @@ export interface TrapDef {
 }
 
 /**
- * Authoring format of one stage. `rows` use `.` air, `#` solid, `^` spike,
- * `S` spawn (player stands on the tile below it) and `E` exit.
+ * Authoring format of one stage. `rows` use `.` air, `#` solid, `^` spike, `h` hidden solid
+ * (collides, drawn as air), `f` fake solid (drawn solid, passable), `X` fake exit (drawn as
+ * the exit, kills), `S` spawn (player stands on the tile below it) and `E` exit.
  */
 export interface StageDef {
   rows: readonly string[];
@@ -84,6 +85,9 @@ const TILE_CHARS: Record<string, number> = {
   '.': Tile.Air,
   '#': Tile.Solid,
   '^': Tile.Spike,
+  h: Tile.Hidden,
+  f: Tile.Fake,
+  X: Tile.FakeExit,
   S: Tile.Air,
   E: Tile.Air,
 };
