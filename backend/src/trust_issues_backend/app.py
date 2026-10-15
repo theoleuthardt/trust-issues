@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import (
 
 from trust_issues_backend.models import Base, User, utcnow
 from trust_issues_backend.ratelimit import SlidingWindowLimiter
+from trust_issues_backend.routes.account import change_password, delete_account, logout_all
 from trust_issues_backend.routes.auth import login, me, register
 from trust_issues_backend.routes.health import health
 from trust_issues_backend.routes.leaderboard import leaderboard, progress
@@ -93,7 +94,18 @@ def create_app(
             await http_client.aclose()
 
     return Litestar(
-        route_handlers=[health, register, login, me, submit_run, leaderboard, progress],
+        route_handlers=[
+            health,
+            register,
+            login,
+            me,
+            logout_all,
+            change_password,
+            delete_account,
+            submit_run,
+            leaderboard,
+            progress,
+        ],
         dependencies={"session": Provide(provide_session)},
         state=State(
             {
