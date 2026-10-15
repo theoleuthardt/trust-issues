@@ -137,6 +137,11 @@ target that skilled players can beat; beating it scores more than 1000 points (s
 | 18  | `mind-games`          | Mind Games          | 4      | Traps that go off while you are in the air           |
 | 19  | `tunnel-vision`       | Tunnel Vision       | 3      | Long ceilings that cut every jump short              |
 | 20  | `trust-issues`        | Trust Issues        | 4      | The title level: nothing is what it seems            |
+| 21  | `paper-walls`         | Paper Walls         | 3      | Walls that look solid and let you walk through       |
+| 22  | `invisible-man`       | Invisible Man       | 3      | Pits that have an invisible floor                    |
+| 23  | `wrong-door`          | Wrong Door          | 3      | Exits that kill, and the real one a jump away        |
+| 24  | `floor-is-fake`       | The Floor Is Fake   | 4      | Ground that looks solid and gives way                |
+| 25  | `everything-lies`     | Everything Lies     | 4      | All three lies in one level                          |
 
 ## Design guidance
 
