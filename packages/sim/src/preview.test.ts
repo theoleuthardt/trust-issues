@@ -95,4 +95,21 @@ describe('previewStage', () => {
 
     expect(previewStage(stage)).toContain('zone invert at 2,0 3x2');
   });
+
+  it('lists the phase of a platform', () => {
+    const level = buildLevel({
+      ...def(['.......', '.S....E', '#######']),
+      stages: [
+        {
+          rows: ['.......', '.S....E', '#######'],
+          traps: [],
+          platforms: [{ x: 2, y: 0, width: 2, axis: 'x', distance: 2, period: 40, phase: 10 }],
+        },
+      ],
+    });
+    const stage = level.stages[0];
+    if (!stage) throw new Error('no stage');
+
+    expect(previewStage(stage)).toContain('phase 10');
+  });
 });

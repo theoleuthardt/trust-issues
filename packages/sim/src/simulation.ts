@@ -211,6 +211,20 @@ function platformUnder(stage: Stage, state: GameState, tick: number): PlatformDe
   return undefined;
 }
 
+/** Whether the player's box would touch a solid tile with its top at `y`. */
+function blockedAt(stage: Stage, state: GameState, y: number): boolean {
+  const top = firstTile(y);
+  const bottom = lastTile(y, PLAYER_HEIGHT);
+  const left = firstTile(state.x);
+  const right = lastTile(state.x, PLAYER_WIDTH);
+  for (let ty = top; ty <= bottom; ty++) {
+    for (let tx = left; tx <= right; tx++) {
+      if (isSolid(tileAt(stage, state.tiles, tx, ty))) return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Lets the player stand on a platform: keeps a rider on it while they do not jump, and catches
  * a falling player whose feet were above the platform's top before this tick.
@@ -224,7 +238,7 @@ function settleOnPlatforms(
   if (state.onGround || state.vy < 0) return;
   if (riding) {
     const rect = platformRect(riding, state.stageTick);
-    if (overlapsHorizontally(state, rect)) {
+    if (overlapsHorizontally(state, rect) && !blockedAt(stage, state, rect.y - PLAYER_HEIGHT)) {
       state.y = rect.y - PLAYER_HEIGHT;
       state.vy = 0;
       state.onGround = true;
@@ -237,13 +251,33 @@ function settleOnPlatforms(
     if (
       overlapsHorizontally(state, now) &&
       previousBottom <= before.y &&
-      state.y + PLAYER_HEIGHT >= now.y
+      state.y + PLAYER_HEIGHT >= now.y &&
+      !blockedAt(stage, state, now.y - PLAYER_HEIGHT)
     ) {
       state.y = now.y - PLAYER_HEIGHT;
       state.vy = 0;
       state.onGround = true;
       return;
     }
+  }
+}
+
+/** Moves a rider with their platform without taking them through walls, floors or ceilings. */
+function carry(stage: Stage, state: GameState, dx: number, dy: number): void {
+  if (dx !== 0) {
+    const velocity = state.vx;
+    state.vx = dx;
+    moveX(stage, state);
+    state.vx = velocity;
+  }
+  if (dy === 0) return;
+  state.y += dy;
+  if (dy < 0) {
+    const row = firstTile(state.y);
+    if (rowBlocked(stage, state, row)) state.y = (row + 1) * TILE_SIZE;
+  } else {
+    const row = lastTile(state.y, PLAYER_HEIGHT);
+    if (rowBlocked(stage, state, row)) state.y = row * TILE_SIZE - PLAYER_HEIGHT;
   }
 }
 
@@ -344,12 +378,12 @@ export function step(level: Level, state: GameState, input: number): void {
     ? Math.min(state.vy + LOW_GRAVITY, LOW_GRAVITY_MAX_FALL)
     : Math.min(state.vy + GRAVITY, MAX_FALL_SPEED);
 
-  const riding = state.onGround ? platformUnder(stage, state, state.stageTick - 1) : undefined;
+  let riding = state.onGround ? platformUnder(stage, state, state.stageTick - 1) : undefined;
   if (riding) {
     const was = platformRect(riding, state.stageTick - 1);
     const now = platformRect(riding, state.stageTick);
-    state.x += now.x - was.x;
-    state.y += now.y - was.y;
+    carry(stage, state, now.x - was.x, now.y - was.y);
+    if (state.y + PLAYER_HEIGHT !== now.y) riding = undefined;
   }
 
   moveX(stage, state);

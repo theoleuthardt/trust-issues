@@ -4,6 +4,7 @@ import {
   PLAYER_HEIGHT,
   PLAYER_WIDTH,
   TILE_SIZE,
+  Tile,
   buildLevel,
   createState,
   platformRect,
@@ -155,6 +156,62 @@ describe('riding', () => {
 
     expect(state.x).toBeGreaterThan(4 * TILE_SIZE);
     expect(state.y).toBeGreaterThan(3 * TILE_SIZE);
+  });
+
+  it('does not carry a rider into a ceiling that appeared above them', () => {
+    const rows = [
+      '..................',
+      '..................',
+      '..................',
+      '..................',
+      '..................',
+      '..................',
+      '..................',
+      '..................',
+      '.S...............E',
+      '##################',
+    ];
+    const platform: PlatformDef = { x: 1, y: 3, width: 3, axis: 'y', distance: 3, period: 120 };
+    const lvl = level([platform], rows);
+    const state = createState(lvl);
+    state.tick = 90;
+    state.stageTick = 90;
+    state.x = 2 * TILE_SIZE;
+    state.y = platformRect(platform, 90).y - PLAYER_HEIGHT;
+    state.onGround = true;
+    const width = stageOf(lvl, 0).width;
+    for (let x = 0; x < width; x++) state.tiles[2 * width + x] = Tile.Solid;
+
+    for (let tick = 0; tick < 30; tick++) {
+      step(lvl, state, 0);
+      expect(state.y).toBeGreaterThanOrEqual(3 * TILE_SIZE);
+    }
+  });
+
+  it('does not carry a rider through a wall', () => {
+    const rows = [
+      '..................',
+      '..................',
+      '..................',
+      '..................',
+      '.....#............',
+      '.S...#...........E',
+      '##################',
+    ];
+    const platform: PlatformDef = { x: 1, y: 6, width: 3, axis: 'x', distance: 4, period: 120 };
+    const lvl = level(
+      [{ ...platform, y: 5 }],
+      rows.map((row, y) => (y === 5 ? row.replace('#', '.') : row)),
+    );
+    const state = createState(lvl);
+    state.x = 3 * TILE_SIZE;
+    state.y = platformRect({ ...platform, y: 5 }, 0).y - PLAYER_HEIGHT;
+    state.onGround = true;
+
+    for (let tick = 0; tick < 60; tick++) {
+      step(lvl, state, 0);
+      expect(state.x + PLAYER_WIDTH).toBeLessThanOrEqual(5 * TILE_SIZE);
+    }
   });
 
   it('is passed through from below', () => {
