@@ -13,3 +13,5 @@ __pycache__/
 *.egg-info/
 
 .claude/settings.local.json
+e2e/test-results/
+e2e/playwright-report/
