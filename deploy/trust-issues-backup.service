@@ -1,0 +1,10 @@
+[Unit]
+Description=Trust Issues database backup
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/trust-issues
+EnvironmentFile=-/opt/trust-issues/.env
+Environment=BACKUP_DIR=/var/backups/trust-issues
+ExecStart=/opt/trust-issues/scripts/backup-db.sh
