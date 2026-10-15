@@ -99,6 +99,13 @@ class LeaderboardPage(Struct):
     next_cursor: str | None
 
 
+class RankingEntry(Struct):
+    rank: int
+    username: str
+    total_frames: int
+    completed_at: datetime
+
+
 class AroundMe(Struct):
     rank: int
     entries: list[LeaderboardEntry]

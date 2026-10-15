@@ -83,6 +83,7 @@ test fails when the models and the migrations drift apart.
 | GET    | `/api/leaderboard/{level_id}`           | no    | Best scores with run ids, `?limit=1..100`            |
 | GET    | `/api/leaderboard/{level_id}/page`      | no    | One page with `next_cursor`, `?limit=1..100&cursor=` |
 | GET    | `/api/leaderboard/{level_id}/around-me` | yes   | The caller's rank with `?radius=1..25` neighbours    |
+| GET    | `/api/ranking`                          | no    | Overall ranking by total frames, `?limit=1..100`     |
 | GET    | `/api/replays/{run_id}`                 | no    | Stored replay of a visible leaderboard run           |
 | \*     | `/api/admin/...`                        | admin | Moderation, see [MODERATION.md](MODERATION.md)       |
 

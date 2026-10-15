@@ -43,6 +43,7 @@ from trust_issues_backend.routes.leaderboard import (
     progress,
     replay,
 )
+from trust_issues_backend.routes.ranking import ranking
 from trust_issues_backend.routes.runs import submit_run
 from trust_issues_backend.security_headers import SecurityHeadersMiddleware, exception_handler
 from trust_issues_backend.settings import Settings
@@ -58,6 +59,7 @@ PUBLIC_PATHS = [
     r"^/api/auth/login$",
     r"^/api/leaderboard/(?![^/]+/around-me$)",
     r"^/api/replays/",
+    r"^/api/ranking$",
     r"^/schema",
 ]
 MAX_REQUEST_BODY_BYTES = 256 * 1024
@@ -141,6 +143,7 @@ def create_app(
             leaderboard,
             leaderboard_page,
             around_me,
+            ranking,
             progress,
             replay,
             list_runs,
@@ -162,6 +165,8 @@ def create_app(
                 "login_limiter": SlidingWindowLimiter(LOGIN_ATTEMPTS_PER_MINUTE, 60),
                 "run_limiter": SlidingWindowLimiter(RUN_SUBMISSIONS_PER_MINUTE, 60),
                 "replay_limiter": SlidingWindowLimiter(REPLAY_DOWNLOADS_PER_MINUTE, 60),
+                "level_cache": None,
+                "level_lock": asyncio.Lock(),
             }
         ),
         request_max_body_size=MAX_REQUEST_BODY_BYTES,

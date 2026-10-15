@@ -47,8 +47,16 @@ The order and the comparisons built on it (`ranking.py`) are used by the top lis
 paged list and by the around-me view, so a rank is the same everywhere. Hidden runs
 (see [MODERATION.md](MODERATION.md)) take no place in it.
 
-A player keeps the best of their runs by the same ordering. The overall ranking across
-levels (a sum of level scores) is a planned feature of the leaderboards epic.
+A player keeps the best of their runs by the same ordering.
+
+## Overall ranking
+
+`GET /api/ranking` ranks the players who have a visible best run on **every** level that is
+in the game right now, by the sum of the frames of those runs (fewest first). Equal sums go
+to whoever completed the last of the levels first. The level list comes from the verifier
+(`GET /levels`, cached for five minutes by the backend), so adding a level takes everybody
+out of the ranking until they have played it, and a retired level stops counting. A hidden
+run counts as a missing one.
 
 ## Where it lives
 

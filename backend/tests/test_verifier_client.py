@@ -128,3 +128,32 @@ async def test_an_unusable_flags_field_is_an_unusable_answer(flags: object) -> N
 
     with pytest.raises(VerifierUnavailableError):
         await verifier.verify("trust-nothing", [2, 10], 1, 1)
+
+
+async def test_lists_the_levels_with_the_token() -> None:
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, json={"levels": ["trust-nothing", "ground-rules"]})
+
+    levels = await make(handler).levels()
+
+    assert levels == ["trust-nothing", "ground-rules"]
+    assert seen[0].url.path == "/levels"
+    assert seen[0].headers["x-verifier-token"] == "secret-token"
+
+
+@pytest.mark.parametrize("body", [{}, {"levels": "x"}, {"levels": [1]}])
+async def test_an_unusable_level_list_is_an_unusable_answer(body: dict) -> None:
+    verifier = make(lambda _: httpx.Response(200, json=body))
+
+    with pytest.raises(VerifierUnavailableError):
+        await verifier.levels()
+
+
+async def test_a_failing_level_list_is_unavailable() -> None:
+    verifier = make(lambda _: httpx.Response(500, json={}))
+
+    with pytest.raises(VerifierUnavailableError):
+        await verifier.levels()
