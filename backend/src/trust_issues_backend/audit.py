@@ -25,18 +25,25 @@ async def record_rejected_run(
     replay_size: int,
     request_id: str,
 ) -> None:
-    """Stores why a submission was refused; only sizes and the reason, never the replay."""
-    session.add(
-        AuditEvent(
-            kind=REJECTED_RUN,
-            user_id=user_id,
-            level_id=level_id,
-            reason=reason[:MAX_REASON_LENGTH],
-            replay_size=replay_size,
-            request_id=request_id,
+    """
+    Stores why a submission was refused; only sizes and the reason, never the replay. The log
+    is a side record: a failed write is logged and never changes the answer to the player.
+    """
+    try:
+        session.add(
+            AuditEvent(
+                kind=REJECTED_RUN,
+                user_id=user_id,
+                level_id=level_id,
+                reason=reason[:MAX_REASON_LENGTH],
+                replay_size=replay_size,
+                request_id=request_id,
+            )
         )
-    )
-    await session.commit()
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        logger.exception("recording a rejected run failed")
 
 
 async def purge_expired(

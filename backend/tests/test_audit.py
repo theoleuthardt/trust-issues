@@ -2,6 +2,7 @@ import asyncio
 from dataclasses import replace
 from datetime import timedelta
 
+import pytest
 from litestar.testing import AsyncTestClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
@@ -47,6 +48,25 @@ async def test_records_a_replay_that_does_not_finish_the_level(
     assert event.replay_size == len(REPLAY)
     assert event.request_id == response.headers["x-request-id"]
     assert event.user_id is not None
+
+
+async def test_a_failing_audit_write_does_not_change_the_answer(
+    client: AsyncTestClient,
+    verifier: FakeVerifier,
+    engine: AsyncEngine,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    headers = await auth_headers(client, "mallory")
+    async with engine.begin() as connection:
+        await connection.exec_driver_sql("DROP TABLE audit_events")
+    verifier.next = OutdatedVersionError("retired")
+
+    with caplog.at_level("ERROR", logger="trust_issues.audit"):
+        response = await client.post("/api/runs", json=body(), headers=headers)
+
+    assert response.status_code == 409
+    assert "reload" in response.json()["detail"]
+    assert any("recording a rejected run failed" in r.getMessage() for r in caplog.records)
 
 
 async def test_records_the_reason_of_the_verifier_for_an_invalid_replay(
