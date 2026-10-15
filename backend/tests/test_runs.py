@@ -320,3 +320,58 @@ async def test_answers_409_when_the_versions_are_no_longer_accepted(
     assert response.status_code == 409
     assert "reload" in response.json()["detail"].lower()
     assert (await client.get("/api/leaderboard/trust-nothing")).json() == []
+
+
+async def test_a_flagged_run_is_stored_with_its_flags_and_still_counts(
+    client: AsyncTestClient,
+    verifier: FakeVerifier,
+    engine: AsyncEngine,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    headers = await auth_headers(client, "mallory")
+    verifier.next = VerifiedRun(
+        finished=True, frames=200, deaths=0, score=1500, flags=("faster-than-possible",)
+    )
+
+    with caplog.at_level("WARNING", logger="trust_issues.runs"):
+        response = await client.post("/api/runs", json=submission(), headers=headers)
+
+    assert response.status_code == 201
+    assert response.json()["rank"] == 1
+    async with async_sessionmaker(engine)() as session:
+        stored = (await session.scalars(select(BestRun))).one()
+    assert stored.flags == ["faster-than-possible"]
+    messages = [record.getMessage() for record in caplog.records]
+    assert any(
+        "faster-than-possible" in message and "trust-nothing" in message for message in messages
+    )
+    assert not any(str(REPLAY) in message for message in messages)
+
+
+async def test_a_clean_run_has_no_flags(
+    client: AsyncTestClient, verifier: FakeVerifier, engine: AsyncEngine
+) -> None:
+    headers = await auth_headers(client, "mallory")
+
+    await client.post("/api/runs", json=submission(), headers=headers)
+
+    async with async_sessionmaker(engine)() as session:
+        stored = (await session.scalars(select(BestRun))).one()
+    assert stored.flags == []
+
+
+async def test_a_better_clean_run_clears_the_flags_of_the_old_best(
+    client: AsyncTestClient, verifier: FakeVerifier, engine: AsyncEngine
+) -> None:
+    headers = await auth_headers(client, "mallory")
+    verifier.next = VerifiedRun(
+        finished=True, frames=300, deaths=0, score=1000, flags=("repetitive-input",)
+    )
+    await client.post("/api/runs", json=submission(), headers=headers)
+    verifier.next = run(frames=290, deaths=0, score=1034)
+
+    await client.post("/api/runs", json=submission(), headers=headers)
+
+    async with async_sessionmaker(engine)() as session:
+        stored = (await session.scalars(select(BestRun))).one()
+    assert stored.flags == []

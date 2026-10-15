@@ -52,6 +52,22 @@ The determinism of `packages/sim` is a security property. Do not break it:
   procedure is in [VERSIONING.md](VERSIONING.md). A replay recorded with other versions is
   refused instead of being judged by rules it was not played under.
 
+## Plausibility flags
+
+The verifier marks a finished run that is valid but looks made by a tool
+(`packages/sim/src/plausibility.ts`). The run still counts and is stored, with its flags on
+the `best_runs` row, and the backend logs one warning line (user id, level, flags, frames;
+never the replay) for a flagged best run. Moderation uses the flags; nothing is hidden
+automatically.
+
+| Flag                   | Raised when                                                                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `faster-than-possible` | the run took less than 70% of the par time. Par is the reference solution of the level, found by a search that humans can beat only by a small margin. |
+| `repetitive-input`     | a pattern of two to four input entries repeats ten times back to back with identical timing, which human input does not do.                            |
+
+The reference solutions of all levels are tested to stay unflagged, so a threshold change
+that would flag them fails CI.
+
 ## What this does not prevent
 
 Verification proves that the inputs are **possible in the game**, not that a human produced
@@ -68,6 +84,5 @@ them. These remain open:
 
 Tracked on the board as part of the anti-cheat epic:
 
-- Plausibility checks on replays (minimum frame count per level, input pattern heuristics).
 - Replay viewer and moderation tools (flag, hide, delete an entry).
 - An audit log of rejected submissions.

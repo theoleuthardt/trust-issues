@@ -45,4 +45,5 @@ class BestRun(Base):
     replay: Mapped[list[int]] = mapped_column(JSON)
     sim_version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     level_revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    flags: Mapped[list[str]] = mapped_column(JSON, default=list, server_default="[]")
     submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

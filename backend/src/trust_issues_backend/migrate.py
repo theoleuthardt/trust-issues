@@ -60,8 +60,11 @@ BASELINE_COLUMNS = {
 }
 BASELINE_INDEXES = {"best_runs": {"ix_best_runs_level_score"}}
 BASELINE_UNIQUE = {"users": {("username_key",)}, "best_runs": {("user_id", "level_id")}}
-LOCKOUT_COLUMNS = {"failed_logins", "locked_until"}
-VERSION_COLUMNS = {"sim_version", "level_revision"}
+REVISION_COLUMNS: tuple[tuple[str, str, frozenset[str]], ...] = (
+    ("0002", "users", frozenset({"failed_logins", "locked_until"})),
+    ("0003", "best_runs", frozenset({"sim_version", "level_revision"})),
+    ("0004", "best_runs", frozenset({"flags"})),
+)
 
 
 def alembic_config(url: str) -> Config:
@@ -74,9 +77,9 @@ def alembic_config(url: str) -> Config:
 
 def _adoptable_revision(sync: Connection) -> str | None:
     """
-    The revision a database created from the models corresponds to: the baseline, the lockout
-    revision or the run versions revision, when all columns of that revision (and the ones
-    before it) are there. None when the schema has only part of a revision.
+    The revision a database created from the models corresponds to: the newest one whose
+    columns are all there while every later one has none of its columns. None when a
+    revision is only partly there or a later one is applied without an earlier one.
     """
     inspector = inspect(sync)
     for table, columns in BASELINE_COLUMNS.items():
@@ -93,13 +96,19 @@ def _adoptable_revision(sync: Connection) -> str | None:
         }
         if BASELINE_UNIQUE[table] - unique:
             return None
-    lockout = LOCKOUT_COLUMNS & {column["name"] for column in inspector.get_columns("users")}
-    versions = VERSION_COLUMNS & {column["name"] for column in inspector.get_columns("best_runs")}
-    if lockout not in (set(), LOCKOUT_COLUMNS) or versions not in (set(), VERSION_COLUMNS):
-        return None
-    if versions:
-        return "0003" if lockout else None
-    return "0002" if lockout else "0001"
+    adopted = "0001"
+    gap = False
+    for revision, table, columns in REVISION_COLUMNS:
+        present = columns & {column["name"] for column in inspector.get_columns(table)}
+        if present and present != columns:
+            return None
+        if present and gap:
+            return None
+        if present:
+            adopted = revision
+        else:
+            gap = True
+    return adopted
 
 
 async def _state(url: str) -> tuple[str, str | None]:

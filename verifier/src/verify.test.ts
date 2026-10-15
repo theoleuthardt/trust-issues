@@ -13,7 +13,7 @@ describe('verifyRun', () => {
 
     expect(outcome).toEqual({
       status: 200,
-      body: { finished: true, frames: solution?.frames, deaths: 0, score: 1000 },
+      body: { finished: true, frames: solution?.frames, deaths: 0, score: 1000, flags: [] },
     });
   });
 
@@ -22,8 +22,27 @@ describe('verifyRun', () => {
 
     expect(outcome).toEqual({
       status: 200,
-      body: { finished: false, frames: 30, deaths: 0, score: 0 },
+      body: { finished: false, frames: 30, deaths: 0, score: 0, flags: [] },
     });
+  });
+
+  it('flags a finished run that repeats one input pattern exactly many times', () => {
+    const wobble = Array.from({ length: 12 }, () => [Input.Left, 1, Input.Right, 1]).flat();
+    const outcome = verifyRun({
+      levelId: 'trust-nothing',
+      replay: [...wobble, ...(solution?.replay ?? [])],
+      ...versions,
+    });
+
+    expect(outcome.status).toBe(200);
+    expect(outcome.body).toMatchObject({ finished: true, flags: ['repetitive-input'] });
+  });
+
+  it('never flags a run that did not finish', () => {
+    const wobble = Array.from({ length: 12 }, () => [Input.Left, 1, Input.Right, 1]).flat();
+    const outcome = verifyRun({ levelId: 'trust-nothing', replay: wobble, ...versions });
+
+    expect(outcome.body).toMatchObject({ finished: false, flags: [] });
   });
 
   it('answers 404 for an unknown level', () => {

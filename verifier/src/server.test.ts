@@ -54,6 +54,7 @@ describe('verifier server', () => {
       frames: SOLUTIONS['trust-nothing']?.frames,
       deaths: 0,
       score: 1000,
+      flags: [],
     });
   });
 

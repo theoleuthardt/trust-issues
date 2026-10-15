@@ -26,17 +26,37 @@ async def test_returns_the_verified_run_and_sends_level_and_replay() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         seen.append(request)
         return httpx.Response(
-            200, json={"finished": True, "frames": 290, "deaths": 1, "score": 975}
+            200,
+            json={"finished": True, "frames": 290, "deaths": 1, "score": 975, "flags": []},
         )
 
     result = await make(handler).verify("trust-nothing", [2, 10], sim_version=1, level_revision=3)
 
-    assert result == VerifiedRun(finished=True, frames=290, deaths=1, score=975)
+    assert result == VerifiedRun(finished=True, frames=290, deaths=1, score=975, flags=())
     assert seen[0].url.path == "/verify"
     assert seen[0].headers["x-verifier-token"] == "secret-token"
     assert seen[0].read() == (
         b'{"levelId":"trust-nothing","replay":[2,10],"simVersion":1,"levelRevision":3}'
     )
+
+
+async def test_returns_the_flags_of_the_verifier() -> None:
+    verifier = make(
+        lambda _: httpx.Response(
+            200,
+            json={
+                "finished": True,
+                "frames": 600,
+                "deaths": 0,
+                "score": 1000,
+                "flags": ["repetitive-input", "faster-than-possible"],
+            },
+        )
+    )
+
+    result = await verifier.verify("trust-nothing", [2, 10], 1, 1)
+
+    assert result.flags == ("repetitive-input", "faster-than-possible")
 
 
 async def test_maps_404_to_unknown_level() -> None:
@@ -88,8 +108,23 @@ async def test_forwards_the_request_id() -> None:
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen.append(request)
-        return httpx.Response(200, json={"finished": True, "frames": 1, "deaths": 0, "score": 1})
+        return httpx.Response(
+            200, json={"finished": True, "frames": 1, "deaths": 0, "score": 1, "flags": []}
+        )
 
     await make(handler).verify("trust-nothing", [2, 1], 1, 1, request_id="trace-abcdef12")
 
     assert seen[0].headers["x-request-id"] == "trace-abcdef12"
+
+
+@pytest.mark.parametrize("flags", [None, "repetitive-input", [3]])
+async def test_an_unusable_flags_field_is_an_unusable_answer(flags: object) -> None:
+    verifier = make(
+        lambda _: httpx.Response(
+            200,
+            json={"finished": True, "frames": 1, "deaths": 0, "score": 1, "flags": flags},
+        )
+    )
+
+    with pytest.raises(VerifierUnavailableError):
+        await verifier.verify("trust-nothing", [2, 10], 1, 1)
