@@ -134,3 +134,11 @@ ninth colour.
   and keys can be rebound there.
 - A DOM test checks every screen for a heading, a name on every control, unique ids,
   alerts for errors and no control removed from the tab order.
+
+## Sound
+
+Four short effects (jump, death, a trap going off, reaching an exit or the next stage) are
+generated from oscillators in the browser (`frontend/src/audio/effects.ts`), so the game ships
+no audio files and there are no licenses to record. The audio context is created and resumed
+on the first key press or tap, which is what iOS and Android require. Mute and volume are in
+the settings and kept in the browser. Replays are silent.

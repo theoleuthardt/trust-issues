@@ -7,6 +7,7 @@ export type TouchSize = 'small' | 'medium' | 'large';
 export interface Settings {
   keys: Record<Action, string[]>;
   touch: { size: TouchSize; swapped: boolean; opacity: number };
+  sound: { muted: boolean; volume: number };
   reducedMotion: boolean;
 }
 
@@ -22,6 +23,7 @@ export const DEFAULT_SETTINGS: Settings = {
     jump: ['ArrowUp', 'KeyW', 'Space'],
   },
   touch: { size: 'medium', swapped: false, opacity: 60 },
+  sound: { muted: false, volume: 60 },
   reducedMotion: false,
 };
 
@@ -116,6 +118,17 @@ function parseTouch(value: unknown): Settings['touch'] {
   return touch;
 }
 
+function parseSound(value: unknown): Settings['sound'] {
+  const sound = { ...DEFAULT_SETTINGS.sound };
+  if (!isRecord(value)) return sound;
+  if (typeof value.muted === 'boolean') sound.muted = value.muted;
+  const volume = value.volume;
+  if (typeof volume === 'number' && Number.isInteger(volume) && volume >= 0 && volume <= 100) {
+    sound.volume = volume;
+  }
+  return sound;
+}
+
 /**
  * Reads stored settings. Every damaged part falls back to its default on its own; without a
  * stored choice, reduced motion follows the system preference.
@@ -131,6 +144,7 @@ export function parseSettings(raw: string | null, systemReducedMotion: boolean):
   return {
     keys: parseKeys(source.keys),
     touch: parseTouch(source.touch),
+    sound: parseSound(source.sound),
     reducedMotion:
       typeof source.reducedMotion === 'boolean' ? source.reducedMotion : systemReducedMotion,
   };
