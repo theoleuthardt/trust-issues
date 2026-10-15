@@ -57,6 +57,16 @@ test.describe('a phone held upright', () => {
   });
 });
 
+test.describe('a tablet held upright', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 768, height: 1024 } });
+
+  test('is not asked to turn the device', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.locator('.rotate-hint')).toBeHidden();
+  });
+});
+
 test.describe('a phone held sideways', () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 844, height: 390 } });
 

@@ -254,7 +254,7 @@ body[data-reduced-motion='true'] .logo-spike {
   display: none;
 }
 
-@media (orientation: portrait) and (pointer: coarse) {
+@media (orientation: portrait) and (pointer: coarse) and (max-width: 600px) {
   .rotate-hint {
     display: grid;
     place-items: center;
