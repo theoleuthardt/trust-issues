@@ -505,6 +505,12 @@ export function settingsScreen(options: SettingsScreenOptions): HTMLElement {
   const problem = h('p', { class: 'form-error' });
   problem.setAttribute('role', 'alert');
   let stopListening: (() => void) | undefined;
+  const afterListening =
+    <A extends unknown[]>(action: (...args: A) => void) =>
+    (...args: A): void => {
+      stopListening?.();
+      action(...args);
+    };
 
   const listen = (action: Action, status: HTMLElement): void => {
     stopListening?.();
@@ -560,7 +566,7 @@ export function settingsScreen(options: SettingsScreenOptions): HTMLElement {
       class: 'button button-small',
       type: 'button',
       text: size[0]?.toUpperCase() + size.slice(1),
-      onClick: () => options.onTouchSize(size),
+      onClick: afterListening(() => options.onTouchSize(size)),
     });
     choice.dataset.size = size;
     choice.setAttribute('aria-pressed', String(settings.touch.size === size));
@@ -574,7 +580,10 @@ export function settingsScreen(options: SettingsScreenOptions): HTMLElement {
   opacity.max = String(MAX_OPACITY);
   opacity.step = '10';
   opacity.value = String(settings.touch.opacity);
-  opacity.addEventListener('change', () => options.onTouchOpacity(Number(opacity.value)));
+  opacity.addEventListener(
+    'change',
+    afterListening(() => options.onTouchOpacity(Number(opacity.value))),
+  );
 
   return h(
     'section',
@@ -586,15 +595,18 @@ export function settingsScreen(options: SettingsScreenOptions): HTMLElement {
       h('legend', { text: 'Keyboard' }),
       ...keyRows,
       problem,
-      button('Reset keys', options.onResetKeys),
+      button('Reset keys', afterListening(options.onResetKeys)),
     ),
     h(
       'fieldset',
       { class: 'settings-group' },
       h('legend', { text: 'Touch controls' }),
       h('div', { class: 'setting-row' }, h('span', { text: 'Size' }), ...sizeButtons),
-      checkbox('swapped', 'Swap the sides of the buttons', settings.touch.swapped, (on) =>
-        options.onTouchSwapped(on),
+      checkbox(
+        'swapped',
+        'Swap the sides of the buttons',
+        settings.touch.swapped,
+        afterListening(options.onTouchSwapped),
       ),
       h('label', { class: 'setting-row' }, h('span', { text: 'Opacity' }), opacity),
     ),
@@ -602,17 +614,13 @@ export function settingsScreen(options: SettingsScreenOptions): HTMLElement {
       'fieldset',
       { class: 'settings-group' },
       h('legend', { text: 'Motion' }),
-      checkbox('motion', 'Reduce motion', settings.reducedMotion, (on) =>
-        options.onReducedMotion(on),
+      checkbox(
+        'motion',
+        'Reduce motion',
+        settings.reducedMotion,
+        afterListening(options.onReducedMotion),
       ),
     ),
-    h(
-      'div',
-      { class: 'stack' },
-      button('Back', () => {
-        stopListening?.();
-        options.onBack();
-      }),
-    ),
+    h('div', { class: 'stack' }, button('Back', afterListening(options.onBack))),
   );
 }

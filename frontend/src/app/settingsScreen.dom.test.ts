@@ -178,4 +178,56 @@ describe('settingsScreen touch and motion', () => {
 
     expect(calls.rebind).not.toHaveBeenCalled();
   });
+
+  it.each([
+    [
+      'Reset keys',
+      (root: HTMLElement) =>
+        Array.from(root.querySelectorAll('button'))
+          .find((button) => /reset keys/i.test(button.textContent ?? ''))
+          ?.click(),
+    ],
+    [
+      'a touch size',
+      (root: HTMLElement) => root.querySelector<HTMLButtonElement>('[data-size="large"]')?.click(),
+    ],
+    [
+      'the swap',
+      (root: HTMLElement) => {
+        const input = root.querySelector<HTMLInputElement>('input[name=swapped]');
+        if (input) {
+          input.checked = true;
+          input.dispatchEvent(new Event('change'));
+        }
+      },
+    ],
+    [
+      'the opacity',
+      (root: HTMLElement) => {
+        const input = root.querySelector<HTMLInputElement>('input[name=opacity]');
+        if (input) {
+          input.value = '50';
+          input.dispatchEvent(new Event('change'));
+        }
+      },
+    ],
+    [
+      'reduced motion',
+      (root: HTMLElement) => {
+        const input = root.querySelector<HTMLInputElement>('input[name=motion]');
+        if (input) {
+          input.checked = true;
+          input.dispatchEvent(new Event('change'));
+        }
+      },
+    ],
+  ])('stops listening for a key when %s is used', (_name, act) => {
+    const { root, calls } = render();
+    rowOf(root, 'jump').querySelector('button')?.click();
+
+    act(root);
+    press('KeyK');
+
+    expect(calls.rebind).not.toHaveBeenCalled();
+  });
 });
