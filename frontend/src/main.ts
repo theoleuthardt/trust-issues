@@ -6,6 +6,7 @@ import type { AuthMode } from './api/credentials';
 import { validateCredentials } from './api/credentials';
 import { SessionStore } from './api/session';
 import { syncAccount } from './app/accountSync';
+import { MusicPlayer } from './audio/MusicPlayer';
 import { SoundBoard } from './audio/SoundBoard';
 import type { AudioLike } from './audio/SoundBoard';
 import { ghostInputs } from './app/ghost';
@@ -81,6 +82,12 @@ const sounds = new SoundBoard(
   () => settings.current().sound,
 );
 
+const music = new MusicPlayer(
+  () => sounds.runningContext(),
+  () => settings.current().sound,
+);
+window.setInterval(() => music.tick(), 200);
+
 const GESTURES = ['pointerdown', 'keydown', 'touchend'] as const;
 
 function unlockSoundOnGesture(): void {
@@ -119,6 +126,7 @@ function announce(text: string): void {
 const setScreen = (screen: Screen) => {
   navigation += 1;
   document.body.dataset.screen = screen;
+  music.setTrack(screen === 'game' || screen === 'pause' ? 'game' : 'menu');
 };
 
 window.addEventListener('keydown', (event) => {
@@ -344,6 +352,9 @@ function showSettings(): void {
       onSoundMuted: (muted) => {
         settings.update((current) => ({ ...current, sound: { ...current.sound, muted } }));
       },
+      onMusic: (on) => {
+        settings.update((current) => ({ ...current, sound: { ...current.sound, music: on } }));
+      },
       onSoundVolume: (volume) => {
         settings.update((current) => ({ ...current, sound: { ...current.sound, volume } }));
         sounds.play('jump');
@@ -545,7 +556,10 @@ function startLevel(index: number): void {
       return level ? ghostInputs(currentStore().load()[levelId], level) : undefined;
     },
     ghostEnabled: ghostPreference.enabled(),
-    sound: (name: SoundName) => sounds.play(name),
+    sound: (name: SoundName) => {
+      sounds.play(name);
+      if (name === 'death') music.duck();
+    },
     reducedMotion: () => settings.current().reducedMotion,
     onGhostToggled: (on: boolean) => {
       ghostPreference.set(on);

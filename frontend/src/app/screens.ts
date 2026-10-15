@@ -489,6 +489,7 @@ export interface SettingsScreenOptions {
   onTouchOpacity: (opacity: number) => void;
   onSoundMuted: (muted: boolean) => void;
   onSoundVolume: (volume: number) => void;
+  onMusic: (on: boolean) => void;
   onReducedMotion: (on: boolean) => void;
   onBack: () => void;
 }
@@ -629,6 +630,7 @@ export function settingsScreen(options: SettingsScreenOptions): HTMLElement {
       { class: 'settings-group' },
       h('legend', { text: 'Sound' }),
       checkbox('muted', 'Mute', settings.sound.muted, afterListening(options.onSoundMuted)),
+      checkbox('music', 'Music', settings.sound.music, afterListening(options.onMusic)),
       h('label', { class: 'setting-row' }, h('span', { text: 'Volume' }), volume),
     ),
     h(

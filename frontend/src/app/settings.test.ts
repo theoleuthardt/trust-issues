@@ -27,7 +27,7 @@ describe('defaults', () => {
 
 describe('sound defaults', () => {
   it('start unmuted at a moderate volume', () => {
-    expect(DEFAULT_SETTINGS.sound).toEqual({ muted: false, volume: 60 });
+    expect(DEFAULT_SETTINGS.sound).toEqual({ muted: false, volume: 60, music: true });
   });
 });
 
@@ -119,7 +119,7 @@ describe('parseSettings', () => {
     const settings = {
       keys: { left: ['KeyJ'], right: ['KeyK'], jump: ['Space'] },
       touch: { size: 'large' as const, swapped: true, opacity: 60 },
-      sound: { muted: true, volume: 20 },
+      sound: { muted: true, volume: 20, music: false },
       reducedMotion: true,
     };
 
@@ -160,10 +160,16 @@ describe('parseSettings', () => {
   });
 
   it('reads the sound settings and repairs damaged ones', () => {
-    const stored = parseSettings(JSON.stringify({ sound: { muted: true, volume: 30 } }), false);
-    const damaged = parseSettings(JSON.stringify({ sound: { muted: 'no', volume: 500 } }), false);
+    const stored = parseSettings(
+      JSON.stringify({ sound: { muted: true, volume: 30, music: false } }),
+      false,
+    );
+    const damaged = parseSettings(
+      JSON.stringify({ sound: { muted: 'no', volume: 500, music: 1 } }),
+      false,
+    );
 
-    expect(stored.sound).toEqual({ muted: true, volume: 30 });
+    expect(stored.sound).toEqual({ muted: true, volume: 30, music: false });
     expect(damaged.sound).toEqual(DEFAULT_SETTINGS.sound);
   });
 

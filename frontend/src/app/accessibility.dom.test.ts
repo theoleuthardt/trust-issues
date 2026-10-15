@@ -116,6 +116,7 @@ const SCREENS: [string, () => HTMLElement][] = [
         onTouchOpacity: noop,
         onSoundMuted: noop,
         onSoundVolume: noop,
+        onMusic: noop,
         onReducedMotion: noop,
         onBack: noop,
       }),

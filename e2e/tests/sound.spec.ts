@@ -22,6 +22,12 @@ const oscillators = (page: Page) =>
   page.evaluate(() => (window as unknown as CountingWindow).__oscillators);
 
 test('a jump makes a sound once the page was used', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      'trust-issues.settings.v1',
+      JSON.stringify({ sound: { muted: false, volume: 60, music: false } }),
+    );
+  });
   await installFakeClock(page);
   await countOscillators(page);
   await openLevel(page, 'trust-nothing');
@@ -50,4 +56,22 @@ test('nothing is played when the sound is muted in the settings', async ({ page 
   await page.keyboard.up('Space');
 
   expect(await oscillators(page)).toBe(0);
+});
+
+test('music starts in the menus after the first key press and stops when turned off', async ({
+  page,
+}) => {
+  await countOscillators(page);
+  await page.goto('/');
+  await page.keyboard.press('Shift');
+
+  await expect.poll(() => oscillators(page), { timeout: 8000 }).toBeGreaterThan(0);
+
+  await page.getByRole('button', { name: 'Play as guest' }).click();
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByLabel('Music').uncheck();
+  const before = await oscillators(page);
+  await page.waitForTimeout(1500);
+
+  expect(await oscillators(page)).toBe(before);
 });
