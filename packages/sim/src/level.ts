@@ -40,6 +40,29 @@ export interface ZoneDef extends TileRect {
   effect: ZoneEffect;
 }
 
+/** Shortest and longest full cycle of a moving platform, in ticks. */
+export const MIN_PLATFORM_PERIOD = 20;
+export const MAX_PLATFORM_PERIOD = 1200;
+
+/**
+ * A one-tile-high platform that moves back and forth along one axis on a fixed schedule: its
+ * place is a pure function of the tick, so a replay always sees it where it was. The player
+ * can stand on it and is carried; it can be jumped through from below.
+ */
+export interface PlatformDef {
+  /** Tile column and row of the start; `width` is in tiles. */
+  x: number;
+  y: number;
+  width: number;
+  axis: 'x' | 'y';
+  /** How far it travels from its start, in tiles. */
+  distance: number;
+  /** Ticks for the way out and back; an even number. */
+  period: number;
+  /** Ticks the schedule is shifted by. */
+  phase?: number;
+}
+
 /**
  * Authoring format of one stage. `rows` use `.` air, `#` solid, `^` spike, `h` hidden solid
  * (collides, drawn as air), `f` fake solid (drawn solid, passable), `X` fake exit (drawn as
@@ -49,6 +72,7 @@ export interface StageDef {
   rows: readonly string[];
   traps: readonly TrapDef[];
   zones?: readonly ZoneDef[];
+  platforms?: readonly PlatformDef[];
 }
 
 /** What an author writes: a level without its par time, which comes from the solver. */
@@ -75,6 +99,7 @@ export interface Stage {
   exit: { x: number; y: number };
   traps: readonly TrapDef[];
   zones: readonly ZoneDef[];
+  platforms: readonly PlatformDef[];
 }
 
 /** Parsed, validated level ready for simulation. The run budget `maxFrames` spans all stages. */
@@ -192,6 +217,36 @@ function buildStage(levelId: string, index: number, def: StageDef): Stage {
     }
   }
 
+  for (const platform of def.platforms ?? []) {
+    const reach = platform.axis === 'x' ? platform.distance : 0;
+    const drop = platform.axis === 'y' ? platform.distance : 0;
+    const whole = [
+      platform.x,
+      platform.y,
+      platform.width,
+      platform.distance,
+      platform.period,
+      platform.phase ?? 0,
+    ].every(Number.isInteger);
+    if (
+      (platform.axis !== 'x' && platform.axis !== 'y') ||
+      !whole ||
+      platform.width < 1 ||
+      platform.distance < 1 ||
+      platform.period % 2 !== 0 ||
+      platform.period < MIN_PLATFORM_PERIOD ||
+      platform.period > MAX_PLATFORM_PERIOD ||
+      platform.x < 0 ||
+      platform.y < 0 ||
+      platform.x + platform.width + reach > width ||
+      platform.y + 1 + drop > height
+    ) {
+      throw new Error(
+        `${where}: a platform needs whole numbers, an even period of ${MIN_PLATFORM_PERIOD} to ${MAX_PLATFORM_PERIOD} ticks and a path inside the stage`,
+      );
+    }
+  }
+
   for (const trap of def.traps) {
     if (trap.rearm === undefined) continue;
     const mine = new Set(trap.tiles.map(([x, y]) => `${x},${y}`));
@@ -205,7 +260,16 @@ function buildStage(levelId: string, index: number, def: StageDef): Stage {
     }
   }
 
-  return { width, height, tiles, spawn, exit, traps: def.traps, zones: def.zones ?? [] };
+  return {
+    width,
+    height,
+    tiles,
+    spawn,
+    exit,
+    traps: def.traps,
+    zones: def.zones ?? [],
+    platforms: def.platforms ?? [],
+  };
 }
 
 /** Parses and validates a level definition; throws on any structural error. */

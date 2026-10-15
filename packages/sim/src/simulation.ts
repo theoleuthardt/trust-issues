@@ -13,11 +13,13 @@ import {
   Tile,
 } from './constants';
 import { stageOf } from './level';
-import type { Level, Stage, TileRect, TrapDef } from './level';
+import type { Level, PlatformDef, Stage, TileRect, TrapDef } from './level';
 
 /** Mutable state of one run. A run spans all lives until the exit is reached. */
 export interface GameState {
   tick: number;
+  /** Ticks since this stage was entered or the player last died in it; platforms run on it. */
+  stageTick: number;
   stage: number;
   x: number;
   y: number;
@@ -58,6 +60,7 @@ export function createState(level: Level): GameState {
   const stage = stageOf(level, 0);
   return {
     tick: 0,
+    stageTick: 0,
     stage: 0,
     x: stage.spawn.x,
     y: stage.spawn.y,
@@ -117,7 +120,9 @@ function moveX(stage: Stage, state: GameState): void {
   }
 }
 
-function moveY(stage: Stage, state: GameState): void {
+/** Moves vertically against the tiles; returns where the bottom of the player was before. */
+function moveY(stage: Stage, state: GameState): number {
+  const previousBottom = state.y + PLAYER_HEIGHT;
   state.y += state.vy;
   state.onGround = false;
   if (state.vy > 0) {
@@ -134,6 +139,7 @@ function moveY(stage: Stage, state: GameState): void {
       state.vy = 0;
     }
   }
+  return previousBottom;
 }
 
 function overlapsRect(state: GameState, left: number, top: number, right: number, bottom: number) {
@@ -172,6 +178,107 @@ function zonesAt(stage: Stage, state: GameState): { invert: boolean; floating: b
     else effects.floating = true;
   }
   return effects;
+}
+
+/** Where a platform is at `tick`, in pixels. Pure in the tick, integer math only. */
+export function platformRect(
+  platform: PlatformDef,
+  tick: number,
+): { x: number; y: number; width: number; height: number } {
+  const half = platform.period / 2;
+  const phase =
+    (((tick + (platform.phase ?? 0)) % platform.period) + platform.period) % platform.period;
+  const progress = phase < half ? phase : platform.period - phase;
+  const offset = Math.floor((platform.distance * TILE_SIZE * progress) / half);
+  return {
+    x: platform.x * TILE_SIZE + (platform.axis === 'x' ? offset : 0),
+    y: platform.y * TILE_SIZE + (platform.axis === 'y' ? offset : 0),
+    width: platform.width * TILE_SIZE,
+    height: TILE_SIZE,
+  };
+}
+
+function overlapsHorizontally(state: GameState, rect: { x: number; width: number }): boolean {
+  return state.x < rect.x + rect.width && state.x + PLAYER_WIDTH > rect.x;
+}
+
+/** The platform the player stands on at `tick`, if there is one. */
+function platformUnder(stage: Stage, state: GameState, tick: number): PlatformDef | undefined {
+  for (const platform of stage.platforms) {
+    const rect = platformRect(platform, tick);
+    if (state.y + PLAYER_HEIGHT === rect.y && overlapsHorizontally(state, rect)) return platform;
+  }
+  return undefined;
+}
+
+/** Whether the player's box would touch a solid tile with its top at `y`. */
+function blockedAt(stage: Stage, state: GameState, y: number): boolean {
+  const top = firstTile(y);
+  const bottom = lastTile(y, PLAYER_HEIGHT);
+  const left = firstTile(state.x);
+  const right = lastTile(state.x, PLAYER_WIDTH);
+  for (let ty = top; ty <= bottom; ty++) {
+    for (let tx = left; tx <= right; tx++) {
+      if (isSolid(tileAt(stage, state.tiles, tx, ty))) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Lets the player stand on a platform: keeps a rider on it while they do not jump, and catches
+ * a falling player whose feet were above the platform's top before this tick.
+ */
+function settleOnPlatforms(
+  stage: Stage,
+  state: GameState,
+  riding: PlatformDef | undefined,
+  previousBottom: number,
+): void {
+  if (state.onGround || state.vy < 0) return;
+  if (riding) {
+    const rect = platformRect(riding, state.stageTick);
+    if (overlapsHorizontally(state, rect) && !blockedAt(stage, state, rect.y - PLAYER_HEIGHT)) {
+      state.y = rect.y - PLAYER_HEIGHT;
+      state.vy = 0;
+      state.onGround = true;
+      return;
+    }
+  }
+  for (const platform of stage.platforms) {
+    const before = platformRect(platform, state.stageTick - 1);
+    const now = platformRect(platform, state.stageTick);
+    if (
+      overlapsHorizontally(state, now) &&
+      previousBottom <= before.y &&
+      state.y + PLAYER_HEIGHT >= now.y &&
+      !blockedAt(stage, state, now.y - PLAYER_HEIGHT)
+    ) {
+      state.y = now.y - PLAYER_HEIGHT;
+      state.vy = 0;
+      state.onGround = true;
+      return;
+    }
+  }
+}
+
+/** Moves a rider with their platform without taking them through walls, floors or ceilings. */
+function carry(stage: Stage, state: GameState, dx: number, dy: number): void {
+  if (dx !== 0) {
+    const velocity = state.vx;
+    state.vx = dx;
+    moveX(stage, state);
+    state.vx = velocity;
+  }
+  if (dy === 0) return;
+  state.y += dy;
+  if (dy < 0) {
+    const row = firstTile(state.y);
+    if (rowBlocked(stage, state, row)) state.y = (row + 1) * TILE_SIZE;
+  } else {
+    const row = lastTile(state.y, PLAYER_HEIGHT);
+    if (rowBlocked(stage, state, row)) state.y = row * TILE_SIZE - PLAYER_HEIGHT;
+  }
 }
 
 function applyTrap(stage: Stage, state: GameState, trap: TrapDef): void {
@@ -245,6 +352,7 @@ function enterStage(stage: Stage, state: GameState): void {
   state.vy = 0;
   state.onGround = spawnsOnGround(stage);
   state.tiles = stage.tiles.slice();
+  state.stageTick = 0;
   state.fired.clear();
   state.pending.clear();
   state.active.clear();
@@ -257,6 +365,7 @@ function enterStage(stage: Stage, state: GameState): void {
 export function step(level: Level, state: GameState, input: number): void {
   if (state.finished) return;
   state.tick += 1;
+  state.stageTick += 1;
   const stage = stageOf(level, state.stage);
 
   const zones = zonesAt(stage, state);
@@ -269,8 +378,17 @@ export function step(level: Level, state: GameState, input: number): void {
     ? Math.min(state.vy + LOW_GRAVITY, LOW_GRAVITY_MAX_FALL)
     : Math.min(state.vy + GRAVITY, MAX_FALL_SPEED);
 
+  let riding = state.onGround ? platformUnder(stage, state, state.stageTick - 1) : undefined;
+  if (riding) {
+    const was = platformRect(riding, state.stageTick - 1);
+    const now = platformRect(riding, state.stageTick);
+    carry(stage, state, now.x - was.x, now.y - was.y);
+    if (state.y + PLAYER_HEIGHT !== now.y) riding = undefined;
+  }
+
   moveX(stage, state);
-  moveY(stage, state);
+  const previousBottom = moveY(stage, state);
+  if (stage.platforms.length > 0) settleOnPlatforms(stage, state, riding, previousBottom);
   fireTraps(stage, state);
 
   if (touchesHazard(stage, state)) {

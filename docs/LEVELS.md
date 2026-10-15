@@ -70,6 +70,26 @@ zones: [{ x: 8, y: 8, width: 6, height: 8, effect: 'invert' }]; // or 'low_gravi
   not traps and do not reset on death.
 - The DSL has `invertZone(x, y, w, h)` and `floatZone(x, y, w, h)`.
 
+### Platforms
+
+A stage may list platforms that move back and forth on a fixed schedule:
+
+```ts
+platforms: [{ x: 8, y: 14, width: 3, axis: 'x', distance: 5, period: 80 }];
+```
+
+- A platform is one tile high, starts at tile (`x`, `y`) and travels `distance` tiles along
+  `axis` and back; `period` is the number of ticks for the way out and back (an even number from
+  20 to 1200), `phase` shifts the schedule by that many ticks.
+- Its place is a pure function of the ticks since the stage was entered or the player last
+  died in it, so every attempt meets it in the same state and a replay always sees it where it was.
+- The player stands on it and is carried; jumping or walking off lets go; it can be jumped
+  through from below and does not block sideways movement.
+- Whole numbers only; the whole path has to lie inside the stage.
+- The solver search grows with the period, so keep periods short (around 80 to 120 ticks) in
+  levels you want solved automatically.
+- The DSL has `movingPlatform(x, y, width, { axis, distance, period, phase? })`.
+
 ### Traps
 
 ```ts
@@ -100,25 +120,26 @@ Stages are written with the small DSL in `packages/sim/src/levels/stage.ts` inst
 hand-drawn ASCII. A stage is a two-row floor plus features; the spawn is in column 1 and the
 exit in column 30 unless told otherwise.
 
-| Feature                          | Effect                                                             |
-| -------------------------------- | ------------------------------------------------------------------ |
-| `gap(x, w)`                      | permanent hole in the floor                                        |
-| `spikes(x, w)`                   | permanent spikes on the floor                                      |
-| `wall(x, h)`                     | permanent wall on the floor                                        |
-| `block(x, y, w, h)`              | free-floating solid block                                          |
-| `pop(at, x, w)`                  | spikes appear at `x` when the player reaches column `at`           |
-| `drop(at, x, w)`                 | the floor vanishes at `x`                                          |
-| `rise(at, x, h)`                 | a wall rises at `x`                                                |
-| `sky(at, x, y)`                  | a spike appears in mid-air at (`x`, `y`)                           |
-| `vanish(at, x, y, w)`            | tiles of a platform vanish                                         |
-| `trap(action, rect, tiles)`      | raw trap with its own trigger rectangle (for platforms and stairs) |
-| `timed(feature, {delay, rearm})` | gives the traps of `feature` a delay and/or a re-arm time          |
-| `invertZone(x, y, w, h)`         | area where left and right are swapped                              |
-| `floatZone(x, y, w, h)`          | area with low gravity                                              |
-| `seal(at, x, y, h)`              | tiles appear at (`x`, `y`) downwards                               |
-| `hidden(x, y, w, h)`             | invisible solid tiles, `y` is the top row                          |
-| `fake(x, y, w, h)`               | tiles that look solid and are not, `y` is the top row              |
-| `fakeExit(x, y)`                 | a deadly door that looks like the exit (row defaults to the floor) |
+| Feature                                             | Effect                                                             |
+| --------------------------------------------------- | ------------------------------------------------------------------ |
+| `gap(x, w)`                                         | permanent hole in the floor                                        |
+| `spikes(x, w)`                                      | permanent spikes on the floor                                      |
+| `wall(x, h)`                                        | permanent wall on the floor                                        |
+| `block(x, y, w, h)`                                 | free-floating solid block                                          |
+| `pop(at, x, w)`                                     | spikes appear at `x` when the player reaches column `at`           |
+| `drop(at, x, w)`                                    | the floor vanishes at `x`                                          |
+| `rise(at, x, h)`                                    | a wall rises at `x`                                                |
+| `sky(at, x, y)`                                     | a spike appears in mid-air at (`x`, `y`)                           |
+| `vanish(at, x, y, w)`                               | tiles of a platform vanish                                         |
+| `trap(action, rect, tiles)`                         | raw trap with its own trigger rectangle (for platforms and stairs) |
+| `timed(feature, {delay, rearm})`                    | gives the traps of `feature` a delay and/or a re-arm time          |
+| `invertZone(x, y, w, h)`                            | area where left and right are swapped                              |
+| `floatZone(x, y, w, h)`                             | area with low gravity                                              |
+| `movingPlatform(x, y, w, {axis, distance, period})` | a platform that moves back and forth                               |
+| `seal(at, x, y, h)`                                 | tiles appear at (`x`, `y`) downwards                               |
+| `hidden(x, y, w, h)`                                | invisible solid tiles, `y` is the top row                          |
+| `fake(x, y, w, h)`                                  | tiles that look solid and are not, `y` is the top row              |
+| `fakeExit(x, y)`                                    | a deadly door that looks like the exit (row defaults to the floor) |
 
 A trap fires when the player overlaps columns `at` and `at + 1` within three tiles above
 the floor. Reference: a jump clears a wall of 2 tiles and a gap of 3 tiles.
@@ -183,6 +204,7 @@ target that skilled players can beat; beating it scores more than 1000 points (s
 | 25  | `everything-lies`     | Everything Lies     | 4      | All three lies in one level                                  |
 | 26  | `second-thoughts`     | Second Thoughts     | 3      | Traps that wait a moment, and traps that put themselves back |
 | 27  | `looking-glass`       | Looking Glass       | 3      | Zones that swap the controls or take the weight off          |
+| 28  | `ferryman`            | The Ferryman        | 3      | Platforms that carry you over the gaps                       |
 
 ## Design guidance
 

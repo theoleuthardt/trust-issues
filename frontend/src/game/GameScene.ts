@@ -7,6 +7,7 @@ import {
   Tile,
   createState,
   encodeReplay,
+  platformRect,
   runVersions,
   scoreRun,
   stageOf,
@@ -458,6 +459,7 @@ export class GameScene extends Phaser.Scene {
     this.renderZones(g);
     this.renderHalo(g, now);
     this.renderTiles(g, now);
+    this.renderPlatforms(g);
     this.renderExit(g);
     this.renderParticles(g, now);
     if (this.ghost && this.ghost.state.stage === this.state.stage) {
@@ -510,6 +512,19 @@ export class GameScene extends Phaser.Scene {
     }
     this.previousTiles = this.state.tiles.slice();
     this.lastPosition = { x: this.state.x, y: this.state.y };
+  }
+
+  private renderPlatforms(g: Phaser.GameObjects.Graphics): void {
+    for (const platform of this.stage.platforms) {
+      const rect = platformRect(platform, this.state.stageTick);
+      g.fillStyle(colorNumber('ink'));
+      g.fillRect(rect.x, rect.y, rect.width, 12);
+      g.fillStyle(colorNumber('inkSoft'));
+      g.fillRect(rect.x, rect.y, rect.width, 3);
+      g.fillStyle(colorNumber('ink'));
+      g.fillRect(rect.x + 4, rect.y + 12, 4, 6);
+      g.fillRect(rect.x + rect.width - 8, rect.y + 12, 4, 6);
+    }
   }
 
   /** A faint tint with a mark for each zone: arrows for inverted controls, chevrons for floating. */

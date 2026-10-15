@@ -8,6 +8,7 @@ import {
   gap,
   hidden,
   invertZone,
+  movingPlatform,
   pop,
   rise,
   timed,
@@ -27,7 +28,7 @@ const level = (id: string, name: string, stages: StageDef[], maxFrames = 7200): 
 /**
  * Levels 21 to 25: walls you can walk through, floors that are not there, doors that kill.
  * Level 26 adds traps with a delay and traps that put themselves back, level 27 zones that
- * swap the controls or take the weight off.
+ * swap the controls or take the weight off, level 28 platforms that carry you over the gaps.
  */
 export const PACK_5: LevelContent[] = [
   level('paper-walls', 'Paper Walls', [
@@ -92,5 +93,20 @@ export const PACK_5: LevelContent[] = [
     stage([invertZone(8, 8, 6, 8), spikes(10), gap(17, 2)]),
     stage([floatZone(6, 0, 8, 16), block(14, 12, 4, 1), gap(15, 4)], { end: 29 }),
     stage([invertZone(5, 8, 5, 8), pop(7, 12), floatZone(16, 0, 7, 16), gap(18, 5), wall(26, 2)]),
+  ]),
+  level('ferryman', 'The Ferryman', [
+    stage([gap(8, 8), movingPlatform(7, 14, 3, { axis: 'x', distance: 5, period: 80 })]),
+    stage([
+      gap(7, 9),
+      movingPlatform(6, 14, 3, { axis: 'x', distance: 6, period: 100 }),
+      pop(25, 28),
+    ]),
+    stage([
+      gap(6, 8),
+      movingPlatform(5, 14, 3, { axis: 'x', distance: 5, period: 80 }),
+      gap(17, 7),
+      movingPlatform(16, 14, 3, { axis: 'x', distance: 5, period: 80, phase: 40 }),
+      pop(27, 29),
+    ]),
   ]),
 ];

@@ -1,4 +1,4 @@
-import type { StageDef, TileRect, TrapAction, TrapDef, ZoneDef } from '../level';
+import type { PlatformDef, StageDef, TileRect, TrapAction, TrapDef, ZoneDef } from '../level';
 
 /** Stages are authored on the canvas of the game: 32 x 18 tiles. */
 export const STAGE_WIDTH = 32;
@@ -13,6 +13,7 @@ interface Canvas {
   cells: string[][];
   traps: TrapDef[];
   zones: ZoneDef[];
+  platforms: PlatformDef[];
 }
 
 /** One building block of a stage, applied in order by `stage`. */
@@ -125,6 +126,21 @@ export const timed =
       const original = canvas.traps[index];
       if (original) canvas.traps[index] = { ...original, ...timing };
     }
+  };
+
+/**
+ * A platform of `width` tiles with its left end at (`x`, `y`) that travels `distance` tiles
+ * along `axis` and back every `period` ticks; the player can ride it.
+ */
+export const movingPlatform =
+  (
+    x: number,
+    y: number,
+    width: number,
+    motion: { axis: 'x' | 'y'; distance: number; period: number; phase?: number },
+  ): Feature =>
+  (canvas) => {
+    canvas.platforms.push({ x, y, width, ...motion });
   };
 
 /** An area, in tiles, where left and right are swapped. */
@@ -240,12 +256,16 @@ export function stage(features: readonly Feature[], options: StageOptions = {}):
     ),
     traps: [],
     zones: [],
+    platforms: [],
   };
   for (const feature of features) feature(canvas);
   put(canvas, start, FLOOR_ROW, 'S');
   put(canvas, end, endY, 'E');
   const rows = canvas.cells.map((row) => row.join(''));
-  return canvas.zones.length > 0
-    ? { rows, traps: canvas.traps, zones: canvas.zones }
-    : { rows, traps: canvas.traps };
+  return {
+    rows,
+    traps: canvas.traps,
+    ...(canvas.zones.length > 0 ? { zones: canvas.zones } : {}),
+    ...(canvas.platforms.length > 0 ? { platforms: canvas.platforms } : {}),
+  };
 }
