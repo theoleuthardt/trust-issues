@@ -10,7 +10,7 @@ from litestar.exceptions import NotFoundException, PermissionDeniedException
 from litestar.handlers import BaseRouteHandler
 from litestar.params import Parameter
 from litestar.security.jwt import Token
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from trust_issues_backend.models import AuditEvent, BestRun, User
@@ -61,8 +61,10 @@ async def list_runs(
     )
     if level_id is not None:
         query = query.where(BestRun.level_id == level_id)
+    if flagged:
+        query = query.where(func.json_array_length(BestRun.flags) > 0)
     rows = await session.execute(query)
-    runs = [
+    return [
         AdminRun(
             id=run.id,
             user_id=run.user_id,
@@ -79,7 +81,6 @@ async def list_runs(
         )
         for run, username in rows
     ]
-    return [run for run in runs if run.flags] if flagged else runs
 
 
 @get("/api/admin/users", guards=[admin_only])

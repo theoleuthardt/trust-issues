@@ -97,6 +97,18 @@ async def test_lists_runs_with_flags_and_filters_by_flagged(
     assert "replay" not in flagged[0]
 
 
+async def test_the_flagged_filter_is_applied_before_the_limit(
+    client: AsyncTestClient, verifier: FakeVerifier, engine: AsyncEngine
+) -> None:
+    people = await setup_board(client, verifier, engine)
+    for name in ["carol", "dave"]:
+        await submit(client, verifier, await auth_headers(client, name), 500, 600)
+
+    response = await client.get("/api/admin/runs?flagged=true&limit=1", headers=people["root"])
+
+    assert [run["username"] for run in response.json()] == ["alice"]
+
+
 async def test_hiding_removes_the_run_from_the_board_but_not_from_progress(
     client: AsyncTestClient, verifier: FakeVerifier, engine: AsyncEngine
 ) -> None:
