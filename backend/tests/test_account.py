@@ -2,7 +2,7 @@ import asyncio
 
 from litestar.testing import AsyncTestClient
 
-from tests.conftest import PASSWORD, FakeVerifier, auth_headers, register
+from tests.conftest import PASSWORD, RUN_VERSIONS, FakeVerifier, auth_headers, register
 from trust_issues_backend.verifier import VerifiedRun
 
 NEW_PASSWORD = "a-completely-new-passphrase"
@@ -104,7 +104,9 @@ async def test_delete_account_removes_the_user_and_the_runs(
     headers = await auth_headers(client, "mallory")
     verifier.next = VerifiedRun(finished=True, frames=300, deaths=0, score=1000)
     await client.post(
-        "/api/runs", json={"level_id": "trust-nothing", "replay": [2, 60]}, headers=headers
+        "/api/runs",
+        json={"level_id": "trust-nothing", "replay": [2, 60], **RUN_VERSIONS},
+        headers=headers,
     )
     assert len((await client.get("/api/leaderboard/trust-nothing")).json()) == 1
 

@@ -6,8 +6,8 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from litestar.testing import AsyncTestClient
 from sqlalchemy.engine import make_url
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.pool import NullPool, StaticPool
 
 from trust_issues_backend.app import create_app
 from trust_issues_backend.models import Base
@@ -15,6 +15,7 @@ from trust_issues_backend.settings import Settings
 from trust_issues_backend.verifier import VerifiedRun
 
 PASSWORD = "correct-horse-battery"
+RUN_VERSIONS = {"sim_version": 1, "level_revision": 1}
 TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
 
 
@@ -36,13 +37,20 @@ class FakeVerifier:
         default_factory=lambda: VerifiedRun(finished=True, frames=300, deaths=0, score=1000)
     )
     calls: list[tuple[str, list[int]]] = field(default_factory=list)
+    versions: list[tuple[int, int]] = field(default_factory=list)
     request_ids: list[str | None] = field(default_factory=list)
     compute: Callable[[str, list[int]], VerifiedRun] | None = None
 
     async def verify(
-        self, level_id: str, replay: list[int], request_id: str | None = None
+        self,
+        level_id: str,
+        replay: list[int],
+        sim_version: int,
+        level_revision: int,
+        request_id: str | None = None,
     ) -> VerifiedRun:
         self.calls.append((level_id, replay))
+        self.versions.append((sim_version, level_revision))
         self.request_ids.append(request_id)
         if self.compute is not None:
             return self.compute(level_id, replay)
@@ -85,11 +93,13 @@ def verifier() -> FakeVerifier:
 
 
 @pytest.fixture
-async def client(
-    settings: Settings, verifier: FakeVerifier, clock: FakeClock
-) -> AsyncIterator[AsyncTestClient]:
+async def engine(settings: Settings) -> AsyncIterator[AsyncEngine]:
+    """
+    The database of a test. The test client runs the app on its own event loop, so PostgreSQL
+    connections must not be pooled across it and the test body.
+    """
     if settings.database_url.startswith("sqlite"):
-        engine = create_async_engine(
+        test_engine = create_async_engine(
             settings.database_url,
             poolclass=StaticPool,
             connect_args={"check_same_thread": False},
@@ -102,7 +112,15 @@ async def client(
                 await connection.run_sync(Base.metadata.drop_all)
         finally:
             await cleanup.dispose()
-        engine = create_async_engine(settings.database_url)
+        test_engine = create_async_engine(settings.database_url, poolclass=NullPool)
+    yield test_engine
+    await test_engine.dispose()
+
+
+@pytest.fixture
+async def client(
+    settings: Settings, verifier: FakeVerifier, clock: FakeClock, engine: AsyncEngine
+) -> AsyncIterator[AsyncTestClient]:
     app = create_app(settings, verifier=verifier, engine=engine, create_schema=True, clock=clock)
     async with AsyncTestClient(app=app) as test_client:
         yield test_client

@@ -61,6 +61,7 @@ BASELINE_COLUMNS = {
 BASELINE_INDEXES = {"best_runs": {"ix_best_runs_level_score"}}
 BASELINE_UNIQUE = {"users": {("username_key",)}, "best_runs": {("user_id", "level_id")}}
 LOCKOUT_COLUMNS = {"failed_logins", "locked_until"}
+VERSION_COLUMNS = {"sim_version", "level_revision"}
 
 
 def alembic_config(url: str) -> Config:
@@ -73,8 +74,9 @@ def alembic_config(url: str) -> Config:
 
 def _adoptable_revision(sync: Connection) -> str | None:
     """
-    The revision a database created from the models corresponds to: the baseline, or the
-    lockout revision when its columns are all there. None when the schema is incomplete.
+    The revision a database created from the models corresponds to: the baseline, the lockout
+    revision or the run versions revision, when all columns of that revision (and the ones
+    before it) are there. None when the schema has only part of a revision.
     """
     inspector = inspect(sync)
     for table, columns in BASELINE_COLUMNS.items():
@@ -91,10 +93,13 @@ def _adoptable_revision(sync: Connection) -> str | None:
         }
         if BASELINE_UNIQUE[table] - unique:
             return None
-    present = LOCKOUT_COLUMNS & {column["name"] for column in inspector.get_columns("users")}
-    if not present:
-        return "0001"
-    return "0002" if present == LOCKOUT_COLUMNS else None
+    lockout = LOCKOUT_COLUMNS & {column["name"] for column in inspector.get_columns("users")}
+    versions = VERSION_COLUMNS & {column["name"] for column in inspector.get_columns("best_runs")}
+    if lockout not in (set(), LOCKOUT_COLUMNS) or versions not in (set(), VERSION_COLUMNS):
+        return None
+    if versions:
+        return "0003" if lockout else None
+    return "0002" if lockout else "0001"
 
 
 async def _state(url: str) -> tuple[str, str | None]:

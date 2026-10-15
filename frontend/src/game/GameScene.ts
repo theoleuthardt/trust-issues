@@ -7,11 +7,12 @@ import {
   Tile,
   createState,
   encodeReplay,
+  runVersions,
   scoreRun,
   stageOf,
   step,
 } from '@trust-issues/sim';
-import type { GameState, Level, Stage } from '@trust-issues/sim';
+import type { GameState, Level, RunVersions, Stage } from '@trust-issues/sim';
 import { Input } from '@trust-issues/sim';
 import { formatTime } from '../format';
 import type { InputState } from '../input/InputState';
@@ -41,6 +42,7 @@ export interface RunFinishedEvent {
   deaths: number;
   score: number;
   replay: number[];
+  versions: RunVersions;
 }
 
 export interface GameSceneData {
@@ -282,6 +284,7 @@ export class GameScene extends Phaser.Scene {
       deaths,
       score,
       replay: encodeReplay(this.recorded),
+      versions: runVersions(this.level),
     };
     this.events.emit(RUN_FINISHED, event);
     this.onFinished?.(event);

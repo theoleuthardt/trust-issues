@@ -117,6 +117,51 @@ async def test_adopts_a_database_from_the_baseline_era_and_upgrades_it(tmp_path:
     assert await scalar(url, "SELECT locked_until FROM users WHERE username_key = 'old'") is None
 
 
+async def test_adopts_a_database_from_before_the_versions_and_marks_old_runs_as_version_1(
+    tmp_path: Path,
+) -> None:
+    url = await fresh_url(tmp_path)
+    await asyncio.to_thread(command.upgrade, alembic_config(url), "0002")
+    engine = create_async_engine(url)
+    try:
+        async with engine.begin() as connection:
+            await connection.exec_driver_sql(
+                "INSERT INTO users (id, username, username_key, password_hash, token_version, "
+                "created_at, failed_logins) VALUES (1, 'Old', 'old', 'x', 0, CURRENT_TIMESTAMP, 0)"
+            )
+            await connection.exec_driver_sql(
+                "INSERT INTO best_runs (user_id, level_id, score, frames, deaths, replay, "
+                "submitted_at) VALUES (1, 'trust-nothing', 900, 300, 2, '[2, 60]', "
+                "CURRENT_TIMESTAMP)"
+            )
+            await connection.exec_driver_sql("DROP TABLE alembic_version")
+    finally:
+        await engine.dispose()
+
+    await run_migrate(url)
+
+    assert await scalar(url, "SELECT version_num FROM alembic_version") == HEAD
+    assert await scalar(url, "SELECT sim_version FROM best_runs") == 1
+    assert await scalar(url, "SELECT level_revision FROM best_runs") == 1
+
+
+async def test_refuses_a_database_with_only_one_of_the_version_columns(tmp_path: Path) -> None:
+    url = await fresh_url(tmp_path)
+    await asyncio.to_thread(command.upgrade, alembic_config(url), "0002")
+    engine = create_async_engine(url)
+    try:
+        async with engine.begin() as connection:
+            await connection.exec_driver_sql(
+                "ALTER TABLE best_runs ADD COLUMN sim_version INTEGER NOT NULL DEFAULT 1"
+            )
+            await connection.exec_driver_sql("DROP TABLE alembic_version")
+    finally:
+        await engine.dispose()
+
+    with pytest.raises(OutdatedDatabaseError):
+        await run_migrate(url)
+
+
 async def test_refuses_a_database_from_before_the_score_column(tmp_path: Path) -> None:
     url = await fresh_url(tmp_path)
     engine = create_async_engine(url)

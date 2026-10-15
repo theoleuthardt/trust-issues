@@ -1,3 +1,9 @@
+/**
+ * Version of the simulation rules. It changes whenever physics, collision, trap behaviour
+ * or the replay format change in a way that alters what an existing replay does.
+ */
+export const SIM_VERSION = 1;
+
 /** Edge length of one level tile in simulation units (pixels). */
 export const TILE_SIZE = 32;
 

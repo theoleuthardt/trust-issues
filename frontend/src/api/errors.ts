@@ -29,6 +29,7 @@ export function messageFor(
   if (context === 'run') {
     if (status === 401) return 'Your session ended, please sign in again.';
     if (status === 404) return 'The server does not know this level.';
+    if (status === 409) return 'This version of the game is outdated, please reload the page.';
     if (status === 422) {
       const reason = detailOf(body);
       return reason ? `The run was not accepted: ${reason}.` : 'The run was not accepted.';

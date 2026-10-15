@@ -1,10 +1,15 @@
 import asyncio
 
+import pytest
 from litestar.testing import AsyncTestClient
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
-from tests.conftest import FakeVerifier, auth_headers
+from tests.conftest import RUN_VERSIONS, FakeVerifier, auth_headers
+from trust_issues_backend.models import BestRun
 from trust_issues_backend.verifier import (
     InvalidReplayError,
+    OutdatedVersionError,
     UnknownLevelError,
     VerifiedRun,
     VerifierUnavailableError,
@@ -14,7 +19,11 @@ REPLAY = [2, 62, 6, 1, 2, 200]
 
 
 def submission(level_id: str = "trust-nothing", replay: list[int] | None = None) -> dict:
-    return {"level_id": level_id, "replay": REPLAY if replay is None else replay}
+    return {
+        "level_id": level_id,
+        "replay": REPLAY if replay is None else replay,
+        **RUN_VERSIONS,
+    }
 
 
 def run(frames: int, deaths: int, score: int) -> VerifiedRun:
@@ -231,3 +240,83 @@ async def test_concurrent_submissions_of_one_player_keep_the_best(
     assert [response.status_code for response in responses] == [201] * 12
     board = (await client.get("/api/leaderboard/trust-nothing")).json()
     assert [(entry["username"], entry["score"]) for entry in board] == [("mallory", 1900)]
+
+
+async def test_passes_the_versions_of_the_replay_to_the_verifier(
+    client: AsyncTestClient, verifier: FakeVerifier
+) -> None:
+    headers = await auth_headers(client, "mallory")
+
+    body = {**submission(), "sim_version": 4, "level_revision": 2}
+    response = await client.post("/api/runs", json=body, headers=headers)
+
+    assert response.status_code == 201
+    assert verifier.versions == [(4, 2)]
+
+
+async def test_stores_the_versions_a_best_run_was_verified_against(
+    client: AsyncTestClient, verifier: FakeVerifier, engine: AsyncEngine
+) -> None:
+    headers = await auth_headers(client, "mallory")
+    body = {**submission(), "sim_version": 4, "level_revision": 2}
+
+    await client.post("/api/runs", json=body, headers=headers)
+
+    async with async_sessionmaker(engine)() as session:
+        stored = (await session.scalars(select(BestRun))).one()
+    assert (stored.sim_version, stored.level_revision) == (4, 2)
+
+
+async def test_a_better_run_replaces_the_versions_of_the_old_best(
+    client: AsyncTestClient, verifier: FakeVerifier, engine: AsyncEngine
+) -> None:
+    headers = await auth_headers(client, "mallory")
+    verifier.next = run(frames=300, deaths=0, score=1000)
+    await client.post("/api/runs", json={**submission(), "level_revision": 1}, headers=headers)
+    verifier.next = run(frames=250, deaths=0, score=1200)
+
+    await client.post("/api/runs", json={**submission(), "level_revision": 2}, headers=headers)
+
+    async with async_sessionmaker(engine)() as session:
+        stored = (await session.scalars(select(BestRun))).one()
+    assert stored.level_revision == 2
+
+
+@pytest.mark.parametrize("missing", ["sim_version", "level_revision"])
+async def test_requires_both_versions(
+    client: AsyncTestClient, verifier: FakeVerifier, missing: str
+) -> None:
+    headers = await auth_headers(client, "mallory")
+    body = {key: value for key, value in submission().items() if key != missing}
+
+    response = await client.post("/api/runs", json=body, headers=headers)
+
+    assert response.status_code == 400
+    assert verifier.calls == []
+
+
+@pytest.mark.parametrize("value", [0, -1, 1.5, "abc"])
+async def test_rejects_invalid_versions(
+    client: AsyncTestClient, verifier: FakeVerifier, value: object
+) -> None:
+    headers = await auth_headers(client, "mallory")
+
+    response = await client.post(
+        "/api/runs", json={**submission(), "sim_version": value}, headers=headers
+    )
+
+    assert response.status_code == 400
+    assert verifier.calls == []
+
+
+async def test_answers_409_when_the_versions_are_no_longer_accepted(
+    client: AsyncTestClient, verifier: FakeVerifier
+) -> None:
+    headers = await auth_headers(client, "mallory")
+    verifier.next = OutdatedVersionError("no longer accepted")
+
+    response = await client.post("/api/runs", json=submission(), headers=headers)
+
+    assert response.status_code == 409
+    assert "reload" in response.json()["detail"].lower()
+    assert (await client.get("/api/leaderboard/trust-nothing")).json() == []

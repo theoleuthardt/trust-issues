@@ -38,8 +38,8 @@ Single suites: `npm test --workspace @trust-issues/sim`, `cd backend && uv run p
 
 - **`packages/sim` is deterministic and framework-free.** No `Math.random`, `Date`,
   timers, DOM or Phaser imports (ESLint enforces it). Anything that changes physics or a
-  level changes what old replays mean, so it needs an explicit decision and, once
-  versioning exists, a version bump.
+  level changes what old replays mean, so it needs an explicit decision and a version
+  bump (`SIM_VERSION`, a level's `revision`), see `docs/VERSIONING.md`.
 - **The client never reports a time.** It submits inputs; the verifier derives
   `finished`, `frames`, `deaths`. Never add a backend field that trusts a client number.
 - **Levels are server-owned.** Submissions carry only a level id.

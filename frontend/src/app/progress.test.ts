@@ -119,6 +119,26 @@ describe('ProgressStore with replays and keys', () => {
     expect(account.load()).toEqual({ b: run(800) });
   });
 
+  it('keeps the versions a run was recorded with', () => {
+    const store = new ProgressStore(new MemoryStorage());
+    const versions = { simVersion: 2, levelRevision: 3 };
+    store.record('a', { ...run(900), replay: [2, 60], versions });
+
+    expect(store.load()).toEqual({ a: { ...run(900), replay: [2, 60], versions } });
+  });
+
+  it('ignores damaged versions but keeps the result and the replay', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      PROGRESS_KEY,
+      JSON.stringify({
+        a: { ...run(900), replay: [2, 60], versions: { simVersion: 'x', levelRevision: 0 } },
+      }),
+    );
+
+    expect(new ProgressStore(storage).load()).toEqual({ a: { ...run(900), replay: [2, 60] } });
+  });
+
   it('ignores a damaged replay but keeps the result', () => {
     const storage = new MemoryStorage();
     storage.setItem(PROGRESS_KEY, JSON.stringify({ a: { ...run(900), replay: 'nope' } }));

@@ -30,13 +30,16 @@ verification cheap and drift-free (see [ADR 0002](adr/0002-node-verifier-reusing
 1. The player plays in the browser. Every simulation tick (60 per second) the input mask
    (left, right, jump as bits) is appended to a list.
 2. When the exit is reached, the list is run-length encoded to `[mask, count, ...]`.
-3. The client sends `POST /api/runs` with `{level_id, replay}` and its bearer token.
+3. The client sends `POST /api/runs` with `{level_id, replay, sim_version, level_revision}`
+   and its bearer token. The two versions are the ones the replay was recorded with.
 4. The backend validates size and shape, then asks the verifier to replay it.
-5. The verifier decodes the replay (strictly), looks the level up **by id on the server**,
+5. The verifier refuses (409) a simulation version or level revision other than the ones it
+   runs, decodes the replay (strictly), looks the level up **by id on the server**,
    simulates it and answers with `{finished, frames, deaths, score}`; see
-   [SCORING.md](SCORING.md).
+   [SCORING.md](SCORING.md) and [VERSIONING.md](VERSIONING.md).
 6. The backend stores the result only if it finished the level and is the user's best one by
-   score. The numbers on the leaderboard are the ones the verifier computed.
+   score, together with the versions it was verified against. The numbers on the
+   leaderboard are the ones the verifier computed.
 
 ## Simulation model
 
@@ -51,10 +54,10 @@ verification cheap and drift-free (see [ADR 0002](adr/0002-node-verifier-reusing
 
 ## Data model
 
-| Table       | Columns                                                                                                        | Notes                                                                                                               |
-| ----------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `users`     | `id`, `username`, `username_key` (unique, lower case), `password_hash` (argon2), `token_version`, `created_at` | `token_version` is embedded in JWTs and allows revoking all tokens of a user.                                       |
-| `best_runs` | `id`, `user_id`, `level_id`, `score`, `frames`, `deaths`, `replay` (JSON), `submitted_at`                      | Unique per `(user_id, level_id)`. A row doubles as the completion record, so progress is derived, not stored twice. |
+| Table       | Columns                                                                                                                    | Notes                                                                                                               |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `users`     | `id`, `username`, `username_key` (unique, lower case), `password_hash` (argon2), `token_version`, `created_at`             | `token_version` is embedded in JWTs and allows revoking all tokens of a user.                                       |
+| `best_runs` | `id`, `user_id`, `level_id`, `score`, `frames`, `deaths`, `replay` (JSON), `sim_version`, `level_revision`, `submitted_at` | Unique per `(user_id, level_id)`. A row doubles as the completion record, so progress is derived, not stored twice. |
 
 The schema is owned by Alembic migrations (`backend/alembic`). The backend container runs
 `python -m trust_issues_backend.migrate` before the server starts: it waits for the database,

@@ -25,7 +25,7 @@ verifier_token="$(python3 -c 'import secrets; print(secrets.token_hex(24))')"
 jwt_secret="$(python3 -c 'import secrets; print(secrets.token_hex(24))')"
 
 cd "$root"
-replay="$(cd verifier && ../node_modules/.bin/tsx -e "import { SOLUTIONS } from '@trust-issues/sim/testing'; console.log(JSON.stringify(SOLUTIONS['trust-nothing']?.replay))")"
+replay="$(cd verifier && ../node_modules/.bin/tsx -e "import { SIM_VERSION, getLevel } from '@trust-issues/sim'; import { SOLUTIONS } from '@trust-issues/sim/testing'; console.log(JSON.stringify({ replay: SOLUTIONS['trust-nothing']?.replay, simVersion: SIM_VERSION, levelRevision: getLevel('trust-nothing')?.revision }))")"
 
 PORT=18081 VERIFIER_TOKEN="$verifier_token" \
   setsid node_modules/.bin/tsx verifier/src/main.ts >"$tmp/verifier.log" 2>&1 &

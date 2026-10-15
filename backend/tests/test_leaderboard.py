@@ -1,6 +1,6 @@
 from litestar.testing import AsyncTestClient
 
-from tests.conftest import FakeVerifier, auth_headers
+from tests.conftest import RUN_VERSIONS, FakeVerifier, auth_headers
 from trust_issues_backend.verifier import VerifiedRun
 
 
@@ -9,7 +9,9 @@ async def _submit(
 ) -> None:
     verifier.next = VerifiedRun(finished=True, frames=frames, deaths=0, score=score)
     response = await client.post(
-        "/api/runs", json={"level_id": "trust-nothing", "replay": [2, 1]}, headers=headers
+        "/api/runs",
+        json={"level_id": "trust-nothing", "replay": [2, 1], **RUN_VERSIONS},
+        headers=headers,
     )
     assert response.status_code == 201
 

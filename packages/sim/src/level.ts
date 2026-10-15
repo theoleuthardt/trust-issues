@@ -1,4 +1,4 @@
-import { PLAYER_HEIGHT, PLAYER_WIDTH, TILE_SIZE, Tile } from './constants';
+import { PLAYER_HEIGHT, PLAYER_WIDTH, SIM_VERSION, TILE_SIZE, Tile } from './constants';
 
 export type TrapAction = 'remove_tiles' | 'add_tiles' | 'add_spikes';
 
@@ -41,6 +41,8 @@ export interface LevelDef {
   maxFrames: number;
   /** Reference time in frames that scores the par score; equals the recorded reference solution. */
   parFrames: number;
+  /** Defaults to 1; raise it with every change that alters what an existing replay does. */
+  revision?: number;
 }
 
 /** Parsed, validated stage. `tiles` is the initial row-major tile grid. */
@@ -60,6 +62,19 @@ export interface Level {
   stages: readonly Stage[];
   maxFrames: number;
   parFrames: number;
+  /** Counts the changes to this level that alter what an existing replay does. */
+  revision: number;
+}
+
+/** The versions a replay was recorded with; the verifier only accepts the current ones. */
+export interface RunVersions {
+  simVersion: number;
+  levelRevision: number;
+}
+
+/** The versions of the simulation and of `level` that a run played right now is recorded with. */
+export function runVersions(level: Level): RunVersions {
+  return { simVersion: SIM_VERSION, levelRevision: level.revision };
 }
 
 /** Most stages one level may have. */
@@ -135,6 +150,10 @@ export function buildLevel(def: LevelDef): Level {
   if (!Number.isInteger(def.parFrames) || def.parFrames <= 0 || def.parFrames > def.maxFrames) {
     throw new Error(`level ${def.id}: parFrames must be a positive integer within maxFrames`);
   }
+  const revision = def.revision ?? 1;
+  if (!Number.isInteger(revision) || revision <= 0) {
+    throw new Error(`level ${def.id}: revision must be a positive integer`);
+  }
   if (!Array.isArray(def.stages) || def.stages.length < 1) {
     throw new Error(`level ${def.id}: at least one stage required`);
   }
@@ -156,6 +175,7 @@ export function buildLevel(def: LevelDef): Level {
     stages,
     maxFrames: def.maxFrames,
     parFrames: def.parFrames,
+    revision,
   };
 }
 

@@ -1,10 +1,15 @@
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { SIM_VERSION, getLevel } from '@trust-issues/sim';
 import { SOLUTIONS } from '@trust-issues/sim/testing';
 import { createVerifierServer } from './server';
 
 const TOKEN = 'test-token-test-token-test-token-0123';
 let base = '';
+const versions = {
+  simVersion: SIM_VERSION,
+  levelRevision: getLevel('trust-nothing')?.revision ?? 0,
+};
 const logged: Record<string, unknown>[] = [];
 const server = createVerifierServer({
   token: TOKEN,
@@ -40,6 +45,7 @@ describe('verifier server', () => {
     const response = await post({
       levelId: 'trust-nothing',
       replay: SOLUTIONS['trust-nothing']?.replay,
+      ...versions,
     });
 
     expect(response.status).toBe(200);
@@ -49,6 +55,17 @@ describe('verifier server', () => {
       deaths: 0,
       score: 1000,
     });
+  });
+
+  it('answers 409 for a simulation version it does not run', async () => {
+    const response = await post({
+      levelId: 'trust-nothing',
+      replay: [],
+      ...versions,
+      simVersion: SIM_VERSION + 1,
+    });
+
+    expect(response.status).toBe(409);
   });
 
   it('rejects a missing or wrong token', async () => {
@@ -86,7 +103,7 @@ describe('verifier server', () => {
     logged.length = 0;
 
     const response = await post(
-      { levelId: 'trust-nothing', replay: [] },
+      { levelId: 'trust-nothing', replay: [], ...versions },
       { 'x-request-id': 'trace-abcdef12' },
     );
     await response.text();
@@ -105,7 +122,7 @@ describe('verifier server', () => {
   it('only logs the fixed set of fields, never the token or the replay', async () => {
     logged.length = 0;
 
-    await (await post({ levelId: 'trust-nothing', replay: [2, 61] })).text();
+    await (await post({ levelId: 'trust-nothing', replay: [2, 61], ...versions })).text();
 
     expect(Object.keys(logged[0] ?? {}).sort()).toEqual([
       'durationMs',

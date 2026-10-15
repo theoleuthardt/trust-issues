@@ -106,6 +106,7 @@ export function solveStage(stage: Stage, options: SolveOptions = {}): SolveResul
     stages: [stage],
     maxFrames,
     parFrames: 1,
+    revision: 1,
   };
   const exitCentre = stage.exit.x * TILE_SIZE + TILE_SIZE / 2;
   const slack = (TILE_SIZE + PLAYER_WIDTH) / 2;
