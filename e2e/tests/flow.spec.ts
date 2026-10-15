@@ -88,23 +88,24 @@ test('the menus work with the keyboard alone', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Resume' })).toBeFocused();
 });
 
-test('every screen of the menu flow has a visible focus outline on its buttons', async ({
+test('a focused menu button looks different from the same button when it is not focused', async ({
   page,
 }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Play as guest' }).click();
-  await page.keyboard.press('Tab');
+  const levels = page.getByRole('button', { name: 'Levels' });
+  const look = () =>
+    levels.evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return `${style.backgroundColor}|${style.color}`;
+    });
 
-  const focused = await page.evaluate(() => {
-    const element = document.activeElement;
-    if (!element) return '';
-    const style = window.getComputedStyle(element);
-    return `${style.backgroundColor}|${style.color}`;
-  });
-  const idle = await page.getByRole('button', { name: 'Leaderboards' }).evaluate((element) => {
-    const style = window.getComputedStyle(element);
-    return `${style.backgroundColor}|${style.color}`;
-  });
+  await page.keyboard.press('Tab');
+  await expect(levels).toBeFocused();
+  const focused = await look();
+  await page.keyboard.press('Tab');
+  await expect(levels).not.toBeFocused();
+  const idle = await look();
 
   expect(focused).not.toBe(idle);
 });

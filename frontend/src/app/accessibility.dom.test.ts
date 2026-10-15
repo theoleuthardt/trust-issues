@@ -135,8 +135,28 @@ function nameOf(element: Element): string {
   }
   const wrapping = element.closest('label');
   if (wrapping?.textContent?.trim()) return wrapping.textContent.trim();
-  return element.textContent?.trim() ?? '';
+  const isField = ['input', 'select', 'textarea'].includes(element.tagName.toLowerCase());
+  return isField ? '' : (element.textContent?.trim() ?? '');
 }
+
+describe('nameOf', () => {
+  it('does not take the content of a field for its name', () => {
+    document.body.innerHTML =
+      '<select id="a"><option>One</option></select><textarea id="b">typed</textarea>';
+
+    expect(nameOf(document.getElementById('a') as Element)).toBe('');
+    expect(nameOf(document.getElementById('b') as Element)).toBe('');
+  });
+
+  it('takes the label of a field and the text of a button', () => {
+    document.body.innerHTML =
+      '<label for="c">Name</label><input id="c"><button>Go</button><input aria-label="Other">';
+
+    expect(nameOf(document.getElementById('c') as Element)).toBe('Name');
+    expect(nameOf(document.querySelector('button') as Element)).toBe('Go');
+    expect(nameOf(document.querySelector('[aria-label]') as Element)).toBe('Other');
+  });
+});
 
 describe.each(SCREENS)('the %s screen', (_name, build) => {
   it('has a heading', () => {
