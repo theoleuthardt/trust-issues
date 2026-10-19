@@ -10,6 +10,10 @@ export default defineConfig({
   workers: process.env.CI ? 2 : undefined,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
+  projects: [
+    { name: 'e2e', testIgnore: '**/visual.spec.ts' },
+    { name: 'visual', testMatch: '**/visual.spec.ts' },
+  ],
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'retain-on-failure',
