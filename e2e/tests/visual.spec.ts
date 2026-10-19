@@ -96,6 +96,7 @@ test('profile', async ({ page }) => {
 });
 
 test('pause menu', async ({ page }) => {
+  await installFakeClock(page);
   await openLevel(page, 'trust-nothing');
   await page.keyboard.press('Escape');
   await expect(page.locator('.screen-pause')).toBeVisible();

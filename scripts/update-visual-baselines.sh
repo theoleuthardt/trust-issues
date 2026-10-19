@@ -11,7 +11,7 @@ trap 'git push -q origin --delete "$branch" > /dev/null 2>&1 || true' EXIT
 
 run=""
 for _ in $(seq 1 30); do
-  run="$(gh run list --workflow visual-baselines.yml --branch "$branch" --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+  run="$(gh run list --branch "$branch" --limit 5 --json databaseId,name --jq 'map(select(.name == "Visual baselines")) | .[0].databaseId // empty')"
   [ -n "$run" ] && break
   sleep 5
 done
