@@ -54,6 +54,24 @@ task backend:migration -- "add foo"
 Read the generated file in `backend/alembic/versions/`, fix what autogenerate cannot know and
 commit it with the model change. A test compares the migrated schema with the models.
 
+## Visual regression
+
+`e2e/tests/visual.spec.ts` takes screenshots of every menu and of the start of four levels and
+compares them with the committed baselines in `e2e/tests/visual.spec.ts-snapshots/`. Text
+rendering differs between machines, so the baselines are only valid for the pinned
+Playwright container (`mcr.microsoft.com/playwright:v1.64.1-noble`) that the `Visual
+regression` CI job runs in; do not run the comparison on your own machine. After a change of
+the look that you intended, regenerate them where they are made:
+
+```bash
+scripts/update-visual-baselines.sh   # pushes a temporary branch, renders in CI, downloads the images
+git diff --stat e2e/tests/visual.spec.ts-snapshots   # then look at the images and commit them
+```
+
+When Playwright is updated, change the image tag in `.github/workflows/ci.yml` and
+`visual-baselines.yml` to the same version (the job fails with a clear message if they differ)
+and regenerate the baselines in the same pull request.
+
 ## Standards
 
 - **Test first.** Add or change the test that expresses the behaviour before the

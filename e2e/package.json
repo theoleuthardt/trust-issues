@@ -4,8 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "e2e": "playwright test",
-    "typecheck": "tsc --noEmit"
+    "e2e": "playwright test --project=e2e",
+    "typecheck": "tsc --noEmit",
+    "e2e:visual": "playwright test --project=visual",
+    "e2e:visual:update": "playwright test --project=visual --update-snapshots"
   },
   "dependencies": {
     "@trust-issues/sim": "*"
