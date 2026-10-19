@@ -96,6 +96,11 @@ and the phone layout; `npx playwright install chromium` once per machine. The ga
 loaded lazily, so tests open levels with `openLevel` from `e2e/support/clock.ts`, which waits
 for the scene and restarts the run (platform levels depend on the exact tick).
 
+Visual regression (`e2e/tests/visual.spec.ts`, the `visual` Playwright project) compares
+screenshots with baselines that only exist for the pinned Playwright container of the CI job;
+never update them from a local run: use `scripts/update-visual-baselines.sh`, review the
+images, commit them in the same PR as the intended visual change.
+
 Shell scripts (`scripts/backup-db.sh`, `restore-test.sh`, `check-health.sh`,
 `release-notes.sh`) have stand-in based tests next to them (`scripts/test-*.sh`) that CI runs.
 
