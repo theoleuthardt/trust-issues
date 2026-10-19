@@ -67,6 +67,22 @@ podman compose -f compose.prod.yml up -d
 The images are published to the registry of this repository; make the packages public or log
 in on the host (`podman login ghcr.io` with a token that may read packages).
 
+## Keeping base images current
+
+The base images of the three Containerfiles (node, python, nginx, uv) and of `compose.yml`
+(postgres) are kept current by [Renovate](https://docs.renovatebot.com), configured in
+`renovate.json`. Dependabot is still used for npm, uv and GitHub Actions, but its Docker
+support only reads files called `Dockerfile`, so it cannot see ours; Renovate reads
+`Containerfile` natively. It is limited to the Docker managers so the two tools do not open
+duplicate pull requests, runs before 6 am on Mondays, opens at most three pull requests at a
+time with Conventional Commit titles (`chore(deps): ...`) and groups the Node images.
+
+Renovate has to be installed once: add the
+[Renovate GitHub App](https://github.com/apps/renovate) to this repository. It first opens an
+onboarding pull request; since `renovate.json` already exists it only confirms the setup.
+Every update pull request runs the normal CI, including the image build and the browser tests,
+so a base image that breaks the build is visible before it is merged.
+
 ## What the proxy has to set
 
 The frontend container serves the static build with the stock nginx configuration, so the
