@@ -1,0 +1,22 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["dockerfile", "docker-compose"],
+  "schedule": ["before 6am on monday"],
+  "timezone": "Europe/Berlin",
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 3,
+  "packageRules": [
+    {
+      "description": "Conventional Commits for every update",
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "deps"
+    },
+    {
+      "description": "The two Node base images move together",
+      "matchPackageNames": ["docker.io/library/node", "node"],
+      "groupName": "node base image"
+    }
+  ]
+}
